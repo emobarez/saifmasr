@@ -1,10 +1,12 @@
+
 import type {Metadata} from 'next';
 import './globals.css';
 import { Toaster } from "@/components/ui/toaster";
 import { AuthProvider } from '@/context/AuthContext';
+import { DynamicTitleSetter } from '@/components/layout/DynamicTitleSetter'; // Updated import
 
 export const metadata: Metadata = {
-  title: 'سيف مصر الوطنية للأمن',
+  title: 'سيف مصر الوطنية للأمن', // Default title, will be updated client-side
   description: 'بوابة شاملة لخدمات سيف مصر الوطنية للأمن',
 };
 
@@ -23,6 +25,7 @@ export default function RootLayout({
       </head>
       <body className="font-body antialiased">
         <AuthProvider>
+          <DynamicTitleSetter />
           {children}
           <Toaster />
         </AuthProvider>

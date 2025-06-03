@@ -19,6 +19,7 @@ import { Button } from "@/components/ui/button";
 import { ShieldHalf, LogOut, Settings, UserCircle } from "lucide-react";
 import { useAuth } from "@/context/AuthContext";
 import { Avatar, AvatarFallback, AvatarImage } from "@/components/ui/avatar";
+import { usePortalName } from '@/hooks/usePortalName';
 
 interface NavItem {
   href: string;
@@ -34,15 +35,16 @@ interface DashboardLayoutProps {
 
 export function DashboardLayout({ children, navItems }: DashboardLayoutProps) {
   const pathname = usePathname();
-  const { user, signOut, loading } = useAuth();
+  const { user, signOut, loading: authLoading } = useAuth();
   const router = useRouter();
+  const { portalName: dynamicPortalName, isLoadingPortalName } = usePortalName();
 
   const getInitials = (name?: string | null) => {
     if (!name) return "SM";
     return name.split(" ").map(n => n[0]).join("").toUpperCase();
   };
 
-  if (loading) {
+  if (authLoading || isLoadingPortalName) {
     return (
       <div className="flex items-center justify-center min-h-screen bg-background">
         <p className="text-lg text-primary font-semibold">جارٍ التحميل...</p>
@@ -57,6 +59,8 @@ export function DashboardLayout({ children, navItems }: DashboardLayoutProps) {
   }
 
   const filteredNavItems = navItems.filter(item => item.allowedRoles.includes(user.role!));
+  
+  const displaySidebarPortalName = isLoadingPortalName ? "..." : dynamicPortalName.split(" ").slice(0, 2).join(" ");
 
 
   return (
@@ -67,7 +71,7 @@ export function DashboardLayout({ children, navItems }: DashboardLayoutProps) {
             <div className="flex items-center gap-3">
               <Link href="/" className="flex items-center gap-2 text-lg font-semibold text-sidebar-primary font-headline">
                 <ShieldHalf className="h-7 w-7" />
-                <span className="group-data-[collapsible=icon]:hidden">سيف مصر</span>
+                <span className="group-data-[collapsible=icon]:hidden">{displaySidebarPortalName}</span>
               </Link>
             </div>
           </SidebarHeader>
@@ -92,7 +96,7 @@ export function DashboardLayout({ children, navItems }: DashboardLayoutProps) {
           <SidebarFooter className="p-4 border-t border-sidebar-border">
              <div className="flex items-center gap-3 group-data-[collapsible=icon]:justify-center mb-2">
                 <Avatar className="h-9 w-9">
-                  <AvatarImage src={user?.displayName || undefined} alt={user?.displayName || "User"} />
+                  <AvatarImage src={user?.photoURL || undefined} alt={user?.displayName || "User"} />
                   <AvatarFallback>{getInitials(user?.displayName)}</AvatarFallback>
                 </Avatar>
                 <div className="group-data-[collapsible=icon]:hidden">

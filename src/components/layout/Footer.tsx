@@ -1,9 +1,13 @@
 
+"use client";
 import { Facebook, Twitter, Linkedin, Instagram, ShieldHalf } from "lucide-react";
 import Link from "next/link";
+import { usePortalName } from '@/hooks/usePortalName';
 
 export function Footer() {
   const currentYear = new Date().getFullYear();
+  const { portalName: dynamicPortalName, isLoadingPortalName } = usePortalName();
+  const displayPortalName = isLoadingPortalName ? "..." : dynamicPortalName;
 
   return (
     <footer className="border-t bg-card text-card-foreground">
@@ -12,7 +16,7 @@ export function Footer() {
           <div>
             <Link href="/" className="flex items-center gap-2 font-headline text-xl font-semibold text-primary mb-4">
               <ShieldHalf className="h-8 w-8 text-primary" />
-              <span>سيف مصر الوطنية للأمن</span>
+              <span>{displayPortalName}</span>
             </Link>
             <p className="text-muted-foreground text-sm">
               نقدم خدمات شاملة لتلبية احتياجات عملائنا بأعلى معايير الجودة والاحترافية.
@@ -50,7 +54,7 @@ export function Footer() {
 
         <div className="mt-12 border-t pt-8 text-center">
           <p className="text-sm text-muted-foreground">
-            &copy; {currentYear} سيف مصر الوطنية للأمن. جميع الحقوق محفوظة.
+            &copy; {currentYear} {displayPortalName}. جميع الحقوق محفوظة.
           </p>
         </div>
       </div>

@@ -6,6 +6,7 @@ import { Sheet, SheetContent, SheetTrigger, SheetTitle } from "@/components/ui/s
 import { Menu, ShieldHalf } from "lucide-react";
 import { useAuth } from "@/context/AuthContext";
 import { useRouter } from "next/navigation";
+import { usePortalName } from '@/hooks/usePortalName';
 
 const navLinks = [
   { href: "/#services", label: "الخدمات" },
@@ -14,8 +15,9 @@ const navLinks = [
 ];
 
 export function Header() {
-  const { user, signOut, loading } = useAuth();
+  const { user, signOut, loading: authLoading } = useAuth();
   const router = useRouter();
+  const { portalName: dynamicPortalName, isLoadingPortalName } = usePortalName();
 
   const handleAuthAction = () => {
     if (user) {
@@ -30,16 +32,18 @@ export function Header() {
   };
   
   const getAuthButtonLabel = () => {
-    if (loading) return "...";
+    if (authLoading) return "...";
     return user ? "لوحة التحكم" : "تسجيل الدخول";
   }
+
+  const displayPortalName = isLoadingPortalName ? "..." : dynamicPortalName;
 
   return (
     <header className="sticky top-0 z-50 w-full border-b border-border/40 bg-background/95 backdrop-blur supports-[backdrop-filter]:bg-background/60">
       <div className="container flex h-16 max-w-screen-2xl items-center justify-between">
         <Link href="/" className="flex items-center gap-2 font-headline text-lg font-semibold text-primary">
           <ShieldHalf className="h-7 w-7 text-primary" />
-          <span>سيف مصر الوطنية للأمن</span>
+          <span>{displayPortalName}</span>
         </Link>
 
         <nav className="hidden md:flex items-center gap-6 text-sm font-medium">
@@ -55,10 +59,10 @@ export function Header() {
         </nav>
 
         <div className="flex items-center gap-2">
-          <Button onClick={handleAuthAction} variant="default" size="sm" className="font-semibold">
+          <Button onClick={handleAuthAction} variant="default" size="sm" className="font-semibold" disabled={authLoading}>
             {getAuthButtonLabel()}
           </Button>
-          {user && !loading && (
+          {user && !authLoading && (
             <Button onClick={signOut} variant="outline" size="sm">تسجيل الخروج</Button>
           )}
           <Sheet>
@@ -73,7 +77,7 @@ export function Header() {
               <nav className="grid gap-6 text-lg font-medium mt-8">
                 <Link href="/" className="flex items-center gap-2 text-lg font-semibold text-primary mb-4">
                    <ShieldHalf className="h-6 w-6 text-primary" />
-                   <span>سيف مصر الوطنية للأمن</span>
+                   <span>{displayPortalName}</span>
                 </Link>
                 {navLinks.map((link) => (
                   <Link
