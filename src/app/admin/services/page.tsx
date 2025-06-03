@@ -7,17 +7,19 @@ import { Input } from "@/components/ui/input";
 import { Textarea } from "@/components/ui/textarea";
 import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from "@/components/ui/table";
 import { Badge } from "@/components/ui/badge";
-import { PlusCircle, Search, Edit, Trash2, Loader2, Lightbulb } from "lucide-react";
+import { PlusCircle, Search, Edit, Trash2, Loader2, Lightbulb, MessageSquareQuote } from "lucide-react";
 import { Dialog, DialogContent, DialogDescription, DialogFooter, DialogHeader, DialogTitle, DialogTrigger } from "@/components/ui/dialog";
 import { useForm } from "react-hook-form";
 import { zodResolver } from "@hookform/resolvers/zod";
 import * as z from "zod";
 import { Form, FormControl, FormField, FormItem, FormLabel, FormMessage } from "@/components/ui/form";
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
+import { Accordion, AccordionContent, AccordionItem, AccordionTrigger } from "@/components/ui/accordion";
 import { useToast } from "@/hooks/use-toast";
 import { db } from "@/lib/firebase";
 import { collection, addDoc, getDocs, serverTimestamp, Timestamp, query, orderBy, doc, updateDoc, deleteDoc } from "firebase/firestore";
 import { suggestServiceCategory } from "@/ai/flows/suggest-service-category";
+import { generateServiceFAQs, GenerateServiceFAQsOutput, GenerateServiceFAQsInput } from "@/ai/flows/generate-service-faqs";
 
 interface Service {
   id: string;
@@ -46,6 +48,8 @@ export default function AdminServicesPage() {
   const [isEditServiceDialogOpen, setIsEditServiceDialogOpen] = useState(false);
   const [editingService, setEditingService] = useState<Service | null>(null);
   const [isSuggestingCategory, setIsSuggestingCategory] = useState(false);
+  const [isGeneratingFAQs, setIsGeneratingFAQs] = useState(false);
+  const [generatedFAQs, setGeneratedFAQs] = useState<GenerateServiceFAQsOutput['faqs'] | null>(null);
   const { toast } = useToast();
 
   const fetchServices = async () => {
@@ -66,6 +70,10 @@ export default function AdminServicesPage() {
   useEffect(() => {
     fetchServices();
   }, []);
+  
+  const resetDialogStates = () => {
+    setGeneratedFAQs(null);
+  };
 
   const addServiceForm = useForm<ServiceFormValues>({
     resolver: zodResolver(serviceSchema),
@@ -85,6 +93,7 @@ export default function AdminServicesPage() {
       toast({ title: "تم بنجاح", description: `تمت إضافة الخدمة ${data.name} بنجاح.` });
       addServiceForm.reset();
       setIsAddServiceDialogOpen(false);
+      resetDialogStates();
       fetchServices(); 
     } catch (error) {
       console.error("Error adding service:", error);
@@ -100,6 +109,7 @@ export default function AdminServicesPage() {
       toast({ title: "تم التعديل بنجاح", description: `تم تعديل بيانات الخدمة ${data.name}.` });
       setIsEditServiceDialogOpen(false);
       setEditingService(null);
+      resetDialogStates();
       fetchServices();
     } catch (error) {
       console.error("Error updating service:", error);
@@ -110,8 +120,15 @@ export default function AdminServicesPage() {
   const openEditDialog = (service: Service) => {
     setEditingService(service);
     editServiceForm.reset(service);
+    resetDialogStates();
     setIsEditServiceDialogOpen(true);
   };
+  
+  const openAddDialog = () => {
+    addServiceForm.reset();
+    resetDialogStates();
+    setIsAddServiceDialogOpen(true);
+  }
 
   const handleDeleteService = async (serviceId: string, serviceName: string) => {
     if (!window.confirm(`هل أنت متأكد أنك تريد حذف الخدمة ${serviceName}؟`)) return;
@@ -155,6 +172,37 @@ export default function AdminServicesPage() {
     }
   };
 
+  const handleGenerateFAQs = async (formInstance: typeof addServiceForm | typeof editServiceForm) => {
+    const serviceName = formInstance.getValues("name");
+    const serviceDescription = formInstance.getValues("description");
+
+    if (!serviceName || !serviceDescription) {
+      toast({
+        title: "معلومات ناقصة",
+        description: "يرجى إدخال اسم الخدمة ووصفها أولاً لإنشاء الأسئلة الشائعة.",
+        variant: "destructive",
+      });
+      return;
+    }
+    setGeneratedFAQs(null);
+    setIsGeneratingFAQs(true);
+    try {
+      const input: GenerateServiceFAQsInput = { serviceName, serviceDescription, faqCount: 3 };
+      const result = await generateServiceFAQs(input);
+      if (result.faqs && result.faqs.length > 0) {
+        setGeneratedFAQs(result.faqs);
+        toast({ title: "تم إنشاء الأسئلة الشائعة", description: `تم إنشاء ${result.faqs.length} أسئلة.` });
+      } else {
+        toast({ title: "لم يتم إنشاء أسئلة", description: "لم يتمكن الذكاء الاصطناعي من إنشاء أسئلة شائعة.", variant: "default" });
+      }
+    } catch (error) {
+      console.error("Error generating FAQs:", error);
+      toast({ title: "خطأ في إنشاء الأسئلة", description: "حدث خطأ أثناء محاولة إنشاء الأسئلة الشائعة.", variant: "destructive" });
+    } finally {
+      setIsGeneratingFAQs(false);
+    }
+  };
+
 
   const getStatusVariant = (status: Service["status"]): "default" | "secondary" | "destructive" => {
     if (status === "متاحة") return "default";
@@ -176,7 +224,7 @@ export default function AdminServicesPage() {
           <FormLabel>فئة الخدمة</FormLabel>
           <div className="flex gap-2 items-center">
             <FormControl><Input placeholder="مثال: أمن سيبراني" {...field} className="flex-grow"/></FormControl>
-            <Button type="button" variant="outline" size="icon" onClick={() => handleSuggestCategory(formInstance)} disabled={isSuggestingCategory || formInstance.formState.isSubmitting}>
+            <Button type="button" variant="outline" size="icon" onClick={() => handleSuggestCategory(formInstance)} disabled={isSuggestingCategory || isGeneratingFAQs || formInstance.formState.isSubmitting}>
               {isSuggestingCategory ? <Loader2 className="h-4 w-4 animate-spin" /> : <Lightbulb className="h-4 w-4" />}
               <span className="sr-only">اقترح فئة</span>
             </Button>
@@ -199,6 +247,27 @@ export default function AdminServicesPage() {
           </Select><FormMessage />
         </FormItem>
       )} />
+      <div className="pt-4">
+        <Button type="button" variant="outline" className="w-full" onClick={() => handleGenerateFAQs(formInstance)} disabled={isSuggestingCategory || isGeneratingFAQs || formInstance.formState.isSubmitting}>
+          {isGeneratingFAQs ? <Loader2 className="me-2 h-4 w-4 animate-spin" /> : <MessageSquareQuote className="me-2 h-4 w-4" />}
+          إنشاء أسئلة شائعة (AI)
+        </Button>
+      </div>
+      {generatedFAQs && generatedFAQs.length > 0 && (
+        <div className="pt-4">
+          <h4 className="text-md font-semibold mb-2">الأسئلة الشائعة المقترحة:</h4>
+          <Accordion type="single" collapsible className="w-full">
+            {generatedFAQs.map((faq, index) => (
+              <AccordionItem value={`faq-${index}`} key={index}>
+                <AccordionTrigger className="text-sm text-start">{faq.question}</AccordionTrigger>
+                <AccordionContent className="text-xs whitespace-pre-wrap p-2 bg-secondary/30 rounded-md">
+                  {faq.answer}
+                </AccordionContent>
+              </AccordionItem>
+            ))}
+          </Accordion>
+        </div>
+      )}
     </>
   );
 
@@ -211,9 +280,9 @@ export default function AdminServicesPage() {
             <CardTitle className="font-headline text-xl text-primary">إدارة الخدمات</CardTitle>
             <CardDescription>إضافة، تعديل، وحذف الخدمات المقدمة عبر البوابة.</CardDescription>
           </div>
-          <Dialog open={isAddServiceDialogOpen} onOpenChange={setIsAddServiceDialogOpen}>
+          <Dialog open={isAddServiceDialogOpen} onOpenChange={(open) => { setIsAddServiceDialogOpen(open); if(!open) resetDialogStates(); }}>
             <DialogTrigger asChild>
-              <Button className="mt-4 md:mt-0">
+              <Button className="mt-4 md:mt-0" onClick={openAddDialog}>
                 <PlusCircle className="me-2 h-5 w-5" />
                 إضافة خدمة جديدة
               </Button>
@@ -229,8 +298,8 @@ export default function AdminServicesPage() {
                 <form onSubmit={addServiceForm.handleSubmit(handleAddServiceSubmit)} className="space-y-4 py-4 max-h-[70vh] overflow-y-auto px-2">
                   {renderServiceFormFields(addServiceForm)}
                   <DialogFooter className="pt-4">
-                    <Button type="button" variant="outline" onClick={() => setIsAddServiceDialogOpen(false)} disabled={addServiceForm.formState.isSubmitting || isSuggestingCategory}>إلغاء</Button>
-                    <Button type="submit" disabled={addServiceForm.formState.isSubmitting || isSuggestingCategory}>
+                    <Button type="button" variant="outline" onClick={() => {setIsAddServiceDialogOpen(false); resetDialogStates();}} disabled={addServiceForm.formState.isSubmitting || isSuggestingCategory || isGeneratingFAQs}>إلغاء</Button>
+                    <Button type="submit" disabled={addServiceForm.formState.isSubmitting || isSuggestingCategory || isGeneratingFAQs}>
                        {addServiceForm.formState.isSubmitting && <Loader2 className="me-2 h-4 w-4 animate-spin" />}
                       إضافة الخدمة
                     </Button>
@@ -284,7 +353,7 @@ export default function AdminServicesPage() {
       </Card>
 
       {/* Edit Service Dialog */}
-      <Dialog open={isEditServiceDialogOpen} onOpenChange={setIsEditServiceDialogOpen}>
+      <Dialog open={isEditServiceDialogOpen} onOpenChange={(open) => { setIsEditServiceDialogOpen(open); if(!open) resetDialogStates(); }}>
         <DialogContent className="sm:max-w-lg" dir="rtl">
           <DialogHeader>
             <DialogTitle>تعديل الخدمة</DialogTitle>
@@ -296,8 +365,8 @@ export default function AdminServicesPage() {
             <form onSubmit={editServiceForm.handleSubmit(handleEditServiceSubmit)} className="space-y-4 py-4 max-h-[70vh] overflow-y-auto px-2">
               {renderServiceFormFields(editServiceForm)}
               <DialogFooter className="pt-4">
-                <Button type="button" variant="outline" onClick={() => setIsEditServiceDialogOpen(false)} disabled={editServiceForm.formState.isSubmitting || isSuggestingCategory}>إلغاء</Button>
-                <Button type="submit" disabled={editServiceForm.formState.isSubmitting || isSuggestingCategory}>
+                <Button type="button" variant="outline" onClick={() => {setIsEditServiceDialogOpen(false); resetDialogStates();}} disabled={editServiceForm.formState.isSubmitting || isSuggestingCategory || isGeneratingFAQs}>إلغاء</Button>
+                <Button type="submit" disabled={editServiceForm.formState.isSubmitting || isSuggestingCategory || isGeneratingFAQs}>
                   {editServiceForm.formState.isSubmitting && <Loader2 className="me-2 h-4 w-4 animate-spin" />}
                   حفظ التعديلات
                 </Button>
@@ -309,3 +378,6 @@ export default function AdminServicesPage() {
     </div>
   );
 }
+
+
+    
