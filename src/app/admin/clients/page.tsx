@@ -1,6 +1,6 @@
 
 "use client";
-import { useState } from "react";
+import { useState, useEffect } from "react";
 import { Card, CardHeader, CardTitle, CardDescription, CardContent } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
@@ -14,47 +14,136 @@ import * as z from "zod";
 import { Form, FormControl, FormField, FormItem, FormLabel, FormMessage } from "@/components/ui/form";
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
 import { useToast } from "@/hooks/use-toast";
+import { db } from "@/lib/firebase";
+import { collection, addDoc, getDocs, serverTimestamp, Timestamp, query, orderBy, deleteDoc, doc, updateDoc } from "firebase/firestore";
 
-const sampleClients = [
-  { id: "CLT-001", name: "أحمد محمد", email: "ahmed.m@example.com", joinDate: "2024-01-15", status: "نشط", statusVariant: "default" },
-  { id: "CLT-002", name: "فاطمة علي", email: "fatima.a@example.com", joinDate: "2024-03-20", status: "غير نشط", statusVariant: "secondary" },
-  { id: "CLT-003", name: "يوسف حسن", email: "youssef.h@example.com", joinDate: "2024-05-10", status: "محظور", statusVariant: "destructive" },
-];
+interface Client {
+  id: string;
+  name: string;
+  email: string;
+  joinDate: Timestamp | Date; // Firestore timestamp or Date object
+  status: "نشط" | "غير نشط" | "محظور";
+}
 
-const addClientSchema = z.object({
+const clientSchema = z.object({
   name: z.string().min(2, { message: "الاسم يجب أن لا يقل عن حرفين" }),
   email: z.string().email({ message: "البريد الإلكتروني غير صالح" }),
   status: z.enum(["نشط", "غير نشط", "محظور"], { required_error: "يرجى اختيار حالة العميل" }),
 });
 
-type AddClientFormValues = z.infer<typeof addClientSchema>;
+type ClientFormValues = z.infer<typeof clientSchema>;
 
 export default function AdminClientsPage() {
+  const [clients, setClients] = useState<Client[]>([]);
+  const [isLoadingClients, setIsLoadingClients] = useState(true);
   const [isAddClientDialogOpen, setIsAddClientDialogOpen] = useState(false);
+  const [isEditClientDialogOpen, setIsEditClientDialogOpen] = useState(false);
+  const [editingClient, setEditingClient] = useState<Client | null>(null);
   const { toast } = useToast();
 
-  const form = useForm<AddClientFormValues>({
-    resolver: zodResolver(addClientSchema),
-    defaultValues: {
-      name: "",
-      email: "",
-      status: "نشط",
-    },
+  const fetchClients = async () => {
+    setIsLoadingClients(true);
+    try {
+      const q = query(collection(db, "clients"), orderBy("joinDate", "desc"));
+      const querySnapshot = await getDocs(q);
+      const clientsData = querySnapshot.docs.map(doc => ({ id: doc.id, ...doc.data() } as Client));
+      setClients(clientsData);
+    } catch (error) {
+      console.error("Error fetching clients:", error);
+      toast({ title: "خطأ", description: "لم نتمكن من تحميل قائمة العملاء.", variant: "destructive" });
+    } finally {
+      setIsLoadingClients(false);
+    }
+  };
+
+  useEffect(() => {
+    fetchClients();
+  }, []);
+
+  const addClientForm = useForm<ClientFormValues>({
+    resolver: zodResolver(clientSchema),
+    defaultValues: { name: "", email: "", status: "نشط" },
   });
 
-  const {formState: {isSubmitting}} = form;
+  const editClientForm = useForm<ClientFormValues>({
+    resolver: zodResolver(clientSchema),
+  });
 
-  const onSubmit = async (data: AddClientFormValues) => {
-    console.log("New client data:", data);
-    // Here you would typically call an API to save the client
-    await new Promise(resolve => setTimeout(resolve, 1000)); // Simulate API call
-    toast({
-      title: "تم بنجاح",
-      description: `تمت إضافة العميل ${data.name} بنجاح. (بيانات مسجلة في الكونسول)`,
-    });
-    form.reset();
-    setIsAddClientDialogOpen(false);
+  const handleAddClientSubmit = async (data: ClientFormValues) => {
+    try {
+      await addDoc(collection(db, "clients"), {
+        ...data,
+        joinDate: serverTimestamp(),
+      });
+      toast({ title: "تم بنجاح", description: `تمت إضافة العميل ${data.name} بنجاح.` });
+      addClientForm.reset();
+      setIsAddClientDialogOpen(false);
+      fetchClients(); // Refresh list
+    } catch (error) {
+      console.error("Error adding client:", error);
+      toast({ title: "خطأ", description: "حدث خطأ أثناء إضافة العميل.", variant: "destructive" });
+    }
   };
+
+  const handleEditClientSubmit = async (data: ClientFormValues) => {
+    if (!editingClient) return;
+    try {
+      const clientRef = doc(db, "clients", editingClient.id);
+      await updateDoc(clientRef, {
+        name: data.name,
+        email: data.email,
+        status: data.status,
+      });
+      toast({ title: "تم التعديل بنجاح", description: `تم تعديل بيانات العميل ${data.name}.` });
+      setIsEditClientDialogOpen(false);
+      setEditingClient(null);
+      fetchClients(); // Refresh list
+    } catch (error) {
+      console.error("Error updating client:", error);
+      toast({ title: "خطأ", description: "حدث خطأ أثناء تعديل بيانات العميل.", variant: "destructive" });
+    }
+  };
+  
+  const openEditDialog = (client: Client) => {
+    setEditingClient(client);
+    editClientForm.reset({
+      name: client.name,
+      email: client.email,
+      status: client.status,
+    });
+    setIsEditClientDialogOpen(true);
+  };
+
+  const handleDeleteClient = async (clientId: string, clientName: string) => {
+    if (!window.confirm(`هل أنت متأكد أنك تريد حذف العميل ${clientName}؟`)) return;
+    try {
+      await deleteDoc(doc(db, "clients", clientId));
+      toast({ title: "تم الحذف", description: `تم حذف العميل ${clientName} بنجاح.` });
+      fetchClients(); // Refresh list
+    } catch (error) {
+      console.error("Error deleting client:", error);
+      toast({ title: "خطأ", description: "حدث خطأ أثناء حذف العميل.", variant: "destructive" });
+    }
+  };
+  
+  const getStatusVariant = (status: Client["status"]): "default" | "secondary" | "destructive" => {
+    if (status === "نشط") return "default";
+    if (status === "غير نشط") return "secondary";
+    if (status === "محظور") return "destructive";
+    return "default";
+  };
+
+  const formatDate = (dateValue: Timestamp | Date | undefined): string => {
+    if (!dateValue) return "غير متوفر";
+    if (dateValue instanceof Timestamp) {
+      return dateValue.toDate().toLocaleDateString('ar-EG');
+    }
+    if (dateValue instanceof Date) {
+      return dateValue.toLocaleDateString('ar-EG');
+    }
+    return "تاريخ غير صالح";
+  };
+
 
   return (
     <div className="space-y-6">
@@ -78,46 +167,29 @@ export default function AdminClientsPage() {
                   املأ النموذج أدناه لإضافة عميل جديد إلى النظام.
                 </DialogDescription>
               </DialogHeader>
-              <Form {...form}>
-                <form onSubmit={form.handleSubmit(onSubmit)} className="space-y-4 py-4">
-                  <FormField
-                    control={form.control}
-                    name="name"
-                    render={({ field }) => (
+              <Form {...addClientForm}>
+                <form onSubmit={addClientForm.handleSubmit(handleAddClientSubmit)} className="space-y-4 py-4">
+                  <FormField control={addClientForm.control} name="name" render={({ field }) => (
                       <FormItem>
                         <FormLabel>اسم العميل</FormLabel>
-                        <FormControl>
-                          <Input placeholder="مثال: أحمد محمد" {...field} />
-                        </FormControl>
+                        <FormControl><Input placeholder="مثال: أحمد محمد" {...field} /></FormControl>
                         <FormMessage />
                       </FormItem>
                     )}
                   />
-                  <FormField
-                    control={form.control}
-                    name="email"
-                    render={({ field }) => (
+                  <FormField control={addClientForm.control} name="email" render={({ field }) => (
                       <FormItem>
                         <FormLabel>البريد الإلكتروني</FormLabel>
-                        <FormControl>
-                          <Input type="email" placeholder="example@mail.com" {...field} />
-                        </FormControl>
+                        <FormControl><Input type="email" placeholder="example@mail.com" {...field} /></FormControl>
                         <FormMessage />
                       </FormItem>
                     )}
                   />
-                  <FormField
-                    control={form.control}
-                    name="status"
-                    render={({ field }) => (
+                  <FormField control={addClientForm.control} name="status" render={({ field }) => (
                       <FormItem>
                         <FormLabel>حالة العميل</FormLabel>
                         <Select onValueChange={field.onChange} defaultValue={field.value} dir="rtl">
-                          <FormControl>
-                            <SelectTrigger>
-                              <SelectValue placeholder="اختر حالة العميل" />
-                            </SelectTrigger>
-                          </FormControl>
+                          <FormControl><SelectTrigger><SelectValue placeholder="اختر حالة العميل" /></SelectTrigger></FormControl>
                           <SelectContent>
                             <SelectItem value="نشط">نشط</SelectItem>
                             <SelectItem value="غير نشط">غير نشط</SelectItem>
@@ -129,11 +201,9 @@ export default function AdminClientsPage() {
                     )}
                   />
                   <DialogFooter>
-                    <Button type="button" variant="outline" onClick={() => setIsAddClientDialogOpen(false)} disabled={isSubmitting}>
-                      إلغاء
-                    </Button>
-                    <Button type="submit" disabled={isSubmitting}>
-                      {isSubmitting && <Loader2 className="me-2 h-4 w-4 animate-spin" />}
+                    <Button type="button" variant="outline" onClick={() => setIsAddClientDialogOpen(false)} disabled={addClientForm.formState.isSubmitting}>إلغاء</Button>
+                    <Button type="submit" disabled={addClientForm.formState.isSubmitting}>
+                      {addClientForm.formState.isSubmitting && <Loader2 className="me-2 h-4 w-4 animate-spin" />}
                       إضافة العميل
                     </Button>
                   </DialogFooter>
@@ -147,7 +217,9 @@ export default function AdminClientsPage() {
             <Input placeholder="ابحث عن عميل (بالاسم أو البريد الإلكتروني)..." className="max-w-sm" />
             <Button variant="outline" size="icon"><Search className="h-5 w-5"/></Button>
           </div>
-          {sampleClients.length > 0 ? (
+          {isLoadingClients ? (
+            <div className="flex justify-center items-center py-8"><Loader2 className="h-8 w-8 animate-spin text-primary" /><p className="ms-2">جارٍ تحميل العملاء...</p></div>
+          ) : clients.length > 0 ? (
             <Table>
               <TableHeader>
                 <TableRow>
@@ -160,20 +232,18 @@ export default function AdminClientsPage() {
                 </TableRow>
               </TableHeader>
               <TableBody>
-                {sampleClients.map((client) => (
+                {clients.map((client) => (
                   <TableRow key={client.id}>
-                    <TableCell className="font-medium">{client.id}</TableCell>
+                    <TableCell className="font-medium truncate max-w-[100px]">{client.id}</TableCell>
                     <TableCell>{client.name}</TableCell>
                     <TableCell>{client.email}</TableCell>
-                    <TableCell>{client.joinDate}</TableCell>
-                    <TableCell>
-                      <Badge variant={client.statusVariant as any}>{client.status}</Badge>
-                    </TableCell>
+                    <TableCell>{formatDate(client.joinDate)}</TableCell>
+                    <TableCell><Badge variant={getStatusVariant(client.status)}>{client.status}</Badge></TableCell>
                     <TableCell className="space-x-1 space-x-reverse">
-                      <Button variant="ghost" size="icon" aria-label="تعديل العميل">
+                      <Button variant="ghost" size="icon" aria-label="تعديل العميل" onClick={() => openEditDialog(client)}>
                         <Edit className="h-5 w-5" />
                       </Button>
-                      <Button variant="ghost" size="icon" aria-label="حذف العميل" className="text-destructive hover:text-destructive">
+                      <Button variant="ghost" size="icon" aria-label="حذف العميل" className="text-destructive hover:text-destructive" onClick={() => handleDeleteClient(client.id, client.name)}>
                         <Trash2 className="h-5 w-5" />
                       </Button>
                     </TableCell>
@@ -182,10 +252,64 @@ export default function AdminClientsPage() {
               </TableBody>
             </Table>
           ) : (
-             <p className="text-muted-foreground text-center py-8">لا يوجد عملاء لعرضهم حالياً.</p>
+             <p className="text-muted-foreground text-center py-8">لا يوجد عملاء لعرضهم حالياً. قم بإضافة عميل جديد.</p>
           )}
         </CardContent>
       </Card>
+
+      {/* Edit Client Dialog */}
+      <Dialog open={isEditClientDialogOpen} onOpenChange={setIsEditClientDialogOpen}>
+        <DialogContent className="sm:max-w-[425px]" dir="rtl">
+          <DialogHeader>
+            <DialogTitle>تعديل بيانات العميل</DialogTitle>
+            <DialogDescription>
+              قم بتحديث بيانات العميل {editingClient?.name}.
+            </DialogDescription>
+          </DialogHeader>
+          <Form {...editClientForm}>
+            <form onSubmit={editClientForm.handleSubmit(handleEditClientSubmit)} className="space-y-4 py-4">
+              <FormField control={editClientForm.control} name="name" render={({ field }) => (
+                  <FormItem>
+                    <FormLabel>اسم العميل</FormLabel>
+                    <FormControl><Input placeholder="مثال: أحمد محمد" {...field} /></FormControl>
+                    <FormMessage />
+                  </FormItem>
+                )}
+              />
+              <FormField control={editClientForm.control} name="email" render={({ field }) => (
+                  <FormItem>
+                    <FormLabel>البريد الإلكتروني</FormLabel>
+                    <FormControl><Input type="email" placeholder="example@mail.com" {...field} /></FormControl>
+                    <FormMessage />
+                  </FormItem>
+                )}
+              />
+              <FormField control={editClientForm.control} name="status" render={({ field }) => (
+                  <FormItem>
+                    <FormLabel>حالة العميل</FormLabel>
+                    <Select onValueChange={field.onChange} defaultValue={field.value} dir="rtl">
+                      <FormControl><SelectTrigger><SelectValue placeholder="اختر حالة العميل" /></SelectTrigger></FormControl>
+                      <SelectContent>
+                        <SelectItem value="نشط">نشط</SelectItem>
+                        <SelectItem value="غير نشط">غير نشط</SelectItem>
+                        <SelectItem value="محظور">محظور</SelectItem>
+                      </SelectContent>
+                    </Select>
+                    <FormMessage />
+                  </FormItem>
+                )}
+              />
+              <DialogFooter>
+                <Button type="button" variant="outline" onClick={() => setIsEditClientDialogOpen(false)} disabled={editClientForm.formState.isSubmitting}>إلغاء</Button>
+                <Button type="submit" disabled={editClientForm.formState.isSubmitting}>
+                  {editClientForm.formState.isSubmitting && <Loader2 className="me-2 h-4 w-4 animate-spin" />}
+                  حفظ التعديلات
+                </Button>
+              </DialogFooter>
+            </form>
+          </Form>
+        </DialogContent>
+      </Dialog>
     </div>
   );
 }
