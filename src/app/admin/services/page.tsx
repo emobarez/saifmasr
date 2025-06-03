@@ -29,6 +29,7 @@ interface Service {
   description: string;
   status: "متاحة" | "قيد التطوير" | "متوقفة مؤقتاً";
   createdAt: Timestamp | Date;
+  faqs?: Array<{ question: string; answer: string }>;
 }
 
 const serviceSchema = z.object({
@@ -89,6 +90,7 @@ export default function AdminServicesPage() {
       await addDoc(collection(db, "services"), {
         ...data,
         createdAt: serverTimestamp(),
+        ...(generatedFAQs && generatedFAQs.length > 0 && { faqs: generatedFAQs }),
       });
       toast({ title: "تم بنجاح", description: `تمت إضافة الخدمة ${data.name} بنجاح.` });
       addServiceForm.reset();
@@ -105,7 +107,10 @@ export default function AdminServicesPage() {
     if (!editingService) return;
     try {
       const serviceRef = doc(db, "services", editingService.id);
-      await updateDoc(serviceRef, data);
+      await updateDoc(serviceRef, {
+        ...data, // This includes name, category, price, description, status
+        ...(generatedFAQs && generatedFAQs.length > 0 && { faqs: generatedFAQs }),
+      });
       toast({ title: "تم التعديل بنجاح", description: `تم تعديل بيانات الخدمة ${data.name}.` });
       setIsEditServiceDialogOpen(false);
       setEditingService(null);
@@ -119,8 +124,16 @@ export default function AdminServicesPage() {
 
   const openEditDialog = (service: Service) => {
     setEditingService(service);
-    editServiceForm.reset(service);
-    resetDialogStates();
+    editServiceForm.reset({
+        name: service.name,
+        category: service.category,
+        price: service.price,
+        description: service.description,
+        status: service.status,
+    });
+    // If the service already has FAQs, we could display them, but generatedFAQs is for NEWLY generated ones in this dialog.
+    // So, we always reset generatedFAQs for a fresh generation attempt.
+    resetDialogStates(); 
     setIsEditServiceDialogOpen(true);
   };
   
@@ -193,7 +206,8 @@ export default function AdminServicesPage() {
         setGeneratedFAQs(result.faqs);
         toast({ title: "تم إنشاء الأسئلة الشائعة", description: `تم إنشاء ${result.faqs.length} أسئلة.` });
       } else {
-        toast({ title: "لم يتم إنشاء أسئلة", description: "لم يتمكن الذكاء الاصطناعي من إنشاء أسئلة شائعة.", variant: "default" });
+        setGeneratedFAQs([]); // Set to empty array if AI returns no FAQs
+        toast({ title: "لم يتم إنشاء أسئلة", description: "لم يتمكن الذكاء الاصطناعي من إنشاء أسئلة شائعة. يمكنك المحاولة مرة أخرى.", variant: "default" });
       }
     } catch (error) {
       console.error("Error generating FAQs:", error);
@@ -268,6 +282,9 @@ export default function AdminServicesPage() {
           </Accordion>
         </div>
       )}
+       {generatedFAQs && generatedFAQs.length === 0 && !isGeneratingFAQs && (
+          <p className="pt-4 text-sm text-muted-foreground">لم يتم إنشاء أسئلة شائعة. يمكنك المحاولة مرة أخرى أو إضافتها يدوياً لاحقاً.</p>
+       )}
     </>
   );
 
@@ -378,6 +395,4 @@ export default function AdminServicesPage() {
     </div>
   );
 }
-
-
     
