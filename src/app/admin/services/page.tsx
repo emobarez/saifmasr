@@ -74,6 +74,7 @@ export default function AdminServicesPage() {
   
   const resetDialogStates = () => {
     setGeneratedFAQs(null);
+    // Keep setIsSuggestingCategory and setIsGeneratingFAQs as they are managed per interaction
   };
 
   const addServiceForm = useForm<ServiceFormValues>({
@@ -108,8 +109,12 @@ export default function AdminServicesPage() {
     try {
       const serviceRef = doc(db, "services", editingService.id);
       await updateDoc(serviceRef, {
-        ...data, // This includes name, category, price, description, status
+        ...data, 
         ...(generatedFAQs && generatedFAQs.length > 0 && { faqs: generatedFAQs }),
+        // If generatedFAQs is null (meaning no new FAQs were generated in this edit session),
+        // we don't pass faqs, so Firestore keeps the existing ones. If it's an empty array, it means clear them.
+        // If you want to explicitly clear FAQs, you might need a separate button or set generatedFAQs to []
+        ...(generatedFAQs === null && editingService.faqs ? { faqs: editingService.faqs } : {}),
       });
       toast({ title: "تم التعديل بنجاح", description: `تم تعديل بيانات الخدمة ${data.name}.` });
       setIsEditServiceDialogOpen(false);
@@ -131,9 +136,9 @@ export default function AdminServicesPage() {
         description: service.description,
         status: service.status,
     });
-    // If the service already has FAQs, we could display them, but generatedFAQs is for NEWLY generated ones in this dialog.
-    // So, we always reset generatedFAQs for a fresh generation attempt.
-    resetDialogStates(); 
+    // If the service has existing FAQs, set them to generatedFAQs to display them,
+    // and allow them to be re-saved if not changed.
+    setGeneratedFAQs(service.faqs || null); 
     setIsEditServiceDialogOpen(true);
   };
   
@@ -197,7 +202,8 @@ export default function AdminServicesPage() {
       });
       return;
     }
-    setGeneratedFAQs(null);
+    // Reset generatedFAQs specifically for a new generation attempt
+    setGeneratedFAQs(null); 
     setIsGeneratingFAQs(true);
     try {
       const input: GenerateServiceFAQsInput = { serviceName, serviceDescription, faqCount: 3 };
@@ -206,7 +212,7 @@ export default function AdminServicesPage() {
         setGeneratedFAQs(result.faqs);
         toast({ title: "تم إنشاء الأسئلة الشائعة", description: `تم إنشاء ${result.faqs.length} أسئلة.` });
       } else {
-        setGeneratedFAQs([]); // Set to empty array if AI returns no FAQs
+        setGeneratedFAQs([]); 
         toast({ title: "لم يتم إنشاء أسئلة", description: "لم يتمكن الذكاء الاصطناعي من إنشاء أسئلة شائعة. يمكنك المحاولة مرة أخرى.", variant: "default" });
       }
     } catch (error) {
@@ -225,7 +231,7 @@ export default function AdminServicesPage() {
     return "default";
   };
 
-  const renderServiceFormFields = (formInstance: typeof addServiceForm | typeof editServiceForm) => (
+  const renderServiceFormFields = (formInstance: typeof addServiceForm | typeof editServiceForm, currentService?: Service | null) => (
     <>
       <FormField control={formInstance.control} name="name" render={({ field }) => (
         <FormItem><FormLabel>اسم الخدمة</FormLabel><FormControl><Input placeholder="مثال: استشارة أمنية متقدمة" {...field} /></FormControl><FormMessage /></FormItem>
@@ -267,10 +273,10 @@ export default function AdminServicesPage() {
           إنشاء أسئلة شائعة (AI)
         </Button>
       </div>
-      {generatedFAQs && generatedFAQs.length > 0 && (
+      {(generatedFAQs && generatedFAQs.length > 0) && (
         <div className="pt-4">
           <h4 className="text-md font-semibold mb-2">الأسئلة الشائعة المقترحة:</h4>
-          <Accordion type="single" collapsible className="w-full">
+          <Accordion type="single" collapsible className="w-full" defaultValue={generatedFAQs.length > 0 ? "faq-0" : undefined}>
             {generatedFAQs.map((faq, index) => (
               <AccordionItem value={`faq-${index}`} key={index}>
                 <AccordionTrigger className="text-sm text-start">{faq.question}</AccordionTrigger>
@@ -282,8 +288,24 @@ export default function AdminServicesPage() {
           </Accordion>
         </div>
       )}
-       {generatedFAQs && generatedFAQs.length === 0 && !isGeneratingFAQs && (
+       {(generatedFAQs && generatedFAQs.length === 0 && !isGeneratingFAQs) && (
           <p className="pt-4 text-sm text-muted-foreground">لم يتم إنشاء أسئلة شائعة. يمكنك المحاولة مرة أخرى أو إضافتها يدوياً لاحقاً.</p>
+       )}
+       {/* Display existing FAQs from the service if not currently generating new ones */}
+       {currentService && currentService.faqs && currentService.faqs.length > 0 && generatedFAQs === null && !isGeneratingFAQs && (
+          <div className="pt-4">
+            <h4 className="text-md font-semibold mb-2">الأسئلة الشائعة الحالية:</h4>
+             <Accordion type="single" collapsible className="w-full" defaultValue={currentService.faqs.length > 0 ? "faq-0" : undefined}>
+                {currentService.faqs.map((faq, index) => (
+                <AccordionItem value={`faq-${index}`} key={`existing-faq-${index}`}>
+                    <AccordionTrigger className="text-sm text-start">{faq.question}</AccordionTrigger>
+                    <AccordionContent className="text-xs whitespace-pre-wrap p-2 bg-secondary/30 rounded-md">
+                    {faq.answer}
+                    </AccordionContent>
+                </AccordionItem>
+                ))}
+            </Accordion>
+          </div>
        )}
     </>
   );
@@ -380,7 +402,7 @@ export default function AdminServicesPage() {
           </DialogHeader>
           <Form {...editServiceForm}>
             <form onSubmit={editServiceForm.handleSubmit(handleEditServiceSubmit)} className="space-y-4 py-4 max-h-[70vh] overflow-y-auto px-2">
-              {renderServiceFormFields(editServiceForm)}
+              {renderServiceFormFields(editServiceForm, editingService)}
               <DialogFooter className="pt-4">
                 <Button type="button" variant="outline" onClick={() => {setIsEditServiceDialogOpen(false); resetDialogStates();}} disabled={editServiceForm.formState.isSubmitting || isSuggestingCategory || isGeneratingFAQs}>إلغاء</Button>
                 <Button type="submit" disabled={editServiceForm.formState.isSubmitting || isSuggestingCategory || isGeneratingFAQs}>
@@ -395,4 +417,6 @@ export default function AdminServicesPage() {
     </div>
   );
 }
+    
+
     
