@@ -1,0 +1,42 @@
+
+rules_version = '2';
+
+service cloud.firestore {
+  match /databases/{database}/documents {
+
+    // Helper function to check if the user is an admin based on email
+    function isAdmin() {
+      return request.auth != null && (
+        request.auth.token.email == 'admin@saifmasr.com' ||
+        request.auth.token.email == 'admin@example.com' // Add other admin emails if needed
+      );
+    }
+
+    // Clients collection: Admins can read, write, create, delete.
+    match /clients/{clientId} {
+      allow read, write: if isAdmin();
+    }
+
+    // Services collection:
+    // - Authenticated users can read services.
+    // - Admins can create, update, delete services.
+    match /services/{serviceId} {
+      allow read: if request.auth != null;
+      allow write: if isAdmin();
+    }
+
+    // Service Requests collection:
+    match /serviceRequests/{requestId} {
+      // Authenticated users can create a service request for themselves.
+      allow create: if request.auth != null && request.resource.data.clientId == request.auth.uid;
+
+      // Users can read/update their own requests. Admins can read/update any request.
+      allow read, update: if request.auth != null && (
+                           (resource.data.clientId == request.auth.uid) ||
+                           isAdmin()
+                         );
+      // Admins can delete requests.
+      allow delete: if isAdmin();
+    }
+  }
+}
