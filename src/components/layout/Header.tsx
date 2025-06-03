@@ -2,7 +2,7 @@
 "use client";
 import Link from "next/link";
 import { Button } from "@/components/ui/button";
-import { Sheet, SheetContent, SheetTrigger } from "@/components/ui/sheet";
+import { Sheet, SheetContent, SheetTrigger, SheetTitle } from "@/components/ui/sheet";
 import { Menu, ShieldHalf } from "lucide-react";
 import { useAuth } from "@/context/AuthContext";
 import { useRouter } from "next/navigation";
@@ -69,6 +69,7 @@ export function Header() {
               </Button>
             </SheetTrigger>
             <SheetContent side="left" className="font-body">
+              <SheetTitle className="sr-only">القائمة</SheetTitle>
               <nav className="grid gap-6 text-lg font-medium mt-8">
                 <Link href="/" className="flex items-center gap-2 text-lg font-semibold text-primary mb-4">
                    <ShieldHalf className="h-6 w-6 text-primary" />
