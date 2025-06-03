@@ -11,22 +11,23 @@ import { zodResolver } from "@hookform/resolvers/zod";
 import * as z from "zod";
 import { Form, FormControl, FormDescription, FormField, FormItem, FormLabel, FormMessage } from "@/components/ui/form";
 import { useToast } from "@/hooks/use-toast";
-import { db } from "@/lib/firebase"; // Import db
-import { collection, addDoc, serverTimestamp } from "firebase/firestore"; // Import Firestore functions
-import { useAuth } from "@/context/AuthContext"; // Import useAuth
+import { db, storage } from "@/lib/firebase"; // Import db and storage
+import { collection, addDoc, serverTimestamp } from "firebase/firestore"; 
+import { ref, uploadBytesResumable, getDownloadURL } from "firebase/storage"; // Import Storage functions
+import { useAuth } from "@/context/AuthContext";
 
 const serviceRequestSchema = z.object({
   serviceType: z.string({ required_error: "يرجى اختيار نوع الخدمة" }).min(1, "يرجى اختيار نوع الخدمة"),
   requestTitle: z.string().min(5, { message: "عنوان الطلب يجب أن لا يقل عن 5 أحرف" }).max(100, { message: "عنوان الطلب يجب أن لا يتجاوز 100 حرف" }),
   requestDetails: z.string().min(10, { message: "تفاصيل الطلب يجب أن لا تقل عن 10 أحرف" }).max(1000, { message: "تفاصيل الطلب يجب أن لا تتجاوز 1000 حرف" }),
-  attachments: z.any().optional(), // Basic file handling for now
+  attachments: z.any().optional(), 
 });
 
 type ServiceRequestFormValues = z.infer<typeof serviceRequestSchema>;
 
 export default function ClientServiceRequestsPage() {
   const { toast } = useToast();
-  const { user } = useAuth(); // Get current user
+  const { user } = useAuth(); 
   const form = useForm<ServiceRequestFormValues>({
     resolver: zodResolver(serviceRequestSchema),
     defaultValues: {
@@ -37,7 +38,7 @@ export default function ClientServiceRequestsPage() {
     },
   });
   
-  const {formState: {isSubmitting}} = form;
+  const {formState: {isSubmitting}, reset} = form;
 
   const onSubmit = async (data: ServiceRequestFormValues) => {
     if (!user) {
@@ -49,30 +50,67 @@ export default function ClientServiceRequestsPage() {
       return;
     }
 
+    let attachmentURL: string | null = null;
+    let originalFilename: string | null = null;
+
     try {
-      // Handle file upload if data.attachments exists (future enhancement)
-      // For now, we'll ignore attachments for Firestore saving.
+      form.control.handleSubmit // to ensure isSubmitting is true
+      
+      const file = data.attachments?.[0] as File | undefined;
+
+      if (file) {
+        toast({ title: "جارٍ رفع المرفق...", description: "قد يستغرق هذا بعض الوقت." });
+        const uniqueFilename = `${Date.now()}-${file.name}`;
+        const storageRef = ref(storage, `service-request-attachments/${user.uid}/${uniqueFilename}`);
+        
+        const uploadTask = uploadBytesResumable(storageRef, file);
+
+        await new Promise<void>((resolve, reject) => {
+          uploadTask.on('state_changed',
+            (snapshot) => {
+              // Optional: handle progress
+            },
+            (error) => {
+              console.error("Upload failed:", error);
+              reject(error);
+            },
+            async () => {
+              attachmentURL = await getDownloadURL(uploadTask.snapshot.ref);
+              originalFilename = file.name;
+              resolve();
+            }
+          );
+        });
+        toast({ title: "تم رفع المرفق بنجاح", description: "يتم الآن إرسال طلبك." });
+      }
+
       const { attachments, ...requestDataToSave } = data;
 
       await addDoc(collection(db, "serviceRequests"), {
         ...requestDataToSave,
         clientId: user.uid,
-        clientName: user.displayName || "غير متوفر", // Store client's name
-        clientEmail: user.email || "غير متوفر", // Store client's email
-        status: "جديد", // Initial status
+        clientName: user.displayName || "غير متوفر", 
+        clientEmail: user.email || "غير متوفر", 
+        status: "جديد", 
         createdAt: serverTimestamp(),
+        ...(attachmentURL && { attachmentURL }),
+        ...(originalFilename && { attachmentFilename: originalFilename }),
       });
 
       toast({
         title: "تم إرسال الطلب بنجاح",
         description: "سنقوم بمراجعة طلبك والتواصل معك قريباً.",
       });
-      form.reset();
-    } catch (error) {
+      reset(); // Reset form fields, including file input
+    } catch (error: any) {
       console.error("Error submitting service request:", error);
+      let errorMessage = "حدث خطأ أثناء محاولة إرسال طلبك. يرجى المحاولة مرة أخرى.";
+      if (error.code && error.code.startsWith('storage/')) {
+        errorMessage = "حدث خطأ أثناء رفع المرفق. يرجى المحاولة مرة أخرى أو إرسال الطلب بدون مرفق.";
+      }
       toast({
         title: "خطأ في إرسال الطلب",
-        description: "حدث خطأ أثناء محاولة إرسال طلبك. يرجى المحاولة مرة أخرى.",
+        description: errorMessage,
         variant: "destructive",
       });
     }
@@ -96,7 +134,7 @@ export default function ClientServiceRequestsPage() {
                     <FormLabel>نوع الخدمة</FormLabel>
                     <Select onValueChange={field.onChange} defaultValue={field.value} dir="rtl">
                       <FormControl>
-                        <SelectTrigger>
+                        <SelectTrigger disabled={isSubmitting}>
                           <SelectValue placeholder="اختر نوع الخدمة" />
                         </SelectTrigger>
                       </FormControl>
@@ -119,7 +157,7 @@ export default function ClientServiceRequestsPage() {
                   <FormItem>
                     <FormLabel>عنوان الطلب</FormLabel>
                     <FormControl>
-                      <Input placeholder="مثال: طلب استشارة أمنية لمشروع جديد" {...field} />
+                      <Input placeholder="مثال: طلب استشارة أمنية لمشروع جديد" {...field} disabled={isSubmitting} />
                     </FormControl>
                     <FormMessage />
                   </FormItem>
@@ -132,7 +170,7 @@ export default function ClientServiceRequestsPage() {
                   <FormItem>
                     <FormLabel>تفاصيل الطلب</FormLabel>
                     <FormControl>
-                      <Textarea placeholder="يرجى تقديم وصف تفصيلي لطلبك، بما في ذلك أي معلومات ذات صلة..." rows={5} {...field} />
+                      <Textarea placeholder="يرجى تقديم وصف تفصيلي لطلبك، بما في ذلك أي معلومات ذات صلة..." rows={5} {...field} disabled={isSubmitting} />
                     </FormControl>
                     <FormMessage />
                   </FormItem>
@@ -148,20 +186,21 @@ export default function ClientServiceRequestsPage() {
                       <Input 
                         type="file" 
                         onChange={(e) => onChange(e.target.files)} 
-                        {...restField} 
+                        {...restField}
+                        disabled={isSubmitting}
+                        className="pt-2" // Added padding for better visual alignment
                       />
                     </FormControl>
                     <FormDescription>
-                      يمكنك إرفاق ملفات ذات صلة بطلبك (مثل مستندات، صور، إلخ).
+                      يمكنك إرفاق ملفات ذات صلة بطلبك (مثل مستندات، صور، إلخ). الحد الأقصى للحجم: 5 ميجا.
                     </FormDescription>
                     <FormMessage />
                   </FormItem>
                 )}
               />
               <Button type="submit" className="w-full md:w-auto" disabled={isSubmitting}>
-                {isSubmitting && <Loader2 className="me-2 h-4 w-4 animate-spin" />}
-                <PlusCircle className="me-2 h-5 w-5" />
-                إرسال الطلب
+                {isSubmitting ? <Loader2 className="me-2 h-4 w-4 animate-spin" /> : <PlusCircle className="me-2 h-5 w-5" />}
+                {isSubmitting ? 'جارٍ الإرسال...' : 'إرسال الطلب'}
               </Button>
             </form>
           </Form>
