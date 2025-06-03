@@ -5,10 +5,12 @@ import { useState } from "react";
 import { Button } from "@/components/ui/button";
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card";
 import { Textarea } from "@/components/ui/textarea";
+import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
-import { Sparkles, Lightbulb, Loader2 } from "lucide-react";
+import { Sparkles, Lightbulb, Loader2, FileText } from "lucide-react";
 import { generateReportSummary, GenerateReportSummaryOutput } from "@/ai/flows/generate-report-summary";
 import { suggestReportImprovements, SuggestReportImprovementsOutput } from "@/ai/flows/suggest-report-improvements";
+import { generateReportSection, GenerateReportSectionInput, GenerateReportSectionOutput } from "@/ai/flows/generate-report-section";
 import { useToast } from "@/hooks/use-toast";
 import { Accordion, AccordionContent, AccordionItem, AccordionTrigger } from "@/components/ui/accordion";
 
@@ -18,6 +20,12 @@ export default function AiReportToolPage() {
   const [improvementSuggestions, setImprovementSuggestions] = useState<SuggestReportImprovementsOutput | null>(null);
   const [isLoadingSummary, setIsLoadingSummary] = useState(false);
   const [isLoadingImprovements, setIsLoadingImprovements] = useState(false);
+
+  const [sectionTopic, setSectionTopic] = useState("");
+  const [sectionKeywords, setSectionKeywords] = useState("");
+  const [generatedSection, setGeneratedSection] = useState<GenerateReportSectionOutput | null>(null);
+  const [isLoadingSection, setIsLoadingSection] = useState(false);
+
   const { toast } = useToast();
 
   const handleGenerateSummary = async () => {
@@ -60,13 +68,37 @@ export default function AiReportToolPage() {
     }
   };
 
+  const handleGenerateSection = async () => {
+    if (!sectionTopic.trim()) {
+      toast({ title: "خطأ", description: "يرجى إدخال موضوع القسم.", variant: "destructive" });
+      return;
+    }
+    setIsLoadingSection(true);
+    setGeneratedSection(null);
+    try {
+      const input: GenerateReportSectionInput = { topic: sectionTopic };
+      if (sectionKeywords.trim()) {
+        input.keywords = sectionKeywords;
+      }
+      const result = await generateReportSection(input);
+      setGeneratedSection(result);
+      toast({ title: "تم بنجاح", description: "تم إنشاء قسم التقرير." });
+    } catch (error) {
+      console.error("Error generating section:", error);
+      toast({ title: "خطأ في إنشاء القسم", description: "حدث خطأ أثناء محاولة إنشاء قسم التقرير.", variant: "destructive" });
+    } finally {
+      setIsLoadingSection(false);
+    }
+  };
+
+
   return (
     <div className="space-y-8">
       <Card className="shadow-lg">
         <CardHeader>
           <div className="flex items-center gap-2">
             <Sparkles className="h-8 w-8 text-primary" />
-            <CardTitle className="font-headline text-2xl text-primary">أداة إنشاء التقارير بالذكاء الاصطناعي</CardTitle>
+            <CardTitle className="font-headline text-2xl text-primary">أداة تحليل وتحسين التقارير بالذكاء الاصطناعي</CardTitle>
           </div>
           <CardDescription>
             استخدم هذه الأداة لإدخال نص تقرير والحصول على ملخص، رؤى رئيسية، واقتراحات للتحسين مدعومة بالذكاء الاصطناعي.
@@ -85,11 +117,11 @@ export default function AiReportToolPage() {
             />
           </div>
           <div className="flex flex-col sm:flex-row gap-4">
-            <Button onClick={handleGenerateSummary} disabled={isLoadingSummary || isLoadingImprovements} className="w-full sm:w-auto">
+            <Button onClick={handleGenerateSummary} disabled={isLoadingSummary || isLoadingImprovements || isLoadingSection} className="w-full sm:w-auto">
               {isLoadingSummary ? <Loader2 className="me-2 h-5 w-5 animate-spin" /> : <Sparkles className="me-2 h-5 w-5" />}
               إنشاء ملخص ورؤى
             </Button>
-            <Button onClick={handleSuggestImprovements} variant="outline" disabled={isLoadingSummary || isLoadingImprovements || (!reportText && !summaryResult)} className="w-full sm:w-auto">
+            <Button onClick={handleSuggestImprovements} variant="outline" disabled={isLoadingSummary || isLoadingImprovements || isLoadingSection || (!reportText && !summaryResult)} className="w-full sm:w-auto">
               {isLoadingImprovements ? <Loader2 className="me-2 h-5 w-5 animate-spin" /> : <Lightbulb className="me-2 h-5 w-5" />}
               اقتراح تحسينات
             </Button>
@@ -100,7 +132,7 @@ export default function AiReportToolPage() {
       {summaryResult && (
         <Card className="shadow-md">
           <CardHeader>
-            <CardTitle className="font-headline text-xl text-primary">نتائج التحليل</CardTitle>
+            <CardTitle className="font-headline text-xl text-primary">نتائج تحليل التقرير</CardTitle>
           </CardHeader>
           <CardContent className="space-y-4">
             <Accordion type="single" collapsible defaultValue="summary">
@@ -124,7 +156,7 @@ export default function AiReportToolPage() {
       {improvementSuggestions && improvementSuggestions.suggestions.length > 0 && (
         <Card className="shadow-md">
           <CardHeader>
-            <CardTitle className="font-headline text-xl text-primary">اقتراحات التحسين</CardTitle>
+            <CardTitle className="font-headline text-xl text-primary">اقتراحات التحسين للتقرير</CardTitle>
           </CardHeader>
           <CardContent>
             <ul className="list-disc ps-5 space-y-2 text-muted-foreground">
@@ -135,6 +167,56 @@ export default function AiReportToolPage() {
           </CardContent>
         </Card>
       )}
+
+      <Card className="shadow-lg">
+        <CardHeader>
+          <div className="flex items-center gap-2">
+            <FileText className="h-8 w-8 text-primary" />
+            <CardTitle className="font-headline text-2xl text-primary">إنشاء قسم تقرير بالذكاء الاصطناعي</CardTitle>
+          </div>
+          <CardDescription>
+            قم بتوفير موضوع وكلمات مفتاحية (اختياري) لإنشاء مسودة قسم لتقريرك.
+          </CardDescription>
+        </CardHeader>
+        <CardContent className="space-y-6">
+          <div>
+            <Label htmlFor="sectionTopic" className="text-lg font-medium mb-2 block">موضوع القسم</Label>
+            <Input
+              id="sectionTopic"
+              value={sectionTopic}
+              onChange={(e) => setSectionTopic(e.target.value)}
+              placeholder="مثال: تحليل المخاطر الأمنية للربع الحالي"
+              className="border-2 focus:border-primary transition-colors"
+            />
+          </div>
+          <div>
+            <Label htmlFor="sectionKeywords" className="text-lg font-medium mb-2 block">كلمات مفتاحية (اختياري، مفصولة بفاصلة)</Label>
+            <Input
+              id="sectionKeywords"
+              value={sectionKeywords}
+              onChange={(e) => setSectionKeywords(e.target.value)}
+              placeholder="مثال: الأمن السيبراني، الهندسة الاجتماعية، تحديثات الأنظمة"
+              className="border-2 focus:border-primary transition-colors"
+            />
+          </div>
+          <Button onClick={handleGenerateSection} disabled={isLoadingSummary || isLoadingImprovements || isLoadingSection} className="w-full sm:w-auto">
+            {isLoadingSection ? <Loader2 className="me-2 h-5 w-5 animate-spin" /> : <FileText className="me-2 h-5 w-5" />}
+            إنشاء قسم التقرير
+          </Button>
+        </CardContent>
+      </Card>
+
+      {generatedSection && (
+        <Card className="shadow-md">
+          <CardHeader>
+            <CardTitle className="font-headline text-xl text-primary">قسم التقرير المُنشأ</CardTitle>
+          </CardHeader>
+          <CardContent className="prose prose-sm max-w-none dark:prose-invert whitespace-pre-wrap p-4 bg-secondary/50 rounded-md">
+            {generatedSection.generatedSectionText}
+          </CardContent>
+        </Card>
+      )}
+
     </div>
   );
 }
