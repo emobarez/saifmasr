@@ -7,7 +7,7 @@ import { Input } from "@/components/ui/input";
 import { Textarea } from "@/components/ui/textarea";
 import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from "@/components/ui/table";
 import { Badge } from "@/components/ui/badge";
-import { PlusCircle, Search, Edit, Trash2, Loader2 } from "lucide-react";
+import { PlusCircle, Search, Edit, Trash2, Loader2, Lightbulb } from "lucide-react";
 import { Dialog, DialogContent, DialogDescription, DialogFooter, DialogHeader, DialogTitle, DialogTrigger } from "@/components/ui/dialog";
 import { useForm } from "react-hook-form";
 import { zodResolver } from "@hookform/resolvers/zod";
@@ -17,6 +17,7 @@ import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@
 import { useToast } from "@/hooks/use-toast";
 import { db } from "@/lib/firebase";
 import { collection, addDoc, getDocs, serverTimestamp, Timestamp, query, orderBy, doc, updateDoc, deleteDoc } from "firebase/firestore";
+import { suggestServiceCategory } from "@/ai/flows/suggest-service-category";
 
 interface Service {
   id: string;
@@ -44,6 +45,7 @@ export default function AdminServicesPage() {
   const [isAddServiceDialogOpen, setIsAddServiceDialogOpen] = useState(false);
   const [isEditServiceDialogOpen, setIsEditServiceDialogOpen] = useState(false);
   const [editingService, setEditingService] = useState<Service | null>(null);
+  const [isSuggestingCategory, setIsSuggestingCategory] = useState(false);
   const { toast } = useToast();
 
   const fetchServices = async () => {
@@ -83,7 +85,7 @@ export default function AdminServicesPage() {
       toast({ title: "تم بنجاح", description: `تمت إضافة الخدمة ${data.name} بنجاح.` });
       addServiceForm.reset();
       setIsAddServiceDialogOpen(false);
-      fetchServices(); // Refresh list
+      fetchServices(); 
     } catch (error) {
       console.error("Error adding service:", error);
       toast({ title: "خطأ", description: "حدث خطأ أثناء إضافة الخدمة.", variant: "destructive" });
@@ -122,6 +124,37 @@ export default function AdminServicesPage() {
       toast({ title: "خطأ", description: "حدث خطأ أثناء حذف الخدمة.", variant: "destructive" });
     }
   };
+  
+  const handleSuggestCategory = async (formInstance: typeof addServiceForm | typeof editServiceForm) => {
+    const serviceName = formInstance.getValues("name");
+    const serviceDescription = formInstance.getValues("description");
+
+    if (!serviceName || !serviceDescription) {
+      toast({
+        title: "معلومات ناقصة",
+        description: "يرجى إدخال اسم الخدمة ووصفها أولاً لاقتراح فئة.",
+        variant: "destructive",
+      });
+      return;
+    }
+
+    setIsSuggestingCategory(true);
+    try {
+      const result = await suggestServiceCategory({ serviceName, serviceDescription });
+      if (result.suggestedCategory) {
+        formInstance.setValue("category", result.suggestedCategory, { shouldValidate: true });
+        toast({ title: "تم اقتراح فئة", description: `الفئة المقترحة: ${result.suggestedCategory}` });
+      } else {
+        toast({ title: "لم يتم العثور على اقتراح", description: "لم يتمكن الذكاء الاصطناعي من اقتراح فئة.", variant: "default" });
+      }
+    } catch (error) {
+      console.error("Error suggesting category:", error);
+      toast({ title: "خطأ في الاقتراح", description: "حدث خطأ أثناء محاولة اقتراح فئة.", variant: "destructive" });
+    } finally {
+      setIsSuggestingCategory(false);
+    }
+  };
+
 
   const getStatusVariant = (status: Service["status"]): "default" | "secondary" | "destructive" => {
     if (status === "متاحة") return "default";
@@ -129,6 +162,46 @@ export default function AdminServicesPage() {
     if (status === "متوقفة مؤقتاً") return "destructive";
     return "default";
   };
+
+  const renderServiceFormFields = (formInstance: typeof addServiceForm | typeof editServiceForm) => (
+    <>
+      <FormField control={formInstance.control} name="name" render={({ field }) => (
+        <FormItem><FormLabel>اسم الخدمة</FormLabel><FormControl><Input placeholder="مثال: استشارة أمنية متقدمة" {...field} /></FormControl><FormMessage /></FormItem>
+      )} />
+      <FormField control={formInstance.control} name="description" render={({ field }) => (
+        <FormItem><FormLabel>وصف الخدمة</FormLabel><FormControl><Textarea placeholder="وصف تفصيلي للخدمة المقدمة..." {...field} rows={3} /></FormControl><FormMessage /></FormItem>
+      )} />
+       <FormField control={formInstance.control} name="category" render={({ field }) => (
+        <FormItem>
+          <FormLabel>فئة الخدمة</FormLabel>
+          <div className="flex gap-2 items-center">
+            <FormControl><Input placeholder="مثال: أمن سيبراني" {...field} className="flex-grow"/></FormControl>
+            <Button type="button" variant="outline" size="icon" onClick={() => handleSuggestCategory(formInstance)} disabled={isSuggestingCategory || formInstance.formState.isSubmitting}>
+              {isSuggestingCategory ? <Loader2 className="h-4 w-4 animate-spin" /> : <Lightbulb className="h-4 w-4" />}
+              <span className="sr-only">اقترح فئة</span>
+            </Button>
+          </div>
+          <FormMessage />
+        </FormItem>
+      )} />
+      <FormField control={formInstance.control} name="price" render={({ field }) => (
+        <FormItem><FormLabel>السعر</FormLabel><FormControl><Input placeholder="مثال: 500 ج.م / ساعة أو حسب الطلب" {...field} /></FormControl><FormMessage /></FormItem>
+      )} />
+      <FormField control={formInstance.control} name="status" render={({ field }) => (
+        <FormItem><FormLabel>حالة الخدمة</FormLabel>
+          <Select onValueChange={field.onChange} defaultValue={field.value} dir="rtl">
+            <FormControl><SelectTrigger><SelectValue placeholder="اختر حالة الخدمة" /></SelectTrigger></FormControl>
+            <SelectContent>
+              <SelectItem value="متاحة">متاحة</SelectItem>
+              <SelectItem value="قيد التطوير">قيد التطوير</SelectItem>
+              <SelectItem value="متوقفة مؤقتاً">متوقفة مؤقتاً</SelectItem>
+            </SelectContent>
+          </Select><FormMessage />
+        </FormItem>
+      )} />
+    </>
+  );
+
 
   return (
     <div className="space-y-6">
@@ -154,38 +227,10 @@ export default function AdminServicesPage() {
               </DialogHeader>
               <Form {...addServiceForm}>
                 <form onSubmit={addServiceForm.handleSubmit(handleAddServiceSubmit)} className="space-y-4 py-4 max-h-[70vh] overflow-y-auto px-2">
-                  <FormField control={addServiceForm.control} name="name" render={({ field }) => (
-                      <FormItem><FormLabel>اسم الخدمة</FormLabel><FormControl><Input placeholder="مثال: استشارة أمنية متقدمة" {...field} /></FormControl><FormMessage /></FormItem>
-                    )}
-                  />
-                  <FormField control={addServiceForm.control} name="category" render={({ field }) => (
-                      <FormItem><FormLabel>فئة الخدمة</FormLabel><FormControl><Input placeholder="مثال: أمن سيبراني" {...field} /></FormControl><FormMessage /></FormItem>
-                    )}
-                  />
-                  <FormField control={addServiceForm.control} name="price" render={({ field }) => (
-                      <FormItem><FormLabel>السعر</FormLabel><FormControl><Input placeholder="مثال: 500 ج.م / ساعة أو حسب الطلب" {...field} /></FormControl><FormMessage /></FormItem>
-                    )}
-                  />
-                  <FormField control={addServiceForm.control} name="description" render={({ field }) => (
-                      <FormItem><FormLabel>وصف الخدمة</FormLabel><FormControl><Textarea placeholder="وصف تفصيلي للخدمة المقدمة..." {...field} rows={4}/></FormControl><FormMessage /></FormItem>
-                    )}
-                  />
-                  <FormField control={addServiceForm.control} name="status" render={({ field }) => (
-                      <FormItem><FormLabel>حالة الخدمة</FormLabel>
-                        <Select onValueChange={field.onChange} defaultValue={field.value} dir="rtl">
-                          <FormControl><SelectTrigger><SelectValue placeholder="اختر حالة الخدمة" /></SelectTrigger></FormControl>
-                          <SelectContent>
-                            <SelectItem value="متاحة">متاحة</SelectItem>
-                            <SelectItem value="قيد التطوير">قيد التطوير</SelectItem>
-                            <SelectItem value="متوقفة مؤقتاً">متوقفة مؤقتاً</SelectItem>
-                          </SelectContent>
-                        </Select><FormMessage />
-                      </FormItem>
-                    )}
-                  />
+                  {renderServiceFormFields(addServiceForm)}
                   <DialogFooter className="pt-4">
-                    <Button type="button" variant="outline" onClick={() => setIsAddServiceDialogOpen(false)} disabled={addServiceForm.formState.isSubmitting}>إلغاء</Button>
-                    <Button type="submit" disabled={addServiceForm.formState.isSubmitting}>
+                    <Button type="button" variant="outline" onClick={() => setIsAddServiceDialogOpen(false)} disabled={addServiceForm.formState.isSubmitting || isSuggestingCategory}>إلغاء</Button>
+                    <Button type="submit" disabled={addServiceForm.formState.isSubmitting || isSuggestingCategory}>
                        {addServiceForm.formState.isSubmitting && <Loader2 className="me-2 h-4 w-4 animate-spin" />}
                       إضافة الخدمة
                     </Button>
@@ -249,38 +294,10 @@ export default function AdminServicesPage() {
           </DialogHeader>
           <Form {...editServiceForm}>
             <form onSubmit={editServiceForm.handleSubmit(handleEditServiceSubmit)} className="space-y-4 py-4 max-h-[70vh] overflow-y-auto px-2">
-            <FormField control={editServiceForm.control} name="name" render={({ field }) => (
-                <FormItem><FormLabel>اسم الخدمة</FormLabel><FormControl><Input {...field} /></FormControl><FormMessage /></FormItem>
-              )}
-            />
-            <FormField control={editServiceForm.control} name="category" render={({ field }) => (
-                <FormItem><FormLabel>فئة الخدمة</FormLabel><FormControl><Input {...field} /></FormControl><FormMessage /></FormItem>
-              )}
-            />
-            <FormField control={editServiceForm.control} name="price" render={({ field }) => (
-                <FormItem><FormLabel>السعر</FormLabel><FormControl><Input {...field} /></FormControl><FormMessage /></FormItem>
-              )}
-            />
-            <FormField control={editServiceForm.control} name="description" render={({ field }) => (
-                <FormItem><FormLabel>وصف الخدمة</FormLabel><FormControl><Textarea {...field} rows={4}/></FormControl><FormMessage /></FormItem>
-              )}
-            />
-            <FormField control={editServiceForm.control} name="status" render={({ field }) => (
-                <FormItem><FormLabel>حالة الخدمة</FormLabel>
-                  <Select onValueChange={field.onChange} defaultValue={field.value} dir="rtl">
-                    <FormControl><SelectTrigger><SelectValue /></SelectTrigger></FormControl>
-                    <SelectContent>
-                      <SelectItem value="متاحة">متاحة</SelectItem>
-                      <SelectItem value="قيد التطوير">قيد التطوير</SelectItem>
-                      <SelectItem value="متوقفة مؤقتاً">متوقفة مؤقتاً</SelectItem>
-                    </SelectContent>
-                  </Select><FormMessage />
-                </FormItem>
-              )}
-            />
+              {renderServiceFormFields(editServiceForm)}
               <DialogFooter className="pt-4">
-                <Button type="button" variant="outline" onClick={() => setIsEditServiceDialogOpen(false)} disabled={editServiceForm.formState.isSubmitting}>إلغاء</Button>
-                <Button type="submit" disabled={editServiceForm.formState.isSubmitting}>
+                <Button type="button" variant="outline" onClick={() => setIsEditServiceDialogOpen(false)} disabled={editServiceForm.formState.isSubmitting || isSuggestingCategory}>إلغاء</Button>
+                <Button type="submit" disabled={editServiceForm.formState.isSubmitting || isSuggestingCategory}>
                   {editServiceForm.formState.isSubmitting && <Loader2 className="me-2 h-4 w-4 animate-spin" />}
                   حفظ التعديلات
                 </Button>
