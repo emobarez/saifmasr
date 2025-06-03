@@ -1,12 +1,12 @@
 
 "use client";
-import { useState, useEffect } from "react";
+import { useState, useEffect, useMemo } from "react";
 import { Card, CardHeader, CardTitle, CardDescription, CardContent } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from "@/components/ui/table";
 import { Badge } from "@/components/ui/badge";
-import { UserPlus, Search, Edit, Trash2, Loader2 } from "lucide-react";
+import { UserPlus, Edit, Trash2, Loader2 } from "lucide-react";
 import { Dialog, DialogContent, DialogDescription, DialogFooter, DialogHeader, DialogTitle, DialogTrigger } from "@/components/ui/dialog";
 import { useForm } from "react-hook-form";
 import { zodResolver } from "@hookform/resolvers/zod";
@@ -39,6 +39,7 @@ export default function AdminClientsPage() {
   const [isAddClientDialogOpen, setIsAddClientDialogOpen] = useState(false);
   const [isEditClientDialogOpen, setIsEditClientDialogOpen] = useState(false);
   const [editingClient, setEditingClient] = useState<Client | null>(null);
+  const [searchTerm, setSearchTerm] = useState("");
   const { toast } = useToast();
 
   const fetchClients = async () => {
@@ -144,6 +145,14 @@ export default function AdminClientsPage() {
     return "تاريخ غير صالح";
   };
 
+  const filteredClients = useMemo(() => {
+    if (!searchTerm) return clients;
+    return clients.filter(client =>
+      client.name.toLowerCase().includes(searchTerm.toLowerCase()) ||
+      client.email.toLowerCase().includes(searchTerm.toLowerCase())
+    );
+  }, [clients, searchTerm]);
+
 
   return (
     <div className="space-y-6">
@@ -214,12 +223,16 @@ export default function AdminClientsPage() {
         </CardHeader>
         <CardContent>
           <div className="mb-4 flex gap-2">
-            <Input placeholder="ابحث عن عميل (بالاسم أو البريد الإلكتروني)..." className="max-w-sm" />
-            <Button variant="outline" size="icon"><Search className="h-5 w-5"/></Button>
+            <Input 
+              placeholder="ابحث عن عميل (بالاسم أو البريد الإلكتروني)..." 
+              className="max-w-sm"
+              value={searchTerm}
+              onChange={(e) => setSearchTerm(e.target.value)}
+            />
           </div>
           {isLoadingClients ? (
             <div className="flex justify-center items-center py-8"><Loader2 className="h-8 w-8 animate-spin text-primary" /><p className="ms-2">جارٍ تحميل العملاء...</p></div>
-          ) : clients.length > 0 ? (
+          ) : filteredClients.length > 0 ? (
             <Table>
               <TableHeader>
                 <TableRow>
@@ -232,7 +245,7 @@ export default function AdminClientsPage() {
                 </TableRow>
               </TableHeader>
               <TableBody>
-                {clients.map((client) => (
+                {filteredClients.map((client) => (
                   <TableRow key={client.id}>
                     <TableCell className="font-medium truncate max-w-[100px]">{client.id}</TableCell>
                     <TableCell>{client.name}</TableCell>
@@ -252,7 +265,7 @@ export default function AdminClientsPage() {
               </TableBody>
             </Table>
           ) : (
-             <p className="text-muted-foreground text-center py-8">لا يوجد عملاء لعرضهم حالياً. قم بإضافة عميل جديد.</p>
+             <p className="text-muted-foreground text-center py-8">{searchTerm ? "لم يتم العثور على عملاء يطابقون بحثك." : "لا يوجد عملاء لعرضهم حالياً. قم بإضافة عميل جديد."}</p>
           )}
         </CardContent>
       </Card>
@@ -313,3 +326,6 @@ export default function AdminClientsPage() {
     </div>
   );
 }
+
+
+    
