@@ -3,7 +3,7 @@
 import { Card, CardHeader, CardTitle, CardDescription, CardContent } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
-import { Label } from "@/components/ui/label"; // Keep for non-RHF labels for password section
+import { Label } from "@/components/ui/label"; 
 import { Avatar, AvatarFallback, AvatarImage } from "@/components/ui/avatar";
 import { Edit3, Save, Loader2 } from "lucide-react";
 import { useAuth } from "@/context/AuthContext";
@@ -13,11 +13,12 @@ import { zodResolver } from "@hookform/resolvers/zod";
 import * as z from "zod";
 import { Form, FormControl, FormField, FormItem, FormLabel, FormMessage } from "@/components/ui/form";
 import { useToast } from "@/hooks/use-toast";
+import { updateProfile } from "firebase/auth";
+import { auth } from "@/lib/firebase";
 
 const updateProfileSchema = z.object({
   name: z.string().min(2, { message: "الاسم يجب أن لا يقل عن حرفين" }),
   email: z.string().email({ message: "البريد الإلكتروني غير صالح" }),
-  // Password fields are handled separately for now, not part of this schema
 });
 
 type UpdateProfileFormValues = z.infer<typeof updateProfileSchema>;
@@ -35,7 +36,7 @@ export default function ClientProfilePage() {
     },
   });
 
-  const { formState: {isSubmitting}, setValue, reset } = form;
+  const { formState: {isSubmitting}, setValue, reset, control, handleSubmit } = form;
 
   useEffect(() => {
     if (user) {
@@ -51,8 +52,7 @@ export default function ClientProfilePage() {
 
   const handleEditToggle = () => {
     if (isEditing) {
-      // If was editing and clicked cancel (Save icon becomes Edit3 icon again)
-      if (user) { // Reset form to original user values
+      if (user) { 
         reset({ name: user.displayName || "", email: user.email || "" });
       }
     }
@@ -60,16 +60,34 @@ export default function ClientProfilePage() {
   };
 
   const onSubmit = async (data: UpdateProfileFormValues) => {
-    console.log("Updating profile with data:", data);
-    // Here you would typically call an API (e.g., Firebase updateProfile)
-    // For now, we simulate an API call and log to console
-    await new Promise(resolve => setTimeout(resolve, 1000));
-    toast({
-      title: "تم تحديث الملف الشخصي",
-      description: "تم حفظ تغييرات ملفك الشخصي بنجاح. (بيانات مسجلة في الكونسول)",
-    });
-    setIsEditing(false);
-    // Potentially update user in AuthContext if displayName/email changed and API call was successful
+    if (!auth.currentUser) {
+      toast({
+        title: "خطأ",
+        description: "المستخدم غير مسجل الدخول.",
+        variant: "destructive",
+      });
+      return;
+    }
+    try {
+      await updateProfile(auth.currentUser, {
+        displayName: data.name,
+      });
+      // Note: Email update (updateEmail(auth.currentUser, data.email)) is more complex
+      // and often requires re-authentication. It's omitted for this step.
+      // The AuthContext's onAuthStateChanged listener should pick up the displayName change.
+      toast({
+        title: "تم تحديث الملف الشخصي",
+        description: "تم حفظ تغييرات اسمك بنجاح.",
+      });
+      setIsEditing(false);
+    } catch (error: any) {
+      console.error("Error updating profile:", error);
+      toast({
+        title: "خطأ في تحديث الملف الشخصي",
+        description: error.message || "لم نتمكن من حفظ التغييرات. يرجى المحاولة مرة أخرى.",
+        variant: "destructive",
+      });
+    }
   };
 
   if (authLoading) {
@@ -106,9 +124,9 @@ export default function ClientProfilePage() {
           </div>
           
           <Form {...form}>
-            <form onSubmit={form.handleSubmit(onSubmit)} className="space-y-4">
+            <form onSubmit={handleSubmit(onSubmit)} className="space-y-4">
               <FormField
-                control={form.control}
+                control={control}
                 name="name"
                 render={({ field }) => (
                   <FormItem>
@@ -121,15 +139,17 @@ export default function ClientProfilePage() {
                 )}
               />
               <FormField
-                control={form.control}
+                control={control}
                 name="email"
                 render={({ field }) => (
                   <FormItem>
                     <FormLabel>البريد الإلكتروني</FormLabel>
                     <FormControl>
-                      <Input type="email" {...field} disabled={!isEditing || isSubmitting} />
+                      <Input type="email" {...field} disabled={!isEditing || isSubmitting} 
+                             aria-describedby="email-update-info" />
                     </FormControl>
                     <FormMessage />
+                     {!isEditing && <p id="email-update-info" className="text-xs text-muted-foreground mt-1">تعديل البريد الإلكتروني غير متاح حالياً عبر هذا النموذج.</p>}
                   </FormItem>
                 )}
               />
