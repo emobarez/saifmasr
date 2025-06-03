@@ -1,0 +1,41 @@
+
+import {
+  LayoutDashboard,
+  ListPlus,
+  History,
+  Receipt,
+  UserCircle,
+  Users,
+  BriefcaseBusiness,
+  FilePieChart,
+  Sparkles,
+  Settings,
+  ShieldEllipsis
+} from "lucide-react";
+
+export interface NavItemConfig {
+  href: string;
+  label: string;
+  icon: React.ElementType;
+  allowedRoles: Array<"client" | "admin">;
+  subItems?: NavItemConfig[];
+}
+
+export const clientNavItems: NavItemConfig[] = [
+  { href: "/client/dashboard", label: "لوحة التحكم الرئيسية", icon: LayoutDashboard, allowedRoles: ["client"] },
+  { href: "/client/requests", label: "طلب خدمة", icon: ListPlus, allowedRoles: ["client"] },
+  { href: "/client/tracking", label: "تتبع الطلبات", icon: History, allowedRoles: ["client"] },
+  { href: "/client/invoices", label: "الفواتير", icon: Receipt, allowedRoles: ["client"] },
+  { href: "/client/profile", label: "الملف الشخصي", icon: UserCircle, allowedRoles: ["client"] },
+];
+
+export const adminNavItems: NavItemConfig[] = [
+  { href: "/admin/dashboard", label: "لوحة التحكم الرئيسية", icon: ShieldEllipsis, allowedRoles: ["admin"] },
+  { href: "/admin/clients", label: "إدارة العملاء", icon: Users, allowedRoles: ["admin"] },
+  { href: "/admin/services", label: "إدارة الخدمات", icon: BriefcaseBusiness, allowedRoles: ["admin"] },
+  { href: "/admin/reports", label: "التقارير", icon: FilePieChart, allowedRoles: ["admin"] },
+  { href: "/admin/ai-tool", label: "أداة الذكاء الاصطناعي", icon: Sparkles, allowedRoles: ["admin"] },
+  { href: "/admin/settings", label: "الإعدادات", icon: Settings, allowedRoles: ["admin"] },
+];
+
+export const allNavItems: NavItemConfig[] = [...clientNavItems, ...adminNavItems];
