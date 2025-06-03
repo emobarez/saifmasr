@@ -4,12 +4,11 @@ import { useState, useEffect, useCallback } from "react";
 import { Card, CardHeader, CardTitle, CardDescription, CardContent } from "@/components/ui/card";
 import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from "@/components/ui/table";
 import { Badge } from "@/components/ui/badge";
-import { Loader2, AlertTriangle, Info, ThumbsUp, ThumbsDown, MinusCircle } from "lucide-react";
+import { Loader2, AlertTriangle, Info, ThumbsUp, MinusCircle } from "lucide-react";
 import { useToast } from "@/hooks/use-toast";
 import { db } from "@/lib/firebase";
 import { collection, getDocs, query, orderBy, Timestamp, doc, updateDoc } from "firebase/firestore";
 import { prioritizeClientRequest, PrioritizeClientRequestOutput } from "@/ai/flows/prioritize-client-request";
-import { Button } from "@/components/ui/button";
 import {
   Select,
   SelectContent,
@@ -28,6 +27,8 @@ interface ServiceRequest {
   clientEmail: string;
   status: "جديد" | "قيد المعالجة" | "مكتمل" | "ملغى";
   createdAt: Timestamp;
+  attachmentURL?: string;
+  attachmentFilename?: string;
 }
 
 interface ServiceRequestWithPriority extends ServiceRequest {
@@ -95,10 +96,10 @@ export default function AdminServiceRequestsPage() {
 
   const getStatusVariant = (status: ServiceRequest["status"]): "default" | "secondary" | "destructive" | "outline" => {
     switch (status) {
-      case "جديد": return "default"; // Blueish (primary)
-      case "قيد المعالجة": return "secondary"; // Grayish
-      case "مكتمل": return "outline"; // Green (outline for success) - this would be better with a specific 'success' variant
-      case "ملغى": return "destructive"; // Red
+      case "جديد": return "default"; 
+      case "قيد المعالجة": return "secondary"; 
+      case "مكتمل": return "outline"; // Using outline for success. A dedicated 'success' variant would be green.
+      case "ملغى": return "destructive";
       default: return "default";
     }
   };
@@ -107,8 +108,8 @@ export default function AdminServiceRequestsPage() {
     if (!priority) return <MinusCircle className="h-5 w-5 text-muted-foreground" />;
     switch (priority) {
       case "عالية": return <AlertTriangle className="h-5 w-5 text-destructive" />;
-      case "متوسطة": return <Info className="h-5 w-5 text-yellow-500" />;
-      case "منخفضة": return <ThumbsUp className="h-5 w-5 text-green-500" />; // Changed to ThumbsUp for low priority
+      case "متوسطة": return <Info className="h-5 w-5 text-yellow-500" />; // text-yellow-500 might need to be added or use an existing color
+      case "منخفضة": return <ThumbsUp className="h-5 w-5 text-green-500" />; // text-green-500 might need to be added or use an existing color
       default: return <MinusCircle className="h-5 w-5 text-muted-foreground" />;
     }
   };
@@ -118,7 +119,7 @@ export default function AdminServiceRequestsPage() {
     if (timestamp instanceof Timestamp) {
       return timestamp.toDate().toLocaleDateString('ar-EG', { year: 'numeric', month: 'short', day: 'numeric', hour: '2-digit', minute: '2-digit' });
     }
-     if (timestamp instanceof Date) { // Should not happen with serverTimestamp but good practice
+     if (timestamp instanceof Date) { 
       return timestamp.toLocaleDateString('ar-EG', { year: 'numeric', month: 'short', day: 'numeric', hour: '2-digit', minute: '2-digit' });
     }
     return "تاريخ غير صالح";
@@ -145,30 +146,42 @@ export default function AdminServiceRequestsPage() {
                     <TableHead className="min-w-[120px]">الحالة</TableHead>
                     <TableHead className="min-w-[150px]">الأولوية (AI)</TableHead>
                     <TableHead className="min-w-[200px]">سبب الأولوية (AI)</TableHead>
-                    <TableHead className="min-w-[150px]">تغيير الحالة</TableHead>
+                    <TableHead className="min-w-[180px]">تغيير الحالة</TableHead>
                   </TableRow>
                 </TableHeader>
                 <TableBody>
                   {requests.map((request) => (
                     <TableRow key={request.id}>
-                      <TableCell className="font-medium">{request.requestTitle}</TableCell>
-                      <TableCell>{request.clientName} <span className="text-xs text-muted-foreground">({request.clientEmail})</span></TableCell>
-                      <TableCell>{formatDate(request.createdAt)}</TableCell>
-                      <TableCell><Badge variant={getStatusVariant(request.status)}>{request.status}</Badge></TableCell>
-                      <TableCell>
+                      <TableCell className="font-medium align-top">
+                        {request.requestTitle}
+                        {request.attachmentURL && (
+                           <a 
+                            href={request.attachmentURL} 
+                            target="_blank" 
+                            rel="noopener noreferrer" 
+                            className="block text-xs text-primary hover:underline mt-1"
+                          >
+                            عرض المرفق ({request.attachmentFilename || 'مرفق'})
+                          </a>
+                        )}
+                      </TableCell>
+                      <TableCell className="align-top">{request.clientName} <span className="text-xs text-muted-foreground">({request.clientEmail})</span></TableCell>
+                      <TableCell className="align-top">{formatDate(request.createdAt)}</TableCell>
+                      <TableCell className="align-top"><Badge variant={getStatusVariant(request.status)}>{request.status}</Badge></TableCell>
+                      <TableCell className="align-top">
                         <div className="flex items-center gap-2">
                           {getPriorityIcon(request.aiPriority)}
                           {request.aiPriority || request.aiError || "N/A"}
                         </div>
                       </TableCell>
-                       <TableCell className="text-xs">{request.aiReasoning || request.aiError || "-"}</TableCell>
-                       <TableCell>
+                       <TableCell className="text-xs align-top">{request.aiReasoning || request.aiError || "-"}</TableCell>
+                       <TableCell className="align-top">
                         <Select 
                           value={request.status} 
                           onValueChange={(value) => handleStatusChange(request.id, value as ServiceRequest["status"])}
                           dir="rtl"
                         >
-                          <SelectTrigger className="h-9">
+                          <SelectTrigger className="h-9 w-full">
                             <SelectValue placeholder="تغيير الحالة" />
                           </SelectTrigger>
                           <SelectContent>
@@ -191,3 +204,4 @@ export default function AdminServiceRequestsPage() {
     </div>
   );
 }
+
