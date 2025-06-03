@@ -4,7 +4,6 @@ import { Card, CardHeader, CardTitle, CardDescription, CardContent } from "@/com
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Textarea } from "@/components/ui/textarea";
-import { Label } from "@/components/ui/label"; // Keep for non-RHF labels if any, or remove if all replaced by FormLabel
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
 import { PlusCircle, Loader2 } from "lucide-react";
 import { useForm } from "react-hook-form";
@@ -12,6 +11,9 @@ import { zodResolver } from "@hookform/resolvers/zod";
 import * as z from "zod";
 import { Form, FormControl, FormDescription, FormField, FormItem, FormLabel, FormMessage } from "@/components/ui/form";
 import { useToast } from "@/hooks/use-toast";
+import { db } from "@/lib/firebase"; // Import db
+import { collection, addDoc, serverTimestamp } from "firebase/firestore"; // Import Firestore functions
+import { useAuth } from "@/context/AuthContext"; // Import useAuth
 
 const serviceRequestSchema = z.object({
   serviceType: z.string({ required_error: "يرجى اختيار نوع الخدمة" }).min(1, "يرجى اختيار نوع الخدمة"),
@@ -24,6 +26,7 @@ type ServiceRequestFormValues = z.infer<typeof serviceRequestSchema>;
 
 export default function ClientServiceRequestsPage() {
   const { toast } = useToast();
+  const { user } = useAuth(); // Get current user
   const form = useForm<ServiceRequestFormValues>({
     resolver: zodResolver(serviceRequestSchema),
     defaultValues: {
@@ -37,18 +40,42 @@ export default function ClientServiceRequestsPage() {
   const {formState: {isSubmitting}} = form;
 
   const onSubmit = async (data: ServiceRequestFormValues) => {
-    console.log("Service request data:", data);
-    // Handle file upload if data.attachments exists
-    if (data.attachments && data.attachments.length > 0) {
-      console.log("Attachment:", data.attachments[0]);
-      // In a real app, you would upload this file
+    if (!user) {
+      toast({
+        title: "خطأ في المصادقة",
+        description: "يجب أن تكون مسجلاً الدخول لتقديم طلب.",
+        variant: "destructive",
+      });
+      return;
     }
-    await new Promise(resolve => setTimeout(resolve, 1000)); // Simulate API call
-    toast({
-      title: "تم إرسال الطلب بنجاح",
-      description: "سنقوم بمراجعة طلبك والتواصل معك قريباً. (بيانات مسجلة في الكونسول)",
-    });
-    form.reset();
+
+    try {
+      // Handle file upload if data.attachments exists (future enhancement)
+      // For now, we'll ignore attachments for Firestore saving.
+      const { attachments, ...requestDataToSave } = data;
+
+      await addDoc(collection(db, "serviceRequests"), {
+        ...requestDataToSave,
+        clientId: user.uid,
+        clientName: user.displayName || "غير متوفر", // Store client's name
+        clientEmail: user.email || "غير متوفر", // Store client's email
+        status: "جديد", // Initial status
+        createdAt: serverTimestamp(),
+      });
+
+      toast({
+        title: "تم إرسال الطلب بنجاح",
+        description: "سنقوم بمراجعة طلبك والتواصل معك قريباً.",
+      });
+      form.reset();
+    } catch (error) {
+      console.error("Error submitting service request:", error);
+      toast({
+        title: "خطأ في إرسال الطلب",
+        description: "حدث خطأ أثناء محاولة إرسال طلبك. يرجى المحاولة مرة أخرى.",
+        variant: "destructive",
+      });
+    }
   };
 
   return (
@@ -78,6 +105,7 @@ export default function ClientServiceRequestsPage() {
                         <SelectItem value="security">حلول أمنية</SelectItem>
                         <SelectItem value="reports">إدارة التقارير</SelectItem>
                         <SelectItem value="audit">التدقيق والمراجعة</SelectItem>
+                        <SelectItem value="other">أخرى</SelectItem>
                       </SelectContent>
                     </Select>
                     <FormMessage />
@@ -91,7 +119,7 @@ export default function ClientServiceRequestsPage() {
                   <FormItem>
                     <FormLabel>عنوان الطلب</FormLabel>
                     <FormControl>
-                      <Input placeholder="مثال: طلب استشارة مالية" {...field} />
+                      <Input placeholder="مثال: طلب استشارة أمنية لمشروع جديد" {...field} />
                     </FormControl>
                     <FormMessage />
                   </FormItem>
@@ -104,7 +132,7 @@ export default function ClientServiceRequestsPage() {
                   <FormItem>
                     <FormLabel>تفاصيل الطلب</FormLabel>
                     <FormControl>
-                      <Textarea placeholder="يرجى تقديم وصف تفصيلي لطلبك..." rows={5} {...field} />
+                      <Textarea placeholder="يرجى تقديم وصف تفصيلي لطلبك، بما في ذلك أي معلومات ذات صلة..." rows={5} {...field} />
                     </FormControl>
                     <FormMessage />
                   </FormItem>
@@ -113,18 +141,18 @@ export default function ClientServiceRequestsPage() {
               <FormField
                 control={form.control}
                 name="attachments"
-                render={({ field: { onChange, value, ...restField } }) => ( // Destructure to handle file input correctly
+                render={({ field: { onChange, value, ...restField } }) => ( 
                   <FormItem>
                     <FormLabel>مرفقات (اختياري)</FormLabel>
                     <FormControl>
                       <Input 
                         type="file" 
-                        onChange={(e) => onChange(e.target.files)} // Pass FileList to RHF
-                        {...restField} // Pass other props like name, ref
+                        onChange={(e) => onChange(e.target.files)} 
+                        {...restField} 
                       />
                     </FormControl>
                     <FormDescription>
-                      يمكنك إرفاق ملفات ذات صلة بطلبك.
+                      يمكنك إرفاق ملفات ذات صلة بطلبك (مثل مستندات، صور، إلخ).
                     </FormDescription>
                     <FormMessage />
                   </FormItem>
