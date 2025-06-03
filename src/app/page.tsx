@@ -30,13 +30,13 @@ const services = [
     icon: <Users className="h-10 w-10 text-primary" />,
     title: "إدارة العملاء",
     description: "نظام متكامل لإدارة علاقات العملاء وتتبع تفاعلاتهم.",
-    dataAiHint: "client management"
+    dataAiHint: "CRM interface"
   },
   {
     icon: <SearchCheck className="h-10 w-10 text-primary" />,
     title: "التدقيق والمراجعة",
     description: "خدمات تدقيق ومراجعة دقيقة لضمان الامتثال والشفافية.",
-    dataAiHint: "audit review"
+    dataAiHint: "financial audit"
   },
 ];
 
