@@ -3,16 +3,31 @@
 import { Card, CardHeader, CardTitle, CardDescription, CardContent } from "@/components/ui/card";
 import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from "@/components/ui/table";
 import { Badge } from "@/components/ui/badge";
-import { Download, Printer } from "lucide-react";
+import { Download, Printer, Loader2 } from "lucide-react";
 import { Button } from "@/components/ui/button";
+import { useState, useEffect } from "react"; // Added for state management
 
-const sampleInvoices = [
-  { id: "INV-2024-001", date: "2024-07-12", amount: "5000 ج.م", status: "مدفوعة", statusVariant: "default" },
-  { id: "INV-2024-002", date: "2024-06-25", amount: "3500 ج.م", status: "مستحقة", statusVariant: "destructive" },
-  { id: "INV-2024-003", date: "2024-05-30", amount: "7200 ج.م", status: "مدفوعة جزئياً", statusVariant: "secondary" },
-];
+// Interface for invoice data
+interface Invoice {
+  id: string;
+  date: string;
+  amount: string;
+  status: string;
+  statusVariant: "default" | "secondary" | "destructive" | "outline" | null | undefined;
+}
 
 export default function ClientInvoicesPage() {
+  const [invoices, setInvoices] = useState<Invoice[]>([]);
+  const [isLoading, setIsLoading] = useState(true);
+
+  useEffect(() => {
+    // Simulate API call
+    setTimeout(() => {
+      setInvoices([]); // Start with no invoices
+      setIsLoading(false);
+    }, 1000);
+  }, []);
+
   return (
     <div className="space-y-6">
       <Card>
@@ -21,7 +36,9 @@ export default function ClientInvoicesPage() {
           <CardDescription>عرض وإدارة فواتير الخدمات الخاصة بك.</CardDescription>
         </CardHeader>
         <CardContent>
-          {sampleInvoices.length > 0 ? (
+          {isLoading ? (
+            <div className="flex justify-center items-center py-8"><Loader2 className="h-8 w-8 animate-spin text-primary" /><p className="ms-2">جارٍ تحميل الفواتير...</p></div>
+          ) : invoices.length > 0 ? (
           <Table>
             <TableHeader>
               <TableRow>
@@ -33,13 +50,13 @@ export default function ClientInvoicesPage() {
               </TableRow>
             </TableHeader>
             <TableBody>
-              {sampleInvoices.map((invoice) => (
+              {invoices.map((invoice) => (
                 <TableRow key={invoice.id}>
                   <TableCell className="font-medium">{invoice.id}</TableCell>
                   <TableCell>{invoice.date}</TableCell>
                   <TableCell>{invoice.amount}</TableCell>
                   <TableCell>
-                    <Badge variant={invoice.statusVariant as any}>{invoice.status}</Badge>
+                    <Badge variant={invoice.statusVariant}>{invoice.status}</Badge>
                   </TableCell>
                   <TableCell className="space-x-1 space-x-reverse">
                     <Button variant="ghost" size="icon" aria-label="تحميل الفاتورة">

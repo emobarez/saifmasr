@@ -3,16 +3,31 @@
 import { Card, CardHeader, CardTitle, CardDescription, CardContent } from "@/components/ui/card";
 import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from "@/components/ui/table";
 import { Badge } from "@/components/ui/badge";
-import { Eye } from "lucide-react";
+import { Eye, Loader2 } from "lucide-react";
 import { Button } from "@/components/ui/button";
+import { useState, useEffect } from "react"; // Added for state management
 
-const sampleRequests = [
-  { id: "SRV-001", service: "استشارة مالية", date: "2024-07-15", status: "قيد المراجعة", statusVariant: "secondary" },
-  { id: "SRV-002", service: "تأمين بيانات الشركة", date: "2024-07-10", status: "مكتمل", statusVariant: "default" },
-  { id: "SRV-003", service: "تقرير أداء الربع الثاني", date: "2024-07-05", status: "ملغى", statusVariant: "destructive" },
-];
+// Interface for service request data
+interface ServiceRequest {
+  id: string;
+  service: string;
+  date: string;
+  status: string;
+  statusVariant: "default" | "secondary" | "destructive" | "outline" | null | undefined;
+}
 
 export default function ClientTrackingPage() {
+  const [requests, setRequests] = useState<ServiceRequest[]>([]);
+  const [isLoading, setIsLoading] = useState(true);
+
+  useEffect(() => {
+    // Simulate API call
+    setTimeout(() => {
+      setRequests([]); // Start with no requests
+      setIsLoading(false);
+    }, 1000);
+  }, []);
+
   return (
     <div className="space-y-6">
       <Card>
@@ -21,7 +36,9 @@ export default function ClientTrackingPage() {
           <CardDescription>هنا يمكنك متابعة حالة جميع طلباتك المقدمة.</CardDescription>
         </CardHeader>
         <CardContent>
-          {sampleRequests.length > 0 ? (
+          {isLoading ? (
+            <div className="flex justify-center items-center py-8"><Loader2 className="h-8 w-8 animate-spin text-primary" /><p className="ms-2">جارٍ تحميل الطلبات...</p></div>
+          ) : requests.length > 0 ? (
             <Table>
               <TableHeader>
                 <TableRow>
@@ -33,13 +50,13 @@ export default function ClientTrackingPage() {
                 </TableRow>
               </TableHeader>
               <TableBody>
-                {sampleRequests.map((request) => (
+                {requests.map((request) => (
                   <TableRow key={request.id}>
                     <TableCell className="font-medium">{request.id}</TableCell>
                     <TableCell>{request.service}</TableCell>
                     <TableCell>{request.date}</TableCell>
                     <TableCell>
-                      <Badge variant={request.statusVariant as any}>{request.status}</Badge>
+                      <Badge variant={request.statusVariant}>{request.status}</Badge>
                     </TableCell>
                     <TableCell>
                       <Button variant="ghost" size="icon" aria-label="عرض التفاصيل">

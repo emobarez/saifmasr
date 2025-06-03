@@ -5,16 +5,32 @@ import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from "@/components/ui/table";
 import { Badge } from "@/components/ui/badge";
-import { FilePlus2, Search, Download, Eye, BarChart3 } from "lucide-react";
+import { FilePlus2, Search, Download, Eye, BarChart3, Loader2 } from "lucide-react";
 import Link from "next/link";
+import { useState, useEffect } from "react"; // Added for potential future state management
 
-const sampleReports = [
-  { id: "REP-2024-Q2", name: "تقرير الأداء للربع الثاني 2024", creationDate: "2024-07-01", type: "أداء مالي", createdBy: "مدير النظام" },
-  { id: "REP-2024-USR", name: "تقرير نشاط المستخدمين (يونيو)", creationDate: "2024-07-05", type: "نشاط مستخدمين", createdBy: "محلل بيانات" },
-  { id: "REP-2023-ANN", name: "التقرير السنوي 2023", creationDate: "2024-01-15", type: "سنوي شامل", createdBy: "الإدارة العليا" },
-];
+// Interface for report data (can be expanded)
+interface Report {
+  id: string;
+  name: string;
+  creationDate: string;
+  type: string;
+  createdBy: string;
+}
 
 export default function AdminReportsPage() {
+  const [reports, setReports] = useState<Report[]>([]); // State for reports
+  const [isLoading, setIsLoading] = useState(true); // State for loading
+
+  // Simulate fetching reports (replace with actual data fetching logic)
+  useEffect(() => {
+    // Simulate API call
+    setTimeout(() => {
+      setReports([]); // Start with no reports
+      setIsLoading(false);
+    }, 1000);
+  }, []);
+
   return (
     <div className="space-y-6">
       <Card>
@@ -35,7 +51,9 @@ export default function AdminReportsPage() {
             <Input placeholder="ابحث عن تقرير..." className="max-w-sm" />
             <Button variant="outline" size="icon"><Search className="h-5 w-5"/></Button>
           </div>
-          {sampleReports.length > 0 ? (
+          {isLoading ? (
+            <div className="flex justify-center items-center py-8"><Loader2 className="h-8 w-8 animate-spin text-primary" /><p className="ms-2">جارٍ تحميل التقارير...</p></div>
+          ) : reports.length > 0 ? (
             <Table>
               <TableHeader>
                 <TableRow>
@@ -48,7 +66,7 @@ export default function AdminReportsPage() {
                 </TableRow>
               </TableHeader>
               <TableBody>
-                {sampleReports.map((report) => (
+                {reports.map((report) => (
                   <TableRow key={report.id}>
                     <TableCell className="font-medium">{report.id}</TableCell>
                     <TableCell>{report.name}</TableCell>
@@ -71,7 +89,7 @@ export default function AdminReportsPage() {
               </TableBody>
             </Table>
           ) : (
-            <p className="text-muted-foreground text-center py-8">لا توجد تقارير لعرضها حالياً.</p>
+            <p className="text-muted-foreground text-center py-8">لا توجد تقارير لعرضها حالياً. قم بإنشاء تقرير جديد.</p>
           )}
         </CardContent>
       </Card>
