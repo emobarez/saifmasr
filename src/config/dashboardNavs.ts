@@ -10,7 +10,8 @@ import {
   FilePieChart,
   Sparkles,
   Settings,
-  ShieldEllipsis
+  ShieldEllipsis,
+  ClipboardList // Added for service requests
 } from "lucide-react";
 
 export interface NavItemConfig {
@@ -33,6 +34,7 @@ export const adminNavItems: NavItemConfig[] = [
   { href: "/admin/dashboard", label: "لوحة التحكم الرئيسية", icon: ShieldEllipsis, allowedRoles: ["admin"] },
   { href: "/admin/clients", label: "إدارة العملاء", icon: Users, allowedRoles: ["admin"] },
   { href: "/admin/services", label: "إدارة الخدمات", icon: BriefcaseBusiness, allowedRoles: ["admin"] },
+  { href: "/admin/service-requests", label: "طلبات الخدمة", icon: ClipboardList, allowedRoles: ["admin"] },
   { href: "/admin/reports", label: "التقارير", icon: FilePieChart, allowedRoles: ["admin"] },
   { href: "/admin/ai-tool", label: "أداة الذكاء الاصطناعي", icon: Sparkles, allowedRoles: ["admin"] },
   { href: "/admin/settings", label: "الإعدادات", icon: Settings, allowedRoles: ["admin"] },
