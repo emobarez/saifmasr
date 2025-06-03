@@ -3,8 +3,6 @@
 
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
-import { Label } from "@/components/ui/label";
-import Link from "next/link";
 import { AuthLayout } from "@/components/layout/AuthLayout";
 import { useAuth } from "@/context/AuthContext";
 import { zodResolver } from "@hookform/resolvers/zod";
@@ -13,6 +11,7 @@ import * as z from "zod";
 import { Form, FormControl, FormField, FormItem, FormLabel, FormMessage } from "@/components/ui/form";
 import { useToast } from "@/hooks/use-toast";
 import { useState } from "react";
+import Link from "next/link";
 
 const registerSchema = z.object({
   name: z.string().min(2, { message: "الاسم يجب أن لا يقل عن حرفين" }),
@@ -27,7 +26,7 @@ const registerSchema = z.object({
 type RegisterFormValues = z.infer<typeof registerSchema>;
 
 export default function RegisterPage() {
-  const { signUp } = useAuth();
+  const { signUp } = useAuth(); // signUp now expects (name, email, password)
   const { toast } = useToast();
   const [isLoading, setIsLoading] = useState(false);
 
@@ -44,17 +43,22 @@ export default function RegisterPage() {
   const onSubmit = async (data: RegisterFormValues) => {
     setIsLoading(true);
     try {
-      await signUp(data.email, data.password); 
-      // In a real app, you might also pass data.name to update profile
+      await signUp(data.name, data.email, data.password); 
       // Navigation handled by AuthContext
       toast({
         title: "تم إنشاء الحساب بنجاح",
         description: "يمكنك الآن تسجيل الدخول.",
       });
     } catch (error: any) {
+      let errorMessage = "حدث خطأ ما. يرجى المحاولة مرة أخرى.";
+      if (error.code === 'auth/email-already-in-use') {
+        errorMessage = "هذا البريد الإلكتروني مستخدم بالفعل.";
+      } else if (error.message) {
+        errorMessage = error.message;
+      }
       toast({
         title: "خطأ في إنشاء الحساب",
-        description: error.message || "حدث خطأ ما. يرجى المحاولة مرة أخرى.",
+        description: errorMessage,
         variant: "destructive",
       });
     } finally {
