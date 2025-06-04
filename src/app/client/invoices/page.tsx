@@ -5,28 +5,81 @@ import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from "@
 import { Badge } from "@/components/ui/badge";
 import { Download, Printer, Loader2 } from "lucide-react";
 import { Button } from "@/components/ui/button";
-import { useState, useEffect } from "react"; // Added for state management
+import { useState, useEffect } from "react";
+import { useAuth } from "@/context/AuthContext";
+import { db } from "@/lib/firebase";
+import { collection, query, where, getDocs, orderBy, Timestamp } from "firebase/firestore";
+import { useToast } from "@/hooks/use-toast";
 
-// Interface for invoice data
+// Interface for invoice data from Firestore
 interface Invoice {
-  id: string;
-  date: string;
-  amount: string;
-  status: string;
-  statusVariant: "default" | "secondary" | "destructive" | "outline" | null | undefined;
+  id: string; // Firestore document ID
+  invoiceNumber: string;
+  issueDate: Timestamp;
+  dueDate: Timestamp;
+  totalAmount: number;
+  status: "مستحقة" | "مدفوعة" | "متأخرة" | "ملغاة";
+  // Optional: description if needed, but not displayed in this table for brevity
+  // description: string; 
 }
 
 export default function ClientInvoicesPage() {
   const [invoices, setInvoices] = useState<Invoice[]>([]);
   const [isLoading, setIsLoading] = useState(true);
+  const { user } = useAuth();
+  const { toast } = useToast();
 
   useEffect(() => {
-    // Simulate API call
-    setTimeout(() => {
-      setInvoices([]); // Start with no invoices
-      setIsLoading(false);
-    }, 1000);
-  }, []);
+    const fetchInvoices = async () => {
+      if (!user) {
+        setIsLoading(false);
+        return;
+      }
+      setIsLoading(true);
+      try {
+        const q = query(
+          collection(db, "invoices"),
+          where("clientId", "==", user.uid),
+          orderBy("issueDate", "desc")
+        );
+        const querySnapshot = await getDocs(q);
+        const fetchedInvoices = querySnapshot.docs.map(doc => ({ id: doc.id, ...doc.data() } as Invoice));
+        setInvoices(fetchedInvoices);
+      } catch (error) {
+        console.error("Error fetching invoices:", error);
+        toast({ title: "خطأ", description: "لم نتمكن من تحميل قائمة فواتيرك.", variant: "destructive" });
+      } finally {
+        setIsLoading(false);
+      }
+    };
+
+    fetchInvoices();
+  }, [user, toast]);
+
+  const formatDateForDisplay = (dateValue: Timestamp | Date | undefined): string => {
+    if (!dateValue) return "غير متوفر";
+    let date: Date;
+    if (dateValue instanceof Timestamp) {
+      date = dateValue.toDate();
+    } else if (dateValue instanceof Date) {
+      date = dateValue;
+    } else {
+      return "تاريخ غير صالح";
+    }
+    return new Intl.DateTimeFormat('ar-EG', { year: 'numeric', month: 'short', day: 'numeric' }).format(date);
+  };
+
+  const formatCurrency = (amount: number): string => {
+    return new Intl.NumberFormat('ar-EG', { style: 'currency', currency: 'EGP' }).format(amount);
+  };
+
+  const getStatusVariant = (status: Invoice["status"]): "default" | "secondary" | "destructive" | "outline" => {
+    if (status === "مدفوعة") return "outline"; 
+    if (status === "مستحقة") return "default"; 
+    if (status === "متأخرة") return "secondary"; 
+    if (status === "ملغاة") return "destructive";
+    return "default";
+  };
 
   return (
     <div className="space-y-6">
@@ -43,7 +96,8 @@ export default function ClientInvoicesPage() {
             <TableHeader>
               <TableRow>
                 <TableHead>رقم الفاتورة</TableHead>
-                <TableHead>التاريخ</TableHead>
+                <TableHead>تاريخ الإصدار</TableHead>
+                <TableHead>تاريخ الاستحقاق</TableHead>
                 <TableHead>المبلغ</TableHead>
                 <TableHead>الحالة</TableHead>
                 <TableHead>إجراءات</TableHead>
@@ -52,17 +106,18 @@ export default function ClientInvoicesPage() {
             <TableBody>
               {invoices.map((invoice) => (
                 <TableRow key={invoice.id}>
-                  <TableCell className="font-medium">{invoice.id}</TableCell>
-                  <TableCell>{invoice.date}</TableCell>
-                  <TableCell>{invoice.amount}</TableCell>
+                  <TableCell className="font-medium">{invoice.invoiceNumber}</TableCell>
+                  <TableCell>{formatDateForDisplay(invoice.issueDate)}</TableCell>
+                  <TableCell>{formatDateForDisplay(invoice.dueDate)}</TableCell>
+                  <TableCell>{formatCurrency(invoice.totalAmount)}</TableCell>
                   <TableCell>
-                    <Badge variant={invoice.statusVariant}>{invoice.status}</Badge>
+                    <Badge variant={getStatusVariant(invoice.status)}>{invoice.status}</Badge>
                   </TableCell>
                   <TableCell className="space-x-1 space-x-reverse">
-                    <Button variant="ghost" size="icon" aria-label="تحميل الفاتورة">
+                    <Button variant="ghost" size="icon" aria-label="تحميل الفاتورة" disabled>
                       <Download className="h-5 w-5" />
                     </Button>
-                    <Button variant="ghost" size="icon" aria-label="طباعة الفاتورة">
+                    <Button variant="ghost" size="icon" aria-label="طباعة الفاتورة" disabled>
                       <Printer className="h-5 w-5" />
                     </Button>
                   </TableCell>
