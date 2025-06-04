@@ -11,7 +11,7 @@ import { cn } from "@/lib/utils"
 import { Button } from "@/components/ui/button"
 import { Input } from "@/components/ui/input"
 import { Separator } from "@/components/ui/separator"
-import { Sheet, SheetContent, SheetTitle } from "@/components/ui/sheet" // Ensure SheetTitle is imported
+import { Sheet, SheetContent, SheetTitle } from "@/components/ui/sheet" 
 import { Skeleton } from "@/components/ui/skeleton"
 import {
   Tooltip,
@@ -551,42 +551,52 @@ const SidebarMenuButton = React.forwardRef<
       size = "default",
       tooltip,
       className,
-      ...props
+      children, // Explicitly destructure children
+      onClick, // Explicitly destructure onClick
+      ...rest // Rest of the props
     },
     ref
   ) => {
     const Comp = asChild ? Slot : "button"
-    const { isMobile, state } = useSidebar()
+    const { isMobile, setOpenMobile, state } = useSidebar()
 
-    const button = (
+    const handleMobileAwareClick = (event: React.MouseEvent<HTMLButtonElement>) => {
+      if (isMobile) {
+        setOpenMobile(false);
+      }
+      onClick?.(event); // Call the original onClick if it was passed
+    };
+
+    const buttonElement = (
       <Comp
         ref={ref}
         data-sidebar="menu-button"
         data-size={size}
         data-active={isActive}
         className={cn(sidebarMenuButtonVariants({ variant, size }), className)}
-        {...props}
-      />
+        onClick={handleMobileAwareClick} // Use the new combined handler
+        {...rest}
+      >
+        {children}
+      </Comp>
     )
 
     if (!tooltip) {
-      return button
+      return buttonElement
     }
 
-    if (typeof tooltip === "string") {
-      tooltip = {
-        children: tooltip,
-      }
-    }
+    const tooltipProps: React.ComponentProps<typeof TooltipContent> =
+      typeof tooltip === "string" ? { children: tooltip } : tooltip;
+
 
     return (
       <Tooltip>
-        <TooltipTrigger asChild>{button}</TooltipTrigger>
+        <TooltipTrigger asChild>{buttonElement}</TooltipTrigger>
         <TooltipContent
           side="right"
           align="center"
           hidden={state !== "collapsed" || isMobile}
-          {...tooltip}
+          {...tooltipProps}
         />
       </Tooltip>
     )
