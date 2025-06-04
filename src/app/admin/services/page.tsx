@@ -1,6 +1,6 @@
 
 "use client";
-import { useState, useEffect } from "react";
+import { useState, useEffect, useMemo } from "react";
 import { Card, CardHeader, CardTitle, CardDescription, CardContent } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
@@ -51,6 +51,7 @@ export default function AdminServicesPage() {
   const [isSuggestingCategory, setIsSuggestingCategory] = useState(false);
   const [isGeneratingFAQs, setIsGeneratingFAQs] = useState(false);
   const [generatedFAQs, setGeneratedFAQs] = useState<GenerateServiceFAQsOutput['faqs'] | null>(null);
+  const [searchTerm, setSearchTerm] = useState("");
   const { toast } = useToast();
 
   const fetchServices = async () => {
@@ -111,9 +112,6 @@ export default function AdminServicesPage() {
       await updateDoc(serviceRef, {
         ...data, 
         ...(generatedFAQs && generatedFAQs.length > 0 && { faqs: generatedFAQs }),
-        // If generatedFAQs is null (meaning no new FAQs were generated in this edit session),
-        // we don't pass faqs, so Firestore keeps the existing ones. If it's an empty array, it means clear them.
-        // If you want to explicitly clear FAQs, you might need a separate button or set generatedFAQs to []
         ...(generatedFAQs === null && editingService.faqs ? { faqs: editingService.faqs } : {}),
       });
       toast({ title: "تم التعديل بنجاح", description: `تم تعديل بيانات الخدمة ${data.name}.` });
@@ -136,8 +134,6 @@ export default function AdminServicesPage() {
         description: service.description,
         status: service.status,
     });
-    // If the service has existing FAQs, set them to generatedFAQs to display them,
-    // and allow them to be re-saved if not changed.
     setGeneratedFAQs(service.faqs || null); 
     setIsEditServiceDialogOpen(true);
   };
@@ -202,7 +198,6 @@ export default function AdminServicesPage() {
       });
       return;
     }
-    // Reset generatedFAQs specifically for a new generation attempt
     setGeneratedFAQs(null); 
     setIsGeneratingFAQs(true);
     try {
@@ -291,7 +286,6 @@ export default function AdminServicesPage() {
        {(generatedFAQs && generatedFAQs.length === 0 && !isGeneratingFAQs) && (
           <p className="pt-4 text-sm text-muted-foreground">لم يتم إنشاء أسئلة شائعة. يمكنك المحاولة مرة أخرى أو إضافتها يدوياً لاحقاً.</p>
        )}
-       {/* Display existing FAQs from the service if not currently generating new ones */}
        {currentService && currentService.faqs && currentService.faqs.length > 0 && generatedFAQs === null && !isGeneratingFAQs && (
           <div className="pt-4">
             <h4 className="text-md font-semibold mb-2">الأسئلة الشائعة الحالية:</h4>
@@ -309,6 +303,15 @@ export default function AdminServicesPage() {
        )}
     </>
   );
+
+  const filteredServices = useMemo(() => {
+    if (!searchTerm) return services;
+    return services.filter(service =>
+      service.name.toLowerCase().includes(searchTerm.toLowerCase()) ||
+      service.category.toLowerCase().includes(searchTerm.toLowerCase()) ||
+      service.description.toLowerCase().includes(searchTerm.toLowerCase())
+    );
+  }, [services, searchTerm]);
 
 
   return (
@@ -349,13 +352,17 @@ export default function AdminServicesPage() {
           </Dialog>
         </CardHeader>
         <CardContent>
-          <div className="mb-4 flex gap-2">
-            <Input placeholder="ابحث عن خدمة..." className="max-w-sm" />
-            <Button variant="outline" size="icon"><Search className="h-5 w-5"/></Button>
+          <div className="mb-4">
+            <Input 
+              placeholder="ابحث عن خدمة (بالاسم، الفئة، أو الوصف)..." 
+              className="max-w-md" 
+              value={searchTerm}
+              onChange={(e) => setSearchTerm(e.target.value)}
+            />
           </div>
           {isLoadingServices ? (
             <div className="flex justify-center items-center py-8"><Loader2 className="h-8 w-8 animate-spin text-primary" /><p className="ms-2">جارٍ تحميل الخدمات...</p></div>
-          ) : services.length > 0 ? (
+          ) : filteredServices.length > 0 ? (
             <Table>
               <TableHeader>
                 <TableRow>
@@ -367,7 +374,7 @@ export default function AdminServicesPage() {
                 </TableRow>
               </TableHeader>
               <TableBody>
-                {services.map((service) => (
+                {filteredServices.map((service) => (
                   <TableRow key={service.id}>
                     <TableCell className="font-medium">{service.name}</TableCell>
                     <TableCell>{service.category}</TableCell>
@@ -386,7 +393,9 @@ export default function AdminServicesPage() {
               </TableBody>
             </Table>
           ) : (
-            <p className="text-muted-foreground text-center py-8">لا توجد خدمات لعرضها حالياً. قم بإضافة خدمة جديدة.</p>
+            <p className="text-muted-foreground text-center py-8">
+              {searchTerm ? "لم يتم العثور على خدمات تطابق بحثك." : "لا توجد خدمات لعرضها حالياً. قم بإضافة خدمة جديدة."}
+            </p>
           )}
         </CardContent>
       </Card>
@@ -417,6 +426,8 @@ export default function AdminServicesPage() {
     </div>
   );
 }
+    
+
     
 
     
