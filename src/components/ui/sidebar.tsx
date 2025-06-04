@@ -551,9 +551,9 @@ const SidebarMenuButton = React.forwardRef<
       size = "default",
       tooltip,
       className,
-      children, // Explicitly destructure children
-      onClick, // Explicitly destructure onClick
-      ...rest // Rest of the props
+      children,
+      onClick, 
+      ...rest
     },
     ref
   ) => {
@@ -564,7 +564,7 @@ const SidebarMenuButton = React.forwardRef<
       if (isMobile) {
         setOpenMobile(false);
       }
-      onClick?.(event); // Call the original onClick if it was passed
+      onClick?.(event); 
     };
 
     const buttonElement = (
@@ -574,7 +574,7 @@ const SidebarMenuButton = React.forwardRef<
         data-size={size}
         data-active={isActive}
         className={cn(sidebarMenuButtonVariants({ variant, size }), className)}
-        onClick={handleMobileAwareClick} // Use the new combined handler
+        onClick={handleMobileAwareClick}
         {...rest}
       >
         {children}
