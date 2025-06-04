@@ -6,49 +6,63 @@ import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from "@/components/ui/table";
 import { Badge } from "@/components/ui/badge";
-import { PlusCircle, Edit, Trash2, Loader2, FileText } from "lucide-react";
+import { PlusCircle, Edit, Trash2, Loader2, FileText, CalendarIcon } from "lucide-react";
 import { Dialog, DialogContent, DialogDescription, DialogFooter, DialogHeader, DialogTitle, DialogTrigger } from "@/components/ui/dialog";
-// import { useForm } from "react-hook-form";
-// import { zodResolver } from "@hookform/resolvers/zod";
-// import * as z from "zod";
-// import { Form, FormControl, FormField, FormItem, FormLabel, FormMessage } from "@/components/ui/form";
-// import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
-// import { Textarea } from "@/components/ui/textarea";
-// import { Popover, PopoverContent, PopoverTrigger } from "@/components/ui/popover";
-// import { CalendarIcon } from "lucide-react";
-// import { Calendar } from "@/components/ui/calendar";
-// import { format } from "date-fns";
-// import { arSA } from "date-fns/locale";
+import { useForm } from "react-hook-form";
+import { zodResolver } from "@hookform/resolvers/zod";
+import * as z from "zod";
+import { Form, FormControl, FormField, FormItem, FormLabel, FormMessage } from "@/components/ui/form";
+import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
+import { Textarea } from "@/components/ui/textarea";
+import { Popover, PopoverContent, PopoverTrigger } from "@/components/ui/popover";
+import { Calendar } from "@/components/ui/calendar";
+import { format as formatDateFn } from "date-fns";
+import { arSA } from "date-fns/locale";
 import { useToast } from "@/hooks/use-toast";
 import { db } from "@/lib/firebase";
 import { collection, addDoc, getDocs, serverTimestamp, Timestamp, query, orderBy, deleteDoc, doc, updateDoc } from "firebase/firestore";
+import { cn } from "@/lib/utils";
 
 interface Invoice {
   id: string;
   clientId: string;
-  clientName: string; // Denormalized for easy display
+  clientName: string; 
   invoiceNumber: string;
   issueDate: Timestamp;
   dueDate: Timestamp;
   totalAmount: number;
   status: "مستحقة" | "مدفوعة" | "متأخرة" | "ملغاة";
-  description: string; // For invoice details/notes
+  description: string;
   createdAt: Timestamp;
 }
 
-// const invoiceSchema = z.object({ /* ... To be defined later ... */ });
-// type InvoiceFormValues = z.infer<typeof invoiceSchema>;
+const invoiceSchema = z.object({
+  clientId: z.string({ required_error: "يرجى اختيار العميل" }),
+  invoiceNumber: z.string().min(1, { message: "رقم الفاتورة مطلوب" }),
+  description: z.string().min(5, { message: "وصف الفاتورة يجب أن لا يقل عن 5 أحرف" }),
+  issueDate: z.date({ required_error: "يرجى اختيار تاريخ الإصدار" }),
+  dueDate: z.date({ required_error: "يرجى اختيار تاريخ الاستحقاق" }),
+  totalAmount: z.coerce.number().positive({ message: "المبلغ الإجمالي يجب أن يكون رقماً موجباً" }),
+  status: z.enum(["مستحقة", "مدفوعة", "متأخرة", "ملغاة"], { required_error: "يرجى اختيار حالة الفاتورة" }),
+});
+
+type InvoiceFormValues = z.infer<typeof invoiceSchema>;
+
+interface ClientOption {
+  id: string;
+  name: string;
+}
 
 export default function AdminInvoicesPage() {
   const [invoices, setInvoices] = useState<Invoice[]>([]);
   const [isLoadingInvoices, setIsLoadingInvoices] = useState(true);
   const [isAddInvoiceDialogOpen, setIsAddInvoiceDialogOpen] = useState(false);
-  // const [isEditInvoiceDialogOpen, setIsEditInvoiceDialogOpen] = useState(false);
-  // const [editingInvoice, setEditingInvoice] = useState<Invoice | null>(null);
+  const [isEditInvoiceDialogOpen, setIsEditInvoiceDialogOpen] = useState(false);
+  const [editingInvoice, setEditingInvoice] = useState<Invoice | null>(null);
   const [searchTerm, setSearchTerm] = useState("");
   const { toast } = useToast();
 
-  // const [clients, setClients] = useState<{ id: string; name: string }[]>([]);
+  const [clients, setClients] = useState<ClientOption[]>([]);
 
   const fetchInvoices = async () => {
     setIsLoadingInvoices(true);
@@ -65,25 +79,108 @@ export default function AdminInvoicesPage() {
     }
   };
 
-  // const fetchClientsForSelect = async () => { /* ... To be implemented later ... */ };
+  const fetchClientsForSelect = async () => {
+    try {
+      const q = query(collection(db, "clients"), orderBy("name", "asc"));
+      const querySnapshot = await getDocs(q);
+      const clientsData = querySnapshot.docs.map(doc => ({ id: doc.id, name: doc.data().name as string }));
+      setClients(clientsData);
+    } catch (error) {
+      console.error("Error fetching clients:", error);
+      toast({ title: "خطأ", description: "لم نتمكن من تحميل قائمة العملاء لاختيارهم.", variant: "destructive" });
+    }
+  };
 
   useEffect(() => {
     fetchInvoices();
-    // fetchClientsForSelect();
+    fetchClientsForSelect();
   }, []);
 
-  // const addInvoiceForm = useForm<InvoiceFormValues>({ /* ... */ });
-  // const editInvoiceForm = useForm<InvoiceFormValues>({ /* ... */ });
+  const addInvoiceForm = useForm<InvoiceFormValues>({
+    resolver: zodResolver(invoiceSchema),
+    defaultValues: {
+      clientId: "",
+      invoiceNumber: "",
+      description: "",
+      issueDate: new Date(),
+      dueDate: new Date(new Date().setDate(new Date().getDate() + 30)), // Default due date 30 days from now
+      totalAmount: 0,
+      status: "مستحقة",
+    },
+  });
 
-  // const handleAddInvoiceSubmit = async (data: InvoiceFormValues) => { /* ... To be implemented later ... */ };
-  // const handleEditInvoiceSubmit = async (data: InvoiceFormValues) => { /* ... To be implemented later ... */ };
-  // const openEditDialog = (invoice: Invoice) => { /* ... To be implemented later ... */ };
+  const editInvoiceForm = useForm<InvoiceFormValues>({
+    resolver: zodResolver(invoiceSchema),
+  });
+
+  const handleAddInvoiceSubmit = async (data: InvoiceFormValues) => {
+    const selectedClient = clients.find(c => c.id === data.clientId);
+    if (!selectedClient) {
+      toast({ title: "خطأ", description: "العميل المحدد غير موجود.", variant: "destructive" });
+      return;
+    }
+
+    try {
+      await addDoc(collection(db, "invoices"), {
+        ...data,
+        clientName: selectedClient.name, // Store client name for easy display
+        issueDate: Timestamp.fromDate(data.issueDate),
+        dueDate: Timestamp.fromDate(data.dueDate),
+        createdAt: serverTimestamp(),
+      });
+      toast({ title: "تم بنجاح", description: `تمت إضافة الفاتورة رقم ${data.invoiceNumber} بنجاح.` });
+      addInvoiceForm.reset();
+      setIsAddInvoiceDialogOpen(false);
+      fetchInvoices(); 
+    } catch (error) {
+      console.error("Error adding invoice:", error);
+      toast({ title: "خطأ", description: "حدث خطأ أثناء إضافة الفاتورة.", variant: "destructive" });
+    }
+  };
+  
+  const handleEditInvoiceSubmit = async (data: InvoiceFormValues) => {
+    if (!editingInvoice) return;
+
+    try {
+      const invoiceRef = doc(db, "invoices", editingInvoice.id);
+      await updateDoc(invoiceRef, {
+        ...data,
+        // clientName and clientId are not changed here as per current decision
+        // invoiceNumber is also not changed
+        issueDate: Timestamp.fromDate(data.issueDate),
+        dueDate: Timestamp.fromDate(data.dueDate),
+        // createdAt is not updated
+      });
+      toast({ title: "تم التعديل بنجاح", description: `تم تعديل الفاتورة رقم ${data.invoiceNumber}.` });
+      setIsEditInvoiceDialogOpen(false);
+      setEditingInvoice(null);
+      fetchInvoices();
+    } catch (error) {
+      console.error("Error updating invoice:", error);
+      toast({ title: "خطأ", description: "حدث خطأ أثناء تعديل الفاتورة.", variant: "destructive" });
+    }
+  };
+
+  const openEditDialog = (invoice: Invoice) => {
+    setEditingInvoice(invoice);
+    editInvoiceForm.reset({
+      clientId: invoice.clientId,
+      invoiceNumber: invoice.invoiceNumber,
+      description: invoice.description,
+      issueDate: invoice.issueDate.toDate(), // Convert Timestamp to Date
+      dueDate: invoice.dueDate.toDate(),     // Convert Timestamp to Date
+      totalAmount: invoice.totalAmount,
+      status: invoice.status,
+    });
+    setIsEditInvoiceDialogOpen(true);
+  };
+
   const handleDeleteInvoice = async (invoiceId: string, invoiceNumber: string) => { 
-    if (!window.confirm(\`هل أنت متأكد أنك تريد حذف الفاتورة رقم \${invoiceNumber}؟ هذا الإجراء لا يمكن التراجع عنه.\`)) return;
+    if (!window.confirm(`هل أنت متأكد أنك تريد حذف الفاتورة رقم ${invoiceNumber}؟ هذا الإجراء لا يمكن التراجع عنه.`)) return;
     try {
       await deleteDoc(doc(db, "invoices", invoiceId));
-      toast({ title: "تم الحذف", description: \`تم حذف الفاتورة رقم \${invoiceNumber} بنجاح.\` });
-      fetchInvoices(); // Refresh list
+      toast({ title: "تم الحذف", description: `تم حذف الفاتورة رقم ${invoiceNumber} بنجاح.` });
+      fetchInvoices(); 
     } catch (error) {
       console.error("Error deleting invoice:", error);
       toast({ title: "خطأ", description: "حدث خطأ أثناء حذف الفاتورة.", variant: "destructive" });
@@ -91,14 +188,14 @@ export default function AdminInvoicesPage() {
   };
   
   const getStatusVariant = (status: Invoice["status"]): "default" | "secondary" | "destructive" | "outline" => {
-    if (status === "مدفوعة") return "outline"; // Using outline for "Paid" (often green or distinct)
-    if (status === "مستحقة") return "default"; // Using default for "Due" (often blue/primary)
-    if (status === "متأخرة") return "secondary"; // Using secondary for "Overdue" (often yellow/orange)
-    if (status === "ملغاة") return "destructive"; // Using destructive for "Cancelled"
+    if (status === "مدفوعة") return "outline"; 
+    if (status === "مستحقة") return "default"; 
+    if (status === "متأخرة") return "secondary"; 
+    if (status === "ملغاة") return "destructive";
     return "default";
   };
 
-  const formatDate = (dateValue: Timestamp | Date | undefined): string => {
+  const formatDateForDisplay = (dateValue: Timestamp | Date | undefined): string => {
     if (!dateValue) return "غير متوفر";
     let date: Date;
     if (dateValue instanceof Timestamp) {
@@ -115,7 +212,6 @@ export default function AdminInvoicesPage() {
     return new Intl.NumberFormat('ar-EG', { style: 'currency', currency: 'EGP' }).format(amount);
   };
 
-
   const filteredInvoices = useMemo(() => {
     if (!searchTerm) return invoices;
     return invoices.filter(invoice =>
@@ -124,6 +220,139 @@ export default function AdminInvoicesPage() {
       invoice.status.toLowerCase().includes(searchTerm.toLowerCase())
     );
   }, [invoices, searchTerm]);
+
+  const renderInvoiceFormFields = (formInstance: typeof addInvoiceForm | typeof editInvoiceForm, isEditing = false) => (
+    <>
+      <FormField
+        control={formInstance.control}
+        name="clientId"
+        render={({ field }) => (
+          <FormItem>
+            <FormLabel>العميل</FormLabel>
+            <Select onValueChange={field.onChange} value={field.value} dir="rtl" disabled={isEditing || clients.length === 0}>
+              <FormControl>
+                <SelectTrigger>
+                  <SelectValue placeholder={clients.length === 0 ? "جارٍ تحميل العملاء..." : "اختر العميل"} />
+                </SelectTrigger>
+              </FormControl>
+              <SelectContent>
+                {clients.map(client => (
+                  <SelectItem key={client.id} value={client.id}>{client.name}</SelectItem>
+                ))}
+              </SelectContent>
+            </Select>
+            <FormMessage />
+          </FormItem>
+        )}
+      />
+      <FormField
+        control={formInstance.control}
+        name="invoiceNumber"
+        render={({ field }) => (
+          <FormItem>
+            <FormLabel>رقم الفاتورة</FormLabel>
+            <FormControl><Input placeholder="مثال: INV-2024-001" {...field} disabled={isEditing} /></FormControl>
+            <FormMessage />
+          </FormItem>
+        )}
+      />
+      <FormField
+        control={formInstance.control}
+        name="description"
+        render={({ field }) => (
+          <FormItem>
+            <FormLabel>الوصف/البيان</FormLabel>
+            <FormControl><Textarea placeholder="وصف موجز لمحتويات الفاتورة..." {...field} rows={3} /></FormControl>
+            <FormMessage />
+          </FormItem>
+        )}
+      />
+      <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+        <FormField
+          control={formInstance.control}
+          name="issueDate"
+          render={({ field }) => (
+            <FormItem className="flex flex-col">
+              <FormLabel>تاريخ الإصدار</FormLabel>
+              <Popover>
+                <PopoverTrigger asChild>
+                  <FormControl>
+                    <Button
+                      variant={"outline"}
+                      className={cn("w-full justify-start text-left font-normal", !field.value && "text-muted-foreground")}
+                    >
+                      <CalendarIcon className="me-2 h-4 w-4" />
+                      {field.value ? formatDateFn(field.value, "PPP", { locale: arSA }) : <span>اختر تاريخ</span>}
+                    </Button>
+                  </FormControl>
+                </PopoverTrigger>
+                <PopoverContent className="w-auto p-0" align="start">
+                  <Calendar mode="single" selected={field.value} onSelect={field.onChange} initialFocus />
+                </PopoverContent>
+              </Popover>
+              <FormMessage />
+            </FormItem>
+          )}
+        />
+        <FormField
+          control={formInstance.control}
+          name="dueDate"
+          render={({ field }) => (
+            <FormItem className="flex flex-col">
+              <FormLabel>تاريخ الاستحقاق</FormLabel>
+              <Popover>
+                <PopoverTrigger asChild>
+                  <FormControl>
+                    <Button
+                      variant={"outline"}
+                      className={cn("w-full justify-start text-left font-normal", !field.value && "text-muted-foreground")}
+                    >
+                      <CalendarIcon className="me-2 h-4 w-4" />
+                      {field.value ? formatDateFn(field.value, "PPP", { locale: arSA }) : <span>اختر تاريخ</span>}
+                    </Button>
+                  </FormControl>
+                </PopoverTrigger>
+                <PopoverContent className="w-auto p-0" align="start">
+                  <Calendar mode="single" selected={field.value} onSelect={field.onChange} initialFocus />
+                </PopoverContent>
+              </Popover>
+              <FormMessage />
+            </FormItem>
+          )}
+        />
+      </div>
+      <FormField
+        control={formInstance.control}
+        name="totalAmount"
+        render={({ field }) => (
+          <FormItem>
+            <FormLabel>المبلغ الإجمالي (ج.م)</FormLabel>
+            <FormControl><Input type="number" placeholder="مثال: 1500.50" {...field} onChange={e => field.onChange(parseFloat(e.target.value) || 0)} /></FormControl>
+            <FormMessage />
+          </FormItem>
+        )}
+      />
+      <FormField
+        control={formInstance.control}
+        name="status"
+        render={({ field }) => (
+          <FormItem>
+            <FormLabel>حالة الفاتورة</FormLabel>
+            <Select onValueChange={field.onChange} value={field.value} dir="rtl">
+              <FormControl><SelectTrigger><SelectValue placeholder="اختر حالة الفاتورة" /></SelectTrigger></FormControl>
+              <SelectContent>
+                <SelectItem value="مستحقة">مستحقة</SelectItem>
+                <SelectItem value="مدفوعة">مدفوعة</SelectItem>
+                <SelectItem value="متأخرة">متأخرة</SelectItem>
+                <SelectItem value="ملغاة">ملغاة</SelectItem>
+              </SelectContent>
+            </Select>
+            <FormMessage />
+          </FormItem>
+        )}
+      />
+    </>
+  );
 
 
   return (
@@ -134,10 +363,34 @@ export default function AdminInvoicesPage() {
             <CardTitle className="font-headline text-xl text-primary">إدارة الفواتير</CardTitle>
             <CardDescription>إنشاء، عرض، وتعديل فواتير العملاء.</CardDescription>
           </div>
-          <Button className="mt-4 md:mt-0" onClick={() => setIsAddInvoiceDialogOpen(true)} disabled>
-            <PlusCircle className="me-2 h-5 w-5" />
-            إضافة فاتورة جديدة (قريبا)
-          </Button>
+          <Dialog open={isAddInvoiceDialogOpen} onOpenChange={setIsAddInvoiceDialogOpen}>
+            <DialogTrigger asChild>
+                <Button className="mt-4 md:mt-0">
+                    <PlusCircle className="me-2 h-5 w-5" />
+                    إضافة فاتورة جديدة
+                </Button>
+            </DialogTrigger>
+            <DialogContent className="sm:max-w-2xl" dir="rtl">
+              <DialogHeader>
+                <DialogTitle>إضافة فاتورة جديدة</DialogTitle>
+                <DialogDescription>
+                  املأ النموذج أدناه لإنشاء فاتورة جديدة.
+                </DialogDescription>
+              </DialogHeader>
+              <Form {...addInvoiceForm}>
+                <form onSubmit={addInvoiceForm.handleSubmit(handleAddInvoiceSubmit)} className="space-y-4 py-4 max-h-[70vh] overflow-y-auto px-2">
+                  {renderInvoiceFormFields(addInvoiceForm)}
+                  <DialogFooter className="pt-4">
+                    <Button type="button" variant="outline" onClick={() => setIsAddInvoiceDialogOpen(false)} disabled={addInvoiceForm.formState.isSubmitting}>إلغاء</Button>
+                    <Button type="submit" disabled={addInvoiceForm.formState.isSubmitting}>
+                      {addInvoiceForm.formState.isSubmitting && <Loader2 className="me-2 h-4 w-4 animate-spin" />}
+                      إنشاء الفاتورة
+                    </Button>
+                  </DialogFooter>
+                </form>
+              </Form>
+            </DialogContent>
+          </Dialog>
         </CardHeader>
         <CardContent>
           <div className="mb-4">
@@ -168,15 +421,15 @@ export default function AdminInvoicesPage() {
                   <TableRow key={invoice.id}>
                     <TableCell className="font-medium">{invoice.invoiceNumber}</TableCell>
                     <TableCell>{invoice.clientName}</TableCell>
-                    <TableCell>{formatDate(invoice.issueDate)}</TableCell>
-                    <TableCell>{formatDate(invoice.dueDate)}</TableCell>
+                    <TableCell>{formatDateForDisplay(invoice.issueDate)}</TableCell>
+                    <TableCell>{formatDateForDisplay(invoice.dueDate)}</TableCell>
                     <TableCell>{formatCurrency(invoice.totalAmount)}</TableCell>
                     <TableCell><Badge variant={getStatusVariant(invoice.status)}>{invoice.status}</Badge></TableCell>
                     <TableCell className="space-x-1 space-x-reverse">
-                      <Button variant="ghost" size="icon" aria-label="عرض الفاتورة" disabled>
+                      <Button variant="ghost" size="icon" aria-label="عرض الفاتورة" disabled> {/* Placeholder */}
                         <FileText className="h-5 w-5" />
                       </Button>
-                      <Button variant="ghost" size="icon" aria-label="تعديل الفاتورة" disabled>
+                      <Button variant="ghost" size="icon" aria-label="تعديل الفاتورة" onClick={() => openEditDialog(invoice)}>
                         <Edit className="h-5 w-5" />
                       </Button>
                       <Button variant="ghost" size="icon" aria-label="حذف الفاتورة" className="text-destructive hover:text-destructive" onClick={() => handleDeleteInvoice(invoice.id, invoice.invoiceNumber)}>
@@ -193,27 +446,34 @@ export default function AdminInvoicesPage() {
         </CardContent>
       </Card>
 
-      {/* Add Invoice Dialog - To be implemented later */}
-      <Dialog open={isAddInvoiceDialogOpen} onOpenChange={setIsAddInvoiceDialogOpen}>
+      {/* Edit Invoice Dialog */}
+      <Dialog open={isEditInvoiceDialogOpen} onOpenChange={setIsEditInvoiceDialogOpen}>
         <DialogContent className="sm:max-w-2xl" dir="rtl">
           <DialogHeader>
-            <DialogTitle>إضافة فاتورة جديدة</DialogTitle>
+            <DialogTitle>تعديل الفاتورة</DialogTitle>
             <DialogDescription>
-              املأ النموذج أدناه لإنشاء فاتورة جديدة. (هذه الميزة قيد التطوير)
+              قم بتحديث بيانات الفاتورة رقم {editingInvoice?.invoiceNumber}.
             </DialogDescription>
           </DialogHeader>
-          <div className="py-8 text-center text-muted-foreground">
-            ميزة إضافة الفواتير سيتم تفعيلها قريباً.
-          </div>
-          <DialogFooter>
-            <Button type="button" variant="outline" onClick={() => setIsAddInvoiceDialogOpen(false)}>إلغاء</Button>
-            <Button type="submit" disabled>إنشاء الفاتورة</Button>
-          </DialogFooter>
+          {editingInvoice && (
+            <Form {...editInvoiceForm}>
+              <form onSubmit={editInvoiceForm.handleSubmit(handleEditInvoiceSubmit)} className="space-y-4 py-4 max-h-[70vh] overflow-y-auto px-2">
+                {renderInvoiceFormFields(editInvoiceForm, true)}
+                <DialogFooter className="pt-4">
+                  <Button type="button" variant="outline" onClick={() => setIsEditInvoiceDialogOpen(false)} disabled={editInvoiceForm.formState.isSubmitting}>إلغاء</Button>
+                  <Button type="submit" disabled={editInvoiceForm.formState.isSubmitting}>
+                    {editInvoiceForm.formState.isSubmitting && <Loader2 className="me-2 h-4 w-4 animate-spin" />}
+                    حفظ التعديلات
+                  </Button>
+                </DialogFooter>
+              </form>
+            </Form>
+          )}
         </DialogContent>
       </Dialog>
-
-      {/* Edit Invoice Dialog - To be implemented later */}
-      {/* ... */}
     </div>
   );
 }
+
+
+    
