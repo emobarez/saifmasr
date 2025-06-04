@@ -36,9 +36,11 @@ export const adminNavItems: NavItemConfig[] = [
   { href: "/admin/clients", label: "إدارة العملاء", icon: "Users", allowedRoles: ["admin"] },
   { href: "/admin/services", label: "إدارة الخدمات", icon: "BriefcaseBusiness", allowedRoles: ["admin"] },
   { href: "/admin/service-requests", label: "طلبات الخدمة", icon: "ClipboardList", allowedRoles: ["admin"] },
+  { href: "/admin/invoices", label: "إدارة الفواتير", icon: "Receipt", allowedRoles: ["admin"] },
   { href: "/admin/reports", label: "التقارير", icon: "FilePieChart", allowedRoles: ["admin"] },
   { href: "/admin/ai-tool", label: "أداة الذكاء الاصطناعي", icon: "Sparkles", allowedRoles: ["admin"] },
   { href: "/admin/settings", label: "الإعدادات", icon: "Settings", allowedRoles: ["admin"] },
 ];
 
 export const allNavItems: NavItemConfig[] = [...clientNavItems, ...adminNavItems];
+
