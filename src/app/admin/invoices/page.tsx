@@ -22,6 +22,7 @@ import { useToast } from "@/hooks/use-toast";
 import { db } from "@/lib/firebase";
 import { collection, addDoc, getDocs, serverTimestamp, Timestamp, query, orderBy, deleteDoc, doc, updateDoc } from "firebase/firestore";
 import { cn } from "@/lib/utils";
+import { InvoiceDetailsDialog } from "@/components/admin/InvoiceDetailsDialog";
 
 interface Invoice {
   id: string;
@@ -59,6 +60,8 @@ export default function AdminInvoicesPage() {
   const [isAddInvoiceDialogOpen, setIsAddInvoiceDialogOpen] = useState(false);
   const [isEditInvoiceDialogOpen, setIsEditInvoiceDialogOpen] = useState(false);
   const [editingInvoice, setEditingInvoice] = useState<Invoice | null>(null);
+  const [viewingInvoice, setViewingInvoice] = useState<Invoice | null>(null);
+  const [isViewDetailsDialogOpen, setIsViewDetailsDialogOpen] = useState(false);
   const [searchTerm, setSearchTerm] = useState("");
   const { toast } = useToast();
 
@@ -103,7 +106,7 @@ export default function AdminInvoicesPage() {
       invoiceNumber: "",
       description: "",
       issueDate: new Date(),
-      dueDate: new Date(new Date().setDate(new Date().getDate() + 30)), // Default due date 30 days from now
+      dueDate: new Date(new Date().setDate(new Date().getDate() + 30)), 
       totalAmount: 0,
       status: "مستحقة",
     },
@@ -123,7 +126,7 @@ export default function AdminInvoicesPage() {
     try {
       await addDoc(collection(db, "invoices"), {
         ...data,
-        clientName: selectedClient.name, // Store client name for easy display
+        clientName: selectedClient.name, 
         issueDate: Timestamp.fromDate(data.issueDate),
         dueDate: Timestamp.fromDate(data.dueDate),
         createdAt: serverTimestamp(),
@@ -145,11 +148,8 @@ export default function AdminInvoicesPage() {
       const invoiceRef = doc(db, "invoices", editingInvoice.id);
       await updateDoc(invoiceRef, {
         ...data,
-        // clientName and clientId are not changed here as per current decision
-        // invoiceNumber is also not changed
         issueDate: Timestamp.fromDate(data.issueDate),
         dueDate: Timestamp.fromDate(data.dueDate),
-        // createdAt is not updated
       });
       toast({ title: "تم التعديل بنجاح", description: `تم تعديل الفاتورة رقم ${data.invoiceNumber}.` });
       setIsEditInvoiceDialogOpen(false);
@@ -167,12 +167,17 @@ export default function AdminInvoicesPage() {
       clientId: invoice.clientId,
       invoiceNumber: invoice.invoiceNumber,
       description: invoice.description,
-      issueDate: invoice.issueDate.toDate(), // Convert Timestamp to Date
-      dueDate: invoice.dueDate.toDate(),     // Convert Timestamp to Date
+      issueDate: invoice.issueDate.toDate(), 
+      dueDate: invoice.dueDate.toDate(),     
       totalAmount: invoice.totalAmount,
       status: invoice.status,
     });
     setIsEditInvoiceDialogOpen(true);
+  };
+
+  const openViewDetailsDialog = (invoice: Invoice) => {
+    setViewingInvoice(invoice);
+    setIsViewDetailsDialogOpen(true);
   };
 
   const handleDeleteInvoice = async (invoiceId: string, invoiceNumber: string) => { 
@@ -426,7 +431,7 @@ export default function AdminInvoicesPage() {
                     <TableCell>{formatCurrency(invoice.totalAmount)}</TableCell>
                     <TableCell><Badge variant={getStatusVariant(invoice.status)}>{invoice.status}</Badge></TableCell>
                     <TableCell className="space-x-1 space-x-reverse">
-                      <Button variant="ghost" size="icon" aria-label="عرض الفاتورة" disabled> {/* Placeholder */}
+                      <Button variant="ghost" size="icon" aria-label="عرض الفاتورة" onClick={() => openViewDetailsDialog(invoice)}> 
                         <FileText className="h-5 w-5" />
                       </Button>
                       <Button variant="ghost" size="icon" aria-label="تعديل الفاتورة" onClick={() => openEditDialog(invoice)}>
@@ -446,7 +451,6 @@ export default function AdminInvoicesPage() {
         </CardContent>
       </Card>
 
-      {/* Edit Invoice Dialog */}
       <Dialog open={isEditInvoiceDialogOpen} onOpenChange={setIsEditInvoiceDialogOpen}>
         <DialogContent className="sm:max-w-2xl" dir="rtl">
           <DialogHeader>
@@ -471,9 +475,14 @@ export default function AdminInvoicesPage() {
           )}
         </DialogContent>
       </Dialog>
+
+      {viewingInvoice && (
+        <InvoiceDetailsDialog
+          invoice={viewingInvoice}
+          isOpen={isViewDetailsDialogOpen}
+          onOpenChange={setIsViewDetailsDialogOpen}
+        />
+      )}
     </div>
   );
 }
-
-
-    
