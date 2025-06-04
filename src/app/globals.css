@@ -1,3 +1,4 @@
+
 @tailwind base;
 @tailwind components;
 @tailwind utilities;
@@ -11,10 +12,10 @@ body {
     --background: 240 11% 89%; /* Light Gray #E0E0E5 */
     --foreground: 238 10% 20%; /* Dark Grayish Blue */
 
-    --card: 0 0% 100%; /* White */
+    --card: 0 0% 100% / 0.85; /* White with opacity */
     --card-foreground: 238 10% 20%; /* Dark Grayish Blue */
 
-    --popover: 0 0% 100%; /* White */
+    --popover: 0 0% 100% / 0.85; /* White with opacity */
     --popover-foreground: 238 10% 20%; /* Dark Grayish Blue */
 
     --primary: 238 53% 37%; /* Dark Blue #2E3192 */
@@ -44,7 +45,7 @@ body {
     --radius: 0.5rem;
 
     /* Sidebar specific colors */
-    --sidebar-background: 238 30% 97%; /* Very light, slightly desaturated blue */
+    --sidebar-background: 238 30% 97% / 0.9; /* Very light, slightly desaturated blue with opacity */
     --sidebar-foreground: 238 15% 30%; /* Darker text for sidebar */
     --sidebar-primary: 238 53% 37%; /* Main primary color */
     --sidebar-primary-foreground: 0 0% 98%; /* White */
@@ -58,10 +59,10 @@ body {
     --background: 238 10% 15%; /* Darker blue-gray for dark mode background */
     --foreground: 0 0% 95%; /* Light gray for dark mode text */
 
-    --card: 238 10% 20%; /* Dark card background */
+    --card: 238 10% 20% / 0.85; /* Dark card background with opacity */
     --card-foreground: 0 0% 95%; /* Light card text */
 
-    --popover: 238 10% 20%;
+    --popover: 238 10% 20% / 0.85; /* Dark popover background with opacity */
     --popover-foreground: 0 0% 95%;
 
     --primary: 238 60% 55%; /* Brighter primary for dark mode */
@@ -90,7 +91,7 @@ body {
     --chart-5: 340 75% 55%;
 
     /* Dark Sidebar specific colors */
-    --sidebar-background: 238 12% 18%; /* Dark sidebar background */
+    --sidebar-background: 238 12% 18% / 0.9; /* Dark sidebar background with opacity */
     --sidebar-foreground: 0 0% 85%; /* Light sidebar text */
     --sidebar-primary: 238 60% 55%; /* Brighter primary for dark mode sidebar */
     --sidebar-primary-foreground: 0 0% 98%;

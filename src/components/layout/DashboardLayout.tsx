@@ -28,7 +28,7 @@ import {
   BriefcaseBusiness,
   FilePieChart,
   Sparkles,
-  Settings as SettingsIcon, // Renamed to avoid conflict with Settings component
+  Settings as SettingsIcon, 
   ShieldEllipsis,
   ClipboardList
 } from "lucide-react";
@@ -36,12 +36,7 @@ import { useAuth } from "@/context/AuthContext";
 import { Avatar, AvatarFallback, AvatarImage } from "@/components/ui/avatar";
 import { usePortalName } from '@/hooks/usePortalName';
 import type { NavItemConfig } from '@/config/dashboardNavs';
-
-
-interface DashboardLayoutProps {
-  children: ReactNode;
-  navItems: NavItemConfig[];
-}
+import { ThemeSwitcher } from "./ThemeSwitcher"; // Added import
 
 const iconMap: { [key: string]: ElementType } = {
   LayoutDashboard,
@@ -53,10 +48,10 @@ const iconMap: { [key: string]: ElementType } = {
   BriefcaseBusiness,
   FilePieChart,
   Sparkles,
-  Settings: SettingsIcon, // Use renamed import
+  Settings: SettingsIcon, 
   ShieldEllipsis,
   ClipboardList,
-  ShieldHalf // Added for completeness, though not directly in navItems via string yet
+  ShieldHalf 
 };
 
 
@@ -80,7 +75,6 @@ export function DashboardLayout({ children, navItems }: DashboardLayoutProps) {
   }
 
   if (!user) {
-    // This should ideally be handled by AuthContext redirects, but as a fallback:
     router.push('/auth/login');
     return null; 
   }
@@ -123,8 +117,8 @@ export function DashboardLayout({ children, navItems }: DashboardLayoutProps) {
               })}
             </SidebarMenu>
           </SidebarContent>
-          <SidebarFooter className="p-4 border-t border-sidebar-border">
-             <div className="flex items-center gap-3 group-data-[collapsible=icon]:justify-center mb-2">
+          <SidebarFooter className="p-4 border-t border-sidebar-border space-y-2">
+             <div className="flex items-center gap-3 group-data-[collapsible=icon]:justify-center">
                 <Avatar className="h-9 w-9">
                   <AvatarImage src={user?.photoURL || undefined} alt={user?.displayName || "User"} />
                   <AvatarFallback>{getInitials(user?.displayName)}</AvatarFallback>
@@ -134,14 +128,17 @@ export function DashboardLayout({ children, navItems }: DashboardLayoutProps) {
                   <p className="text-xs text-muted-foreground">{user?.email}</p>
                 </div>
               </div>
-            <SidebarMenuButton
-              onClick={signOut}
-              tooltip={{ children: "تسجيل الخروج", side: 'left' }}
-              className="w-full"
-            >
-              <LogOut className="h-5 w-5" />
-              <span className="group-data-[collapsible=icon]:hidden">تسجيل الخروج</span>
-            </SidebarMenuButton>
+            <div className="flex items-center justify-between group-data-[collapsible=icon]:flex-col group-data-[collapsible=icon]:gap-2">
+              <ThemeSwitcher />
+              <SidebarMenuButton
+                onClick={signOut}
+                tooltip={{ children: "تسجيل الخروج", side: 'left' }}
+                className="w-full group-data-[collapsible=icon]:w-auto"
+              >
+                <LogOut className="h-5 w-5" />
+                <span className="group-data-[collapsible=icon]:hidden">تسجيل الخروج</span>
+              </SidebarMenuButton>
+            </div>
           </SidebarFooter>
         </Sidebar>
 
