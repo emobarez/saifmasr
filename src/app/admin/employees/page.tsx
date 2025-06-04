@@ -6,19 +6,22 @@ import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from "@/components/ui/table";
 import { Badge } from "@/components/ui/badge";
-import { PlusCircle, Search, Edit, Trash2, Loader2, Users as UsersIcon } from "lucide-react";
-// Dialog components will be needed later for Add/Edit
-// import { Dialog, DialogContent, DialogDescription, DialogFooter, DialogHeader, DialogTitle, DialogTrigger } from "@/components/ui/dialog";
-// Form components will be needed later
-// import { useForm } from "react-hook-form";
-// import { zodResolver } from "@hookform/resolvers/zod";
-// import * as z from "zod";
-// import { Form, FormControl, FormField, FormItem, FormLabel, FormMessage } from "@/components/ui/form";
-// Select will be needed later
-// import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
+import { PlusCircle, Search, Edit, Trash2, Loader2, Users as UsersIcon, CalendarIcon } from "lucide-react";
+import { Dialog, DialogContent, DialogDescription, DialogFooter, DialogHeader, DialogTitle, DialogTrigger } from "@/components/ui/dialog";
+import { useForm } from "react-hook-form";
+import { zodResolver } from "@hookform/resolvers/zod";
+import * as z from "zod";
+import { Form, FormControl, FormField, FormItem, FormLabel, FormMessage } from "@/components/ui/form";
+import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
+import { Textarea } from "@/components/ui/textarea";
+import { Popover, PopoverContent, PopoverTrigger } from "@/components/ui/popover";
+import { Calendar } from "@/components/ui/calendar";
+import { format as formatDateFn } from "date-fns";
+import { arSA } from "date-fns/locale";
 import { useToast } from "@/hooks/use-toast";
 import { db } from "@/lib/firebase";
-import { collection, getDocs, Timestamp, query, orderBy, deleteDoc, doc } from "firebase/firestore"; // serverTimestamp, addDoc, updateDoc will be needed later
+import { collection, addDoc, getDocs, serverTimestamp, Timestamp, query, orderBy, deleteDoc, doc, updateDoc } from "firebase/firestore";
+import { cn } from "@/lib/utils";
 
 // Interface for Employee data
 export interface Employee {
@@ -37,8 +40,7 @@ export interface Employee {
   createdAt?: Timestamp; // For sorting or tracking
 }
 
-// Zod schema for employee form validation (will be used later)
-/*
+// Zod schema for employee form validation
 const employeeSchema = z.object({
   name: z.string().min(2, { message: "الاسم يجب أن لا يقل عن حرفين" }),
   employeeId: z.string().min(1, { message: "الرقم الوظيفي مطلوب" }),
@@ -46,14 +48,15 @@ const employeeSchema = z.object({
   department: z.string().min(2, { message: "القسم مطلوب" }),
   joinDate: z.date({ required_error: "تاريخ الانضمام مطلوب" }),
   status: z.enum(["نشط", "غير نشط", "في إجازة"], { required_error: "يرجى اختيار حالة الموظف" }),
-  phone: z.string().regex(/^01[0125][0-9]{8}$/, { message: "رقم الهاتف المصري غير صالح" }), // Basic Egyptian phone validation
+  phone: z.string().regex(/^01[0125][0-9]{8}$/, { message: "رقم الهاتف المصري غير صالح (مثال: 01012345678)" }), 
   email: z.string().email({ message: "البريد الإلكتروني غير صالح" }),
-  nationalId: z.string().optional(),
-  address: z.string().optional(),
+  nationalId: z.string().optional().refine(val => !val || /^[0-9]{14}$/.test(val), { message: "الرقم القومي يجب أن يكون 14 رقمًا (إن وجد)"}),
+  address: z.string().max(200, {message: "العنوان يجب ألا يتجاوز 200 حرف"}).optional(),
+  profileImageUrl: z.string().url({message: "رابط صورة الملف الشخصي غير صالح"}).optional().or(z.literal('')),
 });
 
 type EmployeeFormValues = z.infer<typeof employeeSchema>;
-*/
+
 
 export default function AdminEmployeesPage() {
   const [employees, setEmployees] = useState<Employee[]>([]);
@@ -67,7 +70,7 @@ export default function AdminEmployeesPage() {
   const fetchEmployees = async () => {
     setIsLoadingEmployees(true);
     try {
-      const q = query(collection(db, "employees"), orderBy("name", "asc")); // Or orderBy joinDate or createdAt
+      const q = query(collection(db, "employees"), orderBy("createdAt", "desc")); 
       const querySnapshot = await getDocs(q);
       const employeesData = querySnapshot.docs.map(doc => ({ id: doc.id, ...doc.data() } as Employee));
       setEmployees(employeesData);
@@ -83,41 +86,78 @@ export default function AdminEmployeesPage() {
     fetchEmployees();
   }, []);
 
-  // Add/Edit form instances (will be used later)
-  /*
+  
   const addEmployeeForm = useForm<EmployeeFormValues>({
     resolver: zodResolver(employeeSchema),
-    // Default values here
+    defaultValues: {
+      name: "",
+      employeeId: "",
+      jobTitle: "",
+      department: "",
+      joinDate: new Date(),
+      status: "نشط",
+      phone: "",
+      email: "",
+      nationalId: "",
+      address: "",
+      profileImageUrl: "",
+    },
   });
 
-  const editEmployeeForm = useForm<EmployeeFormValues>({
+  const editEmployeeForm = useForm<EmployeeFormValues>({ 
     resolver: zodResolver(employeeSchema),
   });
-  */
+  
 
-  // Handle Add/Edit/Delete submissions (will be implemented later)
-  const handleAddEmployeeSubmit = async (data: any /* EmployeeFormValues */) => {
-    // Implementation later
-    console.log("Add employee:", data);
+  const handleAddEmployeeSubmit = async (data: EmployeeFormValues) => {
+    try {
+      await addDoc(collection(db, "employees"), {
+        ...data,
+        joinDate: Timestamp.fromDate(data.joinDate),
+        createdAt: serverTimestamp(),
+      });
+      toast({ title: "تم بنجاح", description: `تمت إضافة الموظف ${data.name} بنجاح.` });
+      addEmployeeForm.reset();
+      setIsAddEmployeeDialogOpen(false);
+      fetchEmployees(); 
+    } catch (error) {
+      console.error("Error adding employee:", error);
+      toast({ title: "خطأ", description: "حدث خطأ أثناء إضافة الموظف.", variant: "destructive" });
+    }
   };
 
-  const handleEditEmployeeSubmit = async (data: any /* EmployeeFormValues */) => {
-    // Implementation later
-    console.log("Edit employee:", data);
+  const handleEditEmployeeSubmit = async (data: EmployeeFormValues) => {
+    if (!editingEmployee) return;
+    try {
+      const employeeRef = doc(db, "employees", editingEmployee.id);
+      await updateDoc(employeeRef, {
+        ...data,
+        joinDate: Timestamp.fromDate(data.joinDate),
+      });
+      toast({ title: "تم التعديل بنجاح", description: `تم تعديل بيانات الموظف ${data.name}.` });
+      setIsEditEmployeeDialogOpen(false);
+      setEditingEmployee(null);
+      fetchEmployees();
+    } catch (error) {
+      console.error("Error updating employee:", error);
+      toast({ title: "خطأ", description: "حدث خطأ أثناء تعديل بيانات الموظف.", variant: "destructive" });
+    }
   };
   
   const openEditDialog = (employee: Employee) => {
     setEditingEmployee(employee);
-    // editEmployeeForm.reset({...}); // Reset form with employee data - later
+    editEmployeeForm.reset({
+      ...employee,
+      joinDate: employee.joinDate instanceof Timestamp ? employee.joinDate.toDate() : employee.joinDate,
+    });
     setIsEditEmployeeDialogOpen(true);
-    toast({title: "ملاحظة", description: "وظيفة تعديل الموظف سيتم تفعيلها قريباً."});
   };
 
   const handleDeleteEmployee = async (employeeId: string, employeeName: string) => {
-    if (!window.confirm(\`هل أنت متأكد أنك تريد حذف الموظف \${employeeName}؟\nهذا الإجراء لا يمكن التراجع عنه.\`)) return;
+    if (!window.confirm(`هل أنت متأكد أنك تريد حذف الموظف ${employeeName}؟\nهذا الإجراء لا يمكن التراجع عنه.`)) return;
     try {
       await deleteDoc(doc(db, "employees", employeeId));
-      toast({ title: "تم الحذف", description: \`تم حذف الموظف \${employeeName} بنجاح.\` });
+      toast({ title: "تم الحذف", description: `تم حذف الموظف ${employeeName} بنجاح.` });
       fetchEmployees(); // Refresh list
     } catch (error) {
       console.error("Error deleting employee:", error);
@@ -128,7 +168,7 @@ export default function AdminEmployeesPage() {
   const getStatusVariant = (status: Employee["status"]): "default" | "secondary" | "destructive" => {
     if (status === "نشط") return "default";
     if (status === "غير نشط") return "secondary";
-    if (status === "في إجازة") return "destructive"; // Or another color like warning/yellow
+    if (status === "في إجازة") return "destructive"; 
     return "default";
   };
 
@@ -156,6 +196,69 @@ export default function AdminEmployeesPage() {
   }, [employees, searchTerm]);
 
 
+  const renderEmployeeFormFields = (formInstance: typeof addEmployeeForm | typeof editEmployeeForm) => (
+    <>
+       <FormField control={formInstance.control} name="name" render={({ field }) => (
+          <FormItem><FormLabel>اسم الموظف</FormLabel><FormControl><Input placeholder="الاسم بالكامل" {...field} /></FormControl><FormMessage /></FormItem>
+        )}/>
+        <FormField control={formInstance.control} name="employeeId" render={({ field }) => (
+          <FormItem><FormLabel>الرقم الوظيفي</FormLabel><FormControl><Input placeholder="مثال: EMP001" {...field} /></FormControl><FormMessage /></FormItem>
+        )}/>
+        <FormField control={formInstance.control} name="jobTitle" render={({ field }) => (
+          <FormItem><FormLabel>المسمى الوظيفي</FormLabel><FormControl><Input placeholder="مثال: فرد أمن" {...field} /></FormControl><FormMessage /></FormItem>
+        )}/>
+        <FormField control={formInstance.control} name="department" render={({ field }) => (
+          <FormItem><FormLabel>القسم</FormLabel><FormControl><Input placeholder="مثال: عمليات الموقع" {...field} /></FormControl><FormMessage /></FormItem>
+        )}/>
+        <FormField control={formInstance.control} name="joinDate" render={({ field }) => (
+            <FormItem className="flex flex-col">
+              <FormLabel>تاريخ الانضمام</FormLabel>
+              <Popover>
+                <PopoverTrigger asChild>
+                  <FormControl>
+                    <Button variant={"outline"} className={cn("w-full justify-start text-left font-normal", !field.value && "text-muted-foreground")}>
+                      <CalendarIcon className="me-2 h-4 w-4" />
+                      {field.value ? formatDateFn(field.value, "PPP", { locale: arSA }) : <span>اختر تاريخ</span>}
+                    </Button>
+                  </FormControl>
+                </PopoverTrigger>
+                <PopoverContent className="w-auto p-0" align="start">
+                  <Calendar mode="single" selected={field.value} onSelect={field.onChange} initialFocus captionLayout="dropdown-buttons" fromYear={1990} toYear={new Date().getFullYear() + 5}/>
+                </PopoverContent>
+              </Popover>
+              <FormMessage />
+            </FormItem>
+          )}/>
+        <FormField control={formInstance.control} name="status" render={({ field }) => (
+            <FormItem><FormLabel>حالة الموظف</FormLabel>
+            <Select onValueChange={field.onChange} value={field.value} dir="rtl">
+                <FormControl><SelectTrigger><SelectValue placeholder="اختر حالة الموظف" /></SelectTrigger></FormControl>
+                <SelectContent>
+                    <SelectItem value="نشط">نشط</SelectItem>
+                    <SelectItem value="غير نشط">غير نشط</SelectItem>
+                    <SelectItem value="في إجازة">في إجازة</SelectItem>
+                </SelectContent>
+            </Select><FormMessage /></FormItem>
+        )}/>
+        <FormField control={formInstance.control} name="phone" render={({ field }) => (
+            <FormItem><FormLabel>رقم الهاتف</FormLabel><FormControl><Input type="tel" placeholder="01xxxxxxxxx" {...field} /></FormControl><FormMessage /></FormItem>
+        )}/>
+        <FormField control={formInstance.control} name="email" render={({ field }) => (
+            <FormItem><FormLabel>البريد الإلكتروني</FormLabel><FormControl><Input type="email" placeholder="employee@example.com" {...field} /></FormControl><FormMessage /></FormItem>
+        )}/>
+        <FormField control={formInstance.control} name="nationalId" render={({ field }) => (
+            <FormItem><FormLabel>الرقم القومي (اختياري)</FormLabel><FormControl><Input placeholder="14 رقمًا" {...field} /></FormControl><FormMessage /></FormItem>
+        )}/>
+        <FormField control={formInstance.control} name="address" render={({ field }) => (
+            <FormItem><FormLabel>العنوان (اختياري)</FormLabel><FormControl><Textarea placeholder="عنوان إقامة الموظف" {...field} rows={2} /></FormControl><FormMessage /></FormItem>
+        )}/>
+        <FormField control={formInstance.control} name="profileImageUrl" render={({ field }) => (
+            <FormItem><FormLabel>رابط صورة الملف الشخصي (اختياري)</FormLabel><FormControl><Input placeholder="https://example.com/image.png" {...field} /></FormControl><FormMessage /></FormItem>
+        )}/>
+    </>
+  );
+
+
   return (
     <div className="space-y-6">
       <Card>
@@ -167,11 +270,34 @@ export default function AdminEmployeesPage() {
             </div>
             <CardDescription>عرض، تعديل، وإضافة موظفين جدد للنظام.</CardDescription>
           </div>
-          {/* DialogTrigger for Add Employee will be here */}
-          <Button className="mt-4 md:mt-0" onClick={() => { setIsAddEmployeeDialogOpen(true); toast({title: "ملاحظة", description: "وظيفة إضافة موظف جديد سيتم تفعيلها قريباً."})}}>
-            <PlusCircle className="me-2 h-5 w-5" />
-            إضافة موظف جديد
-          </Button>
+          <Dialog open={isAddEmployeeDialogOpen} onOpenChange={setIsAddEmployeeDialogOpen}>
+            <DialogTrigger asChild>
+                <Button className="mt-4 md:mt-0" onClick={() => addEmployeeForm.reset()}>
+                    <PlusCircle className="me-2 h-5 w-5" />
+                    إضافة موظف جديد
+                </Button>
+            </DialogTrigger>
+            <DialogContent className="sm:max-w-lg" dir="rtl">
+              <DialogHeader>
+                <DialogTitle>إضافة موظف جديد</DialogTitle>
+                <DialogDescription>
+                  املأ النموذج أدناه لإضافة موظف جديد.
+                </DialogDescription>
+              </DialogHeader>
+              <Form {...addEmployeeForm}>
+                <form onSubmit={addEmployeeForm.handleSubmit(handleAddEmployeeSubmit)} className="space-y-4 py-4 max-h-[70vh] overflow-y-auto px-2">
+                  {renderEmployeeFormFields(addEmployeeForm)}
+                  <DialogFooter className="pt-4">
+                    <Button type="button" variant="outline" onClick={() => setIsAddEmployeeDialogOpen(false)} disabled={addEmployeeForm.formState.isSubmitting}>إلغاء</Button>
+                    <Button type="submit" disabled={addEmployeeForm.formState.isSubmitting}>
+                      {addEmployeeForm.formState.isSubmitting && <Loader2 className="me-2 h-4 w-4 animate-spin" />}
+                      إضافة الموظف
+                    </Button>
+                  </DialogFooter>
+                </form>
+              </Form>
+            </DialogContent>
+          </Dialog>
         </CardHeader>
         <CardContent>
           <div className="mb-4 relative max-w-sm">
@@ -227,34 +353,6 @@ export default function AdminEmployeesPage() {
         </CardContent>
       </Card>
 
-      {/* Add Employee Dialog (Structure to be filled later) */}
-      {/* 
-      <Dialog open={isAddEmployeeDialogOpen} onOpenChange={setIsAddEmployeeDialogOpen}>
-        <DialogContent className="sm:max-w-lg" dir="rtl">
-          <DialogHeader>
-            <DialogTitle>إضافة موظف جديد</DialogTitle>
-            <DialogDescription>
-              املأ النموذج أدناه لإضافة موظف جديد.
-            </DialogDescription>
-          </DialogHeader>
-          <Form {...addEmployeeForm}>
-            <form onSubmit={addEmployeeForm.handleSubmit(handleAddEmployeeSubmit)} className="space-y-4 py-4 max-h-[70vh] overflow-y-auto px-2">
-              // FormFields will go here
-              <DialogFooter className="pt-4">
-                <Button type="button" variant="outline" onClick={() => setIsAddEmployeeDialogOpen(false)} disabled={addEmployeeForm.formState.isSubmitting}>إلغاء</Button>
-                <Button type="submit" disabled={addEmployeeForm.formState.isSubmitting}>
-                  {addEmployeeForm.formState.isSubmitting && <Loader2 className="me-2 h-4 w-4 animate-spin" />}
-                  إضافة الموظف
-                </Button>
-              </DialogFooter>
-            </form>
-          </Form>
-        </DialogContent>
-      </Dialog>
-      */}
-
-      {/* Edit Employee Dialog (Structure to be filled later) */}
-      {/* 
       <Dialog open={isEditEmployeeDialogOpen} onOpenChange={setIsEditEmployeeDialogOpen}>
         <DialogContent className="sm:max-w-lg" dir="rtl">
           <DialogHeader>
@@ -266,7 +364,7 @@ export default function AdminEmployeesPage() {
           {editingEmployee && (
             <Form {...editEmployeeForm}>
               <form onSubmit={editEmployeeForm.handleSubmit(handleEditEmployeeSubmit)} className="space-y-4 py-4 max-h-[70vh] overflow-y-auto px-2">
-                // FormFields will go here, pre-filled with editingEmployee data
+                {renderEmployeeFormFields(editEmployeeForm)}
                 <DialogFooter className="pt-4">
                   <Button type="button" variant="outline" onClick={() => setIsEditEmployeeDialogOpen(false)} disabled={editEmployeeForm.formState.isSubmitting}>إلغاء</Button>
                   <Button type="submit" disabled={editEmployeeForm.formState.isSubmitting}>
@@ -279,7 +377,9 @@ export default function AdminEmployeesPage() {
           )}
         </DialogContent>
       </Dialog>
-      */}
     </div>
   );
 }
+    
+
+    
