@@ -352,13 +352,14 @@ export default function AdminServicesPage() {
           </Dialog>
         </CardHeader>
         <CardContent>
-          <div className="mb-4">
+          <div className="mb-4 relative max-w-md">
             <Input 
               placeholder="ابحث عن خدمة (بالاسم، الفئة، أو الوصف)..." 
-              className="max-w-md" 
+              className="ps-10" 
               value={searchTerm}
               onChange={(e) => setSearchTerm(e.target.value)}
             />
+             <Search className="absolute start-3 top-1/2 -translate-y-1/2 h-5 w-5 text-muted-foreground" />
           </div>
           {isLoadingServices ? (
             <div className="flex justify-center items-center py-8"><Loader2 className="h-8 w-8 animate-spin text-primary" /><p className="ms-2">جارٍ تحميل الخدمات...</p></div>

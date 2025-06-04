@@ -5,7 +5,7 @@ import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Textarea } from "@/components/ui/textarea";
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
-import { PlusCircle, Loader2 } from "lucide-react";
+import { PlusCircle, Loader2, Paperclip } from "lucide-react";
 import { useForm } from "react-hook-form";
 import { zodResolver } from "@hookform/resolvers/zod";
 import * as z from "zod";
@@ -181,7 +181,10 @@ export default function ClientServiceRequestsPage() {
                 name="attachments"
                 render={({ field: { onChange, value, ...restField } }) => ( 
                   <FormItem>
-                    <FormLabel>مرفقات (اختياري)</FormLabel>
+                    <FormLabel className="flex items-center gap-2">
+                      <Paperclip className="h-5 w-5" />
+                      مرفقات (اختياري)
+                    </FormLabel>
                     <FormControl>
                       <Input 
                         type="file" 

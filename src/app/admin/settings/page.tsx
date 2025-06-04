@@ -5,7 +5,7 @@ import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
 import { Switch } from "@/components/ui/switch";
-import { Save, Bell, ShieldQuestion, Palette, Loader2 } from "lucide-react";
+import { Save, Bell, ShieldCheck, Palette, Loader2, Settings as SettingsIcon } from "lucide-react"; // Renamed ShieldQuestion to ShieldCheck, Settings to SettingsIcon
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
 import { useState, useEffect } from "react";
 import { useToast } from "@/hooks/use-toast";
@@ -101,15 +101,23 @@ export default function AdminSettingsPage() {
         <CardContent>
           <Tabs defaultValue="general" className="w-full" dir="rtl">
             <TabsList className="grid w-full grid-cols-2 md:grid-cols-4">
-              <TabsTrigger value="general">عامة</TabsTrigger>
-              <TabsTrigger value="notifications" disabled>الإشعارات</TabsTrigger>
-              <TabsTrigger value="security" disabled>الأمان</TabsTrigger>
-              <TabsTrigger value="appearance" disabled>المظهر</TabsTrigger>
+              <TabsTrigger value="general" className="flex items-center gap-2">
+                <SettingsIcon className="h-5 w-5" /> عامة
+              </TabsTrigger>
+              <TabsTrigger value="notifications" disabled className="flex items-center gap-2">
+                <Bell className="h-5 w-5" /> الإشعارات
+              </TabsTrigger>
+              <TabsTrigger value="security" disabled className="flex items-center gap-2">
+                <ShieldCheck className="h-5 w-5" /> الأمان
+              </TabsTrigger>
+              <TabsTrigger value="appearance" disabled className="flex items-center gap-2">
+                <Palette className="h-5 w-5" /> المظهر
+              </TabsTrigger>
             </TabsList>
             
             <TabsContent value="general" className="mt-6 space-y-6">
               <Card>
-                <CardHeader><CardTitle>الإعدادات العامة</CardTitle></CardHeader>
+                <CardHeader><CardTitle className="flex items-center gap-2"><SettingsIcon className="h-5 w-5" />الإعدادات العامة</CardTitle></CardHeader>
                 <CardContent className="space-y-4">
                   <div>
                     <Label htmlFor="portalName">اسم البوابة</Label>
@@ -141,7 +149,7 @@ export default function AdminSettingsPage() {
             {/* Other TabsContent sections remain for structure but are not functional yet */}
             <TabsContent value="notifications" className="mt-6 space-y-6">
               <Card>
-                <CardHeader><CardTitle>إعدادات الإشعارات</CardTitle></CardHeader>
+                <CardHeader><CardTitle className="flex items-center gap-2"><Bell className="h-5 w-5" />إعدادات الإشعارات</CardTitle></CardHeader>
                 <CardContent className="space-y-4">
                    <p className="text-muted-foreground">هذه الميزة غير متاحة بعد.</p>
                   {/* 
@@ -156,7 +164,7 @@ export default function AdminSettingsPage() {
 
             <TabsContent value="security" className="mt-6 space-y-6">
                <Card>
-                <CardHeader><CardTitle>إعدادات الأمان</CardTitle></CardHeader>
+                <CardHeader><CardTitle className="flex items-center gap-2"><ShieldCheck className="h-5 w-5" />إعدادات الأمان</CardTitle></CardHeader>
                 <CardContent className="space-y-4">
                   <p className="text-muted-foreground">هذه الميزة غير متاحة بعد.</p>
                   {/*
@@ -171,7 +179,7 @@ export default function AdminSettingsPage() {
             
             <TabsContent value="appearance" className="mt-6 space-y-6">
                <Card>
-                <CardHeader><CardTitle>إعدادات المظهر</CardTitle></CardHeader>
+                <CardHeader><CardTitle className="flex items-center gap-2"><Palette className="h-5 w-5" />إعدادات المظهر</CardTitle></CardHeader>
                 <CardContent className="space-y-4">
                    <p className="text-muted-foreground">هذه الميزة غير متاحة بعد.</p>
                  {/* 

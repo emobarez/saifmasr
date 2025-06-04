@@ -6,7 +6,7 @@ import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from "@/components/ui/table";
 import { Badge } from "@/components/ui/badge";
-import { PlusCircle, Edit, Trash2, Loader2, FileText, CalendarIcon } from "lucide-react";
+import { PlusCircle, Edit, Trash2, Loader2, FileText, CalendarIcon, Search } from "lucide-react";
 import { Dialog, DialogContent, DialogDescription, DialogFooter, DialogHeader, DialogTitle, DialogTrigger } from "@/components/ui/dialog";
 import { useForm } from "react-hook-form";
 import { zodResolver } from "@hookform/resolvers/zod";
@@ -398,13 +398,14 @@ export default function AdminInvoicesPage() {
           </Dialog>
         </CardHeader>
         <CardContent>
-          <div className="mb-4">
+          <div className="mb-4 relative max-w-md">
             <Input 
               placeholder="ابحث عن فاتورة (بالرقم، اسم العميل، أو الحالة)..." 
-              className="max-w-md"
+              className="ps-10"
               value={searchTerm}
               onChange={(e) => setSearchTerm(e.target.value)}
             />
+            <Search className="absolute start-3 top-1/2 -translate-y-1/2 h-5 w-5 text-muted-foreground" />
           </div>
           {isLoadingInvoices ? (
             <div className="flex justify-center items-center py-8"><Loader2 className="h-8 w-8 animate-spin text-primary" /><p className="ms-2">جارٍ تحميل الفواتير...</p></div>

@@ -1,7 +1,7 @@
 
 import { Button } from "@/components/ui/button";
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card";
-import { Briefcase, ShieldCheck, FileText, ArrowLeftCircle, Users, SearchCheck } from "lucide-react";
+import { Briefcase, ShieldCheck, FileText, ArrowLeftCircle, Users, SearchCheck, Search, LogIn } from "lucide-react";
 import Image from "next/image";
 import Link from "next/link";
 import { Header } from "@/components/layout/Header";
@@ -59,7 +59,7 @@ export default function LandingPage() {
                 <Link href="/auth/register">ابدأ الآن <ArrowLeftCircle className="ms-2 h-5 w-5" /></Link>
               </Button>
               <Button asChild variant="outline" size="lg" className="font-semibold">
-                <Link href="/#services">اكتشف خدماتنا</Link>
+                <Link href="/#services"><Search className="me-2 h-5 w-5" />اكتشف خدماتنا</Link>
               </Button>
             </div>
           </div>
@@ -144,7 +144,7 @@ export default function LandingPage() {
               تواصل معنا اليوم لمعرفة كيف يمكن لخدماتنا وحلولنا المبتكرة أن تساعدك في تحقيق أهدافك والوصول إلى آفاق جديدة من النجاح.
             </p>
             <Button asChild size="lg" variant="secondary" className="font-semibold text-primary hover:bg-white/90">
-              <Link href="/auth/register">سجل الآن وابدأ رحلتك</Link>
+              <Link href="/auth/register"><LogIn className="me-2 h-5 w-5"/>سجل الآن وابدأ رحلتك</Link>
             </Button>
           </div>
         </section>

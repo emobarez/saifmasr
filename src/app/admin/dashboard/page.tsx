@@ -2,7 +2,7 @@
 "use client";
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
-import { ArrowLeftCircle, Users, BriefcaseBusiness, FilePieChart, Sparkles, Loader2, ClipboardList } from "lucide-react";
+import { ArrowLeftCircle, Users, BriefcaseBusiness, FilePieChart, Sparkles, Loader2, ClipboardList, Activity, TrendingUp } from "lucide-react";
 import Link from "next/link";
 import { useAuth } from "@/context/AuthContext";
 import { useState, useEffect } from "react";
@@ -112,16 +112,28 @@ export default function AdminDashboardPage() {
       <div className="grid grid-cols-1 lg:grid-cols-2 gap-6">
         <Card className="shadow-md">
           <CardHeader>
-            <CardTitle className="font-headline text-xl text-primary">إحصائيات سريعة</CardTitle>
+            <div className="flex items-center gap-2">
+              <TrendingUp className="h-6 w-6 text-primary" />
+              <CardTitle className="font-headline text-xl text-primary">إحصائيات سريعة</CardTitle>
+            </div>
           </CardHeader>
-          <CardContent className="space-y-2">
+          <CardContent className="space-y-3">
             {isLoadingStats ? (
               <div className="flex justify-center items-center py-4"><Loader2 className="h-6 w-6 animate-spin text-primary" /><p className="ms-2 text-sm">جارٍ تحميل الإحصائيات...</p></div>
             ) : stats ? (
               <>
-                <div className="flex justify-between"><span>إجمالي العملاء:</span> <span className="font-semibold">{stats.totalClients}</span></div>
-                <div className="flex justify-between"><span>إجمالي الخدمات:</span> <span className="font-semibold">{stats.totalServices}</span></div>
-                <div className="flex justify-between"><span>إجمالي طلبات الخدمة:</span> <span className="font-semibold">{stats.totalServiceRequests}</span></div>
+                <div className="flex items-center justify-between">
+                  <div className="flex items-center gap-2 text-muted-foreground"><Users className="h-5 w-5" /><span>إجمالي العملاء:</span></div>
+                  <span className="font-semibold text-lg text-foreground">{stats.totalClients}</span>
+                </div>
+                <div className="flex items-center justify-between">
+                  <div className="flex items-center gap-2 text-muted-foreground"><BriefcaseBusiness className="h-5 w-5" /><span>إجمالي الخدمات:</span></div>
+                   <span className="font-semibold text-lg text-foreground">{stats.totalServices}</span>
+                </div>
+                <div className="flex items-center justify-between">
+                   <div className="flex items-center gap-2 text-muted-foreground"><ClipboardList className="h-5 w-5" /><span>إجمالي طلبات الخدمة:</span></div>
+                   <span className="font-semibold text-lg text-foreground">{stats.totalServiceRequests}</span>
+                </div>
               </>
             ) : (
               <p className="text-muted-foreground text-center py-4">لا توجد إحصائيات لعرضها.</p>
@@ -130,7 +142,10 @@ export default function AdminDashboardPage() {
         </Card>
         <Card className="shadow-md">
           <CardHeader>
-            <CardTitle className="font-headline text-xl text-primary">آخر الأنشطة</CardTitle>
+            <div className="flex items-center gap-2">
+              <Activity className="h-6 w-6 text-primary" />
+              <CardTitle className="font-headline text-xl text-primary">آخر الأنشطة</CardTitle>
+            </div>
           </CardHeader>
           <CardContent>
             {isLoadingActivities ? (
