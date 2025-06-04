@@ -1,7 +1,7 @@
 
 "use client";
 
-import type { ReactNode } from "react";
+import type { ReactNode, ElementType } from "react";
 import Link from "next/link";
 import { usePathname, useRouter } from "next/navigation";
 import {
@@ -16,22 +16,49 @@ import {
   SidebarTrigger,
 } from "@/components/ui/sidebar";
 import { Button } from "@/components/ui/button";
-import { ShieldHalf, LogOut, Settings, UserCircle } from "lucide-react";
+import { 
+  ShieldHalf, 
+  LogOut, 
+  LayoutDashboard,
+  ListPlus,
+  History,
+  Receipt,
+  UserCircle,
+  Users,
+  BriefcaseBusiness,
+  FilePieChart,
+  Sparkles,
+  Settings as SettingsIcon, // Renamed to avoid conflict with Settings component
+  ShieldEllipsis,
+  ClipboardList
+} from "lucide-react";
 import { useAuth } from "@/context/AuthContext";
 import { Avatar, AvatarFallback, AvatarImage } from "@/components/ui/avatar";
 import { usePortalName } from '@/hooks/usePortalName';
+import type { NavItemConfig } from '@/config/dashboardNavs';
 
-interface NavItem {
-  href: string;
-  label: string;
-  icon: React.ElementType;
-  allowedRoles: Array<"client" | "admin">;
-}
 
 interface DashboardLayoutProps {
   children: ReactNode;
-  navItems: NavItem[];
+  navItems: NavItemConfig[];
 }
+
+const iconMap: { [key: string]: ElementType } = {
+  LayoutDashboard,
+  ListPlus,
+  History,
+  Receipt,
+  UserCircle,
+  Users,
+  BriefcaseBusiness,
+  FilePieChart,
+  Sparkles,
+  Settings: SettingsIcon, // Use renamed import
+  ShieldEllipsis,
+  ClipboardList,
+  ShieldHalf // Added for completeness, though not directly in navItems via string yet
+};
+
 
 export function DashboardLayout({ children, navItems }: DashboardLayoutProps) {
   const pathname = usePathname();
@@ -77,20 +104,23 @@ export function DashboardLayout({ children, navItems }: DashboardLayoutProps) {
           </SidebarHeader>
           <SidebarContent className="p-2 flex-grow">
             <SidebarMenu>
-              {filteredNavItems.map((item) => (
-                <SidebarMenuItem key={item.href}>
-                  <SidebarMenuButton
-                    asChild
-                    isActive={pathname === item.href || (item.href !== (user?.role === 'admin' ? "/admin/dashboard" : "/client/dashboard") && pathname.startsWith(item.href))}
-                    tooltip={{ children: item.label, side: 'left' }}
-                  >
-                    <Link href={item.href}>
-                      <item.icon className="h-5 w-5" />
-                      <span className="group-data-[collapsible=icon]:hidden">{item.label}</span>
-                    </Link>
-                  </SidebarMenuButton>
-                </SidebarMenuItem>
-              ))}
+              {filteredNavItems.map((item) => {
+                const IconComponent = iconMap[item.icon];
+                return (
+                  <SidebarMenuItem key={item.href}>
+                    <SidebarMenuButton
+                      asChild
+                      isActive={pathname === item.href || (item.href !== (user?.role === 'admin' ? "/admin/dashboard" : "/client/dashboard") && pathname.startsWith(item.href))}
+                      tooltip={{ children: item.label, side: 'left' }}
+                    >
+                      <Link href={item.href}>
+                        {IconComponent && <IconComponent className="h-5 w-5" />}
+                        <span className="group-data-[collapsible=icon]:hidden">{item.label}</span>
+                      </Link>
+                    </SidebarMenuButton>
+                  </SidebarMenuItem>
+                );
+              })}
             </SidebarMenu>
           </SidebarContent>
           <SidebarFooter className="p-4 border-t border-sidebar-border">
