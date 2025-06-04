@@ -6,7 +6,7 @@ import {
   History,
   Receipt,
   UserCircle,
-  Users,
+  Users, // For managing employees
   BriefcaseBusiness,
   FilePieChart,
   Sparkles,
@@ -18,7 +18,7 @@ import {
 export interface NavItemConfig {
   href: string;
   label: string;
-  icon: string; // Changed from React.ElementType to string
+  icon: string; 
   allowedRoles: Array<"client" | "admin">;
   subItems?: NavItemConfig[];
 }
@@ -37,10 +37,10 @@ export const adminNavItems: NavItemConfig[] = [
   { href: "/admin/services", label: "إدارة الخدمات", icon: "BriefcaseBusiness", allowedRoles: ["admin"] },
   { href: "/admin/service-requests", label: "طلبات الخدمة", icon: "ClipboardList", allowedRoles: ["admin"] },
   { href: "/admin/invoices", label: "إدارة الفواتير", icon: "Receipt", allowedRoles: ["admin"] },
+  { href: "/admin/employees", label: "إدارة الموظفين", icon: "Users", allowedRoles: ["admin"] },
   { href: "/admin/reports", label: "التقارير", icon: "FilePieChart", allowedRoles: ["admin"] },
   { href: "/admin/ai-tool", label: "أداة الذكاء الاصطناعي", icon: "Sparkles", allowedRoles: ["admin"] },
   { href: "/admin/settings", label: "الإعدادات", icon: "Settings", allowedRoles: ["admin"] },
 ];
 
 export const allNavItems: NavItemConfig[] = [...clientNavItems, ...adminNavItems];
-

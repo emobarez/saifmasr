@@ -1,4 +1,3 @@
-
 rules_version = '2';
 
 service cloud.firestore {
@@ -6,58 +5,50 @@ service cloud.firestore {
 
     // Helper function to check if the user is an admin
     function isAdmin() {
-      return request.auth.uid != null && (
-        request.auth.token.email == 'admin@saifmasr.com' ||
-        request.auth.token.email == 'admin@example.com' // For testing/development
-      );
+      return request.auth.token.email == "admin@saifmasr.com" || request.auth.token.email == "admin@example.com";
     }
 
-    // Clients collection
+    // Clients: Admins can manage all, clients can only manage their own.
     match /clients/{clientId} {
-      // Admins can read and write any client document
       allow read, write: if isAdmin();
-      // Authenticated users can read their own client document
-      allow get: if request.auth.uid == clientId;
-      // Allow client creation if user is authenticated (typically during signup)
-      // More specific rules might be needed if creation is restricted
-      allow create: if request.auth.uid != null;
-      // Clients can update their own document (e.g. profile updates)
-      allow update: if request.auth.uid == clientId;
+      allow read, update: if request.auth.uid == clientId;
     }
 
-    // Services collection
+    // Services: Admins can manage, all authenticated users can read.
     match /services/{serviceId} {
-      // Admins can create, read, update, delete services
-      allow read, write: if isAdmin();
-      // Clients can read services (e.g., to display on a public page or in their portal)
-      allow get, list: if request.auth.uid != null;
+      allow read: if request.auth != null;
+      allow write: if isAdmin();
+    }
+    match /services/{serviceId}/faqs/{faqId} {
+       allow read: if request.auth != null;
+       allow write: if isAdmin(); // Or more specific if needed
     }
 
-    // Service Requests collection
+    // Service Requests:
+    // Admins can read all and update status.
+    // Clients can create for themselves and read their own.
     match /serviceRequests/{requestId} {
-      // Admins can read and update any service request
       allow read, update: if isAdmin();
-      // Authenticated users can create service requests for themselves
       allow create: if request.auth.uid == request.resource.data.clientId;
-      // Authenticated users can read their own service requests
-      allow get, list: if request.auth.uid == resource.data.clientId;
+      allow read: if request.auth.uid == resource.data.clientId;
     }
 
-    // System Settings collection
-    match /systemSettings/{settingId} {
-      // Admins can read and write system settings
-      allow read, write: if isAdmin();
-      // Authenticated users can read system settings (e.g. for portalName)
-      allow get: if request.auth.uid != null;
-    }
-
-    // Invoices collection
+    // Invoices:
+    // Admins can manage all.
+    // Clients can read their own.
     match /invoices/{invoiceId} {
-      // Admins can read and write any invoice
       allow read, write: if isAdmin();
+      allow read: if request.auth.uid == resource.data.clientId;
+    }
 
-      // Clients can read (get, list) their own invoices
-      allow get, list: if request.auth.uid == resource.data.clientId && request.auth.uid != null;
+    // System Settings: Only admins can read/write
+    match /systemSettings/{settingId} {
+      allow read, write: if isAdmin();
+    }
+
+    // Employees: Only admins can manage employees
+    match /employees/{employeeId} {
+      allow read, write, create, update, delete: if isAdmin();
     }
 
     // Default deny all other access
