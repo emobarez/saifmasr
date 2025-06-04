@@ -10,19 +10,25 @@ import { useAuth } from "@/context/AuthContext";
 import { db } from "@/lib/firebase";
 import { collection, query, where, getDocs, orderBy, Timestamp } from "firebase/firestore";
 import { useToast } from "@/hooks/use-toast";
+import Link from "next/link";
+import { ServiceRequestDetailsDialog } from "@/components/client/ServiceRequestDetailsDialog";
 
 interface ServiceRequest {
   id: string;
   serviceType: string;
   requestTitle: string;
+  requestDetails: string; // Added for details dialog
   status: "جديد" | "قيد المعالجة" | "مكتمل" | "ملغى";
   createdAt: Timestamp;
-  // Add other fields you might want to display from the serviceRequest document
+  attachmentURL?: string;
+  attachmentFilename?: string;
 }
 
 export default function ClientTrackingPage() {
   const [requests, setRequests] = useState<ServiceRequest[]>([]);
   const [isLoading, setIsLoading] = useState(true);
+  const [selectedRequest, setSelectedRequest] = useState<ServiceRequest | null>(null);
+  const [isDetailsDialogOpen, setIsDetailsDialogOpen] = useState(false);
   const { user } = useAuth();
   const { toast } = useToast();
 
@@ -68,7 +74,7 @@ export default function ClientTrackingPage() {
     switch (status) {
       case "جديد": return "default";
       case "قيد المعالجة": return "secondary";
-      case "مكتمل": return "outline"; // Using outline for 'completed'
+      case "مكتمل": return "outline";
       case "ملغى": return "destructive";
       default: return "default";
     }
@@ -85,6 +91,10 @@ export default function ClientTrackingPage() {
     return types[typeKey] || typeKey;
   }
 
+  const handleViewDetails = (request: ServiceRequest) => {
+    setSelectedRequest(request);
+    setIsDetailsDialogOpen(true);
+  };
 
   return (
     <div className="space-y-6">
@@ -117,7 +127,7 @@ export default function ClientTrackingPage() {
                       <Badge variant={getStatusVariant(request.status)}>{request.status}</Badge>
                     </TableCell>
                     <TableCell>
-                      <Button variant="ghost" size="icon" aria-label="عرض التفاصيل" onClick={() => alert(`تفاصيل الطلب ${request.id} (لم يتم التنفيذ بعد)`)}>
+                      <Button variant="ghost" size="icon" aria-label="عرض التفاصيل" onClick={() => handleViewDetails(request)}>
                         <Eye className="h-5 w-5" />
                       </Button>
                     </TableCell>
@@ -130,6 +140,14 @@ export default function ClientTrackingPage() {
           )}
         </CardContent>
       </Card>
+
+      {selectedRequest && (
+        <ServiceRequestDetailsDialog
+          request={selectedRequest}
+          isOpen={isDetailsDialogOpen}
+          onOpenChange={setIsDetailsDialogOpen}
+        />
+      )}
     </div>
   );
 }
