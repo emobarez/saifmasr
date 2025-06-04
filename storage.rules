@@ -9,15 +9,15 @@ service firebase.storage {
       // and the file size is less than 5MB (5 * 1024 * 1024 bytes)
       allow write: if request.auth != null && request.auth.uid == userId && request.resource.size < 5 * 1024 * 1024;
 
-      // Allow read for any authenticated user.
-      // You might want to restrict this further, e.g., only the uploader or admins.
-      // For download URLs to work easily for the client and admin, this is a common starting point.
+      // Allow read for any authenticated user for files they might have uploaded or admins need to see.
+      // This allows download URLs (which are typically publicly readable if not signed) to function
+      // for both the client who uploaded and an admin viewing the request.
       allow read: if request.auth != null;
     }
 
-    // Optional: Default deny all other paths if not explicitly matched
-    // match /{allPaths=**} {
-    //   allow read, write: if false;
-    // }
+    // Fallback: Default deny all other paths if not explicitly matched
+    match /{allPaths=**} {
+      allow read, write: if false;
+    }
   }
 }
