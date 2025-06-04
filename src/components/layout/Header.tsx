@@ -2,11 +2,12 @@
 "use client";
 import Link from "next/link";
 import { Button } from "@/components/ui/button";
-import { Sheet, SheetContent, SheetTrigger, SheetTitle } from "@/components/ui/sheet";
+import { Sheet, SheetContent, SheetTrigger, SheetTitle, SheetClose } from "@/components/ui/sheet";
 import { Menu, ShieldHalf } from "lucide-react";
 import { useAuth } from "@/context/AuthContext";
 import { useRouter } from "next/navigation";
 import { usePortalName } from '@/hooks/usePortalName';
+import { useState } from "react"; // Added useState
 
 const navLinks = [
   { href: "/#services", label: "الخدمات" },
@@ -18,6 +19,7 @@ export function Header() {
   const { user, signOut, loading: authLoading } = useAuth();
   const router = useRouter();
   const { portalName: dynamicPortalName, isLoadingPortalName } = usePortalName();
+  const [isMobileMenuOpen, setIsMobileMenuOpen] = useState(false); // Added state for mobile menu
 
   const handleAuthAction = () => {
     if (user) {
@@ -37,6 +39,10 @@ export function Header() {
   }
 
   const displayPortalName = isLoadingPortalName ? "..." : dynamicPortalName;
+
+  const handleMobileLinkClick = () => {
+    setIsMobileMenuOpen(false); // Close menu on link click
+  };
 
   return (
     <header className="sticky top-0 z-50 w-full border-b border-border/40 bg-background/95 backdrop-blur supports-[backdrop-filter]:bg-background/60">
@@ -63,19 +69,19 @@ export function Header() {
             {getAuthButtonLabel()}
           </Button>
           {user && !authLoading && (
-            <Button onClick={signOut} variant="outline" size="sm">تسجيل الخروج</Button>
+            <Button onClick={() => { signOut(); setIsMobileMenuOpen(false); }} variant="outline" size="sm">تسجيل الخروج</Button>
           )}
-          <Sheet>
+          <Sheet open={isMobileMenuOpen} onOpenChange={setIsMobileMenuOpen}> {/* Control Sheet with state */}
             <SheetTrigger asChild>
-              <Button variant="outline" size="icon" className="md:hidden">
+              <Button variant="outline" size="icon" className="md:hidden" onClick={() => setIsMobileMenuOpen(true)}>
                 <Menu className="h-5 w-5" />
                 <span className="sr-only">فتح القائمة</span>
               </Button>
             </SheetTrigger>
-            <SheetContent side="left" className="font-body">
+            <SheetContent side="left" className="font-body"> {/* Changed side to left as per image */}
               <SheetTitle className="sr-only">القائمة</SheetTitle>
               <nav className="grid gap-6 text-lg font-medium mt-8">
-                <Link href="/" className="flex items-center gap-2 text-lg font-semibold text-primary mb-4">
+                <Link href="/" className="flex items-center gap-2 text-lg font-semibold text-primary mb-4" onClick={handleMobileLinkClick}>
                    <ShieldHalf className="h-6 w-6 text-primary" />
                    <span>{displayPortalName}</span>
                 </Link>
@@ -84,6 +90,7 @@ export function Header() {
                     key={link.href}
                     href={link.href}
                     className="text-foreground/80 transition-colors hover:text-foreground"
+                    onClick={handleMobileLinkClick} // Add onClick handler here
                   >
                     {link.label}
                   </Link>
