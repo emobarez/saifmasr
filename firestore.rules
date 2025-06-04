@@ -13,7 +13,7 @@ service cloud.firestore {
     }
 
     // System Settings:
-    // - Anyone can read (for portal name display even for unauthenticated users)
+    // - Anyone can read (for portal name display)
     // - Admins can write
     match /systemSettings/general {
       allow read: if true;
@@ -30,7 +30,7 @@ service cloud.firestore {
     // - Admins can create, update, delete services.
     match /services/{serviceId} {
       allow read: if request.auth != null;
-      allow write: if isAdmin(); // This covers create, update, delete for admins
+      allow write: if isAdmin();
     }
 
     // Service Requests collection:
@@ -39,6 +39,8 @@ service cloud.firestore {
       allow create: if request.auth != null && request.resource.data.clientId == request.auth.uid;
 
       // Users can read/update their own requests. Admins can read/update any request.
+      // For update, ensure only certain fields can be updated by clients vs admins if needed.
+      // Currently, client can update any field on their own request if this rule passes.
       allow read, update: if request.auth != null && (
                            (resource.data.clientId == request.auth.uid) ||
                            isAdmin()
@@ -48,7 +50,7 @@ service cloud.firestore {
     }
 
     // Fallback: Deny all other access to prevent accidental exposure.
-    // This rule MUST be the last one in this 'match /databases/{database}/documents' block.
+    // This rule should be the LAST rule within the "match /databases/{database}/documents" block.
     match /{document=**} {
       allow read, write: if false;
     }
