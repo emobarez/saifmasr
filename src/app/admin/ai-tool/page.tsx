@@ -1,18 +1,26 @@
 
 "use client";
 
-import { useState } from "react";
+import { useState, useEffect } from "react";
 import { Button } from "@/components/ui/button";
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card";
 import { Textarea } from "@/components/ui/textarea";
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
-import { Sparkles, Lightbulb, Loader2, FileText } from "lucide-react";
+import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
+import { Sparkles, Lightbulb, Loader2, FileText, Save } from "lucide-react";
 import { generateReportSummary, GenerateReportSummaryOutput } from "@/ai/flows/generate-report-summary";
 import { suggestReportImprovements, SuggestReportImprovementsOutput } from "@/ai/flows/suggest-report-improvements";
 import { generateReportSection, GenerateReportSectionInput, GenerateReportSectionOutput } from "@/ai/flows/generate-report-section";
 import { useToast } from "@/hooks/use-toast";
 import { Accordion, AccordionContent, AccordionItem, AccordionTrigger } from "@/components/ui/accordion";
+import { db } from "@/lib/firebase";
+import { collection, getDocs, doc, updateDoc, getDoc } from "firebase/firestore";
+
+interface ReportOption {
+  id: string;
+  title: string;
+}
 
 export default function AiReportToolPage() {
   const [reportText, setReportText] = useState("");
@@ -26,7 +34,28 @@ export default function AiReportToolPage() {
   const [generatedSection, setGeneratedSection] = useState<GenerateReportSectionOutput | null>(null);
   const [isLoadingSection, setIsLoadingSection] = useState(false);
 
+  const [reports, setReports] = useState<ReportOption[]>([]);
+  const [selectedReportId, setSelectedReportId] = useState<string | null>(null);
+  const [isSavingSection, setIsSavingSection] = useState(false);
+
   const { toast } = useToast();
+
+  useEffect(() => {
+    const fetchReports = async () => {
+      try {
+        const querySnapshot = await getDocs(collection(db, "reports"));
+        const reportOptions = querySnapshot.docs.map(doc => ({
+          id: doc.id,
+          title: doc.data().title as string,
+        }));
+        setReports(reportOptions);
+      } catch (error) {
+        console.error("Error fetching reports:", error);
+        toast({ title: "خطأ", description: "لم نتمكن من تحميل قائمة التقارير.", variant: "destructive" });
+      }
+    };
+    fetchReports();
+  }, [toast]);
 
   const handleGenerateSummary = async () => {
     if (!reportText.trim()) {
@@ -91,6 +120,34 @@ export default function AiReportToolPage() {
     }
   };
 
+  const handleSaveSectionToReport = async () => {
+    if (!selectedReportId || !generatedSection?.generatedSectionText) {
+      toast({ title: "خطأ", description: "يرجى تحديد تقرير وإنشاء قسم لحفظه.", variant: "destructive" });
+      return;
+    }
+    setIsSavingSection(true);
+    try {
+      const reportRef = doc(db, "reports", selectedReportId);
+      const reportSnap = await getDoc(reportRef);
+      if (!reportSnap.exists()) {
+        toast({ title: "خطأ", description: "التقرير المحدد غير موجود.", variant: "destructive" });
+        return;
+      }
+      const currentContent = reportSnap.data()?.content || "";
+      const newContent = currentContent 
+        ? `${currentContent}\n\n---\n\n${generatedSection.generatedSectionText}` 
+        : generatedSection.generatedSectionText;
+      
+      await updateDoc(reportRef, { content: newContent });
+      toast({ title: "تم الحفظ بنجاح", description: "تم حفظ القسم في التقرير المحدد." });
+    } catch (error) {
+      console.error("Error saving section to report:", error);
+      toast({ title: "خطأ في الحفظ", description: "حدث خطأ أثناء محاولة حفظ القسم في التقرير.", variant: "destructive" });
+    } finally {
+      setIsSavingSection(false);
+    }
+  };
+
 
   return (
     <div className="space-y-8">
@@ -117,11 +174,11 @@ export default function AiReportToolPage() {
             />
           </div>
           <div className="flex flex-col sm:flex-row gap-4">
-            <Button onClick={handleGenerateSummary} disabled={isLoadingSummary || isLoadingImprovements || isLoadingSection} className="w-full sm:w-auto">
+            <Button onClick={handleGenerateSummary} disabled={isLoadingSummary || isLoadingImprovements || isLoadingSection || isSavingSection} className="w-full sm:w-auto">
               {isLoadingSummary ? <Loader2 className="me-2 h-5 w-5 animate-spin" /> : <Sparkles className="me-2 h-5 w-5" />}
               إنشاء ملخص ورؤى
             </Button>
-            <Button onClick={handleSuggestImprovements} variant="outline" disabled={isLoadingSummary || isLoadingImprovements || isLoadingSection || (!reportText && !summaryResult)} className="w-full sm:w-auto">
+            <Button onClick={handleSuggestImprovements} variant="outline" disabled={isLoadingSummary || isLoadingImprovements || isLoadingSection || isSavingSection || (!reportText && !summaryResult)} className="w-full sm:w-auto">
               {isLoadingImprovements ? <Loader2 className="me-2 h-5 w-5 animate-spin" /> : <Lightbulb className="me-2 h-5 w-5" />}
               اقتراح تحسينات
             </Button>
@@ -175,7 +232,7 @@ export default function AiReportToolPage() {
             <CardTitle className="font-headline text-2xl text-primary">إنشاء قسم تقرير بالذكاء الاصطناعي</CardTitle>
           </div>
           <CardDescription>
-            قم بتوفير موضوع وكلمات مفتاحية (اختياري) لإنشاء مسودة قسم لتقريرك.
+            قم بتوفير موضوع وكلمات مفتاحية (اختياري) لإنشاء مسودة قسم لتقريرك. يمكنك حفظ القسم المنشأ في أحد التقارير الموجودة.
           </CardDescription>
         </CardHeader>
         <CardContent className="space-y-6">
@@ -187,6 +244,7 @@ export default function AiReportToolPage() {
               onChange={(e) => setSectionTopic(e.target.value)}
               placeholder="مثال: تحليل المخاطر الأمنية للربع الحالي"
               className="border-2 focus:border-primary transition-colors"
+              disabled={isLoadingSummary || isLoadingImprovements || isLoadingSection || isSavingSection}
             />
           </div>
           <div>
@@ -197,12 +255,42 @@ export default function AiReportToolPage() {
               onChange={(e) => setSectionKeywords(e.target.value)}
               placeholder="مثال: الأمن السيبراني، الهندسة الاجتماعية، تحديثات الأنظمة"
               className="border-2 focus:border-primary transition-colors"
+              disabled={isLoadingSummary || isLoadingImprovements || isLoadingSection || isSavingSection}
             />
           </div>
-          <Button onClick={handleGenerateSection} disabled={isLoadingSummary || isLoadingImprovements || isLoadingSection} className="w-full sm:w-auto">
-            {isLoadingSection ? <Loader2 className="me-2 h-5 w-5 animate-spin" /> : <FileText className="me-2 h-5 w-5" />}
-            إنشاء قسم التقرير
-          </Button>
+           <div>
+            <Label htmlFor="selectReport" className="text-lg font-medium mb-2 block">اختر تقريرًا لحفظ القسم فيه (اختياري)</Label>
+            <Select 
+              onValueChange={setSelectedReportId} 
+              value={selectedReportId || undefined}
+              dir="rtl"
+              disabled={isLoadingSummary || isLoadingImprovements || isLoadingSection || isSavingSection || reports.length === 0}
+            >
+              <SelectTrigger id="selectReport" className="w-full">
+                <SelectValue placeholder={reports.length === 0 ? "لا توجد تقارير متاحة" : "اختر تقريرًا..."} />
+              </SelectTrigger>
+              <SelectContent>
+                {reports.map(report => (
+                  <SelectItem key={report.id} value={report.id}>{report.title}</SelectItem>
+                ))}
+              </SelectContent>
+            </Select>
+          </div>
+          <div className="flex flex-col sm:flex-row gap-4">
+            <Button onClick={handleGenerateSection} disabled={isLoadingSummary || isLoadingImprovements || isLoadingSection || isSavingSection} className="w-full sm:w-auto">
+              {isLoadingSection ? <Loader2 className="me-2 h-5 w-5 animate-spin" /> : <FileText className="me-2 h-5 w-5" />}
+              إنشاء قسم التقرير
+            </Button>
+             <Button 
+                onClick={handleSaveSectionToReport} 
+                disabled={!selectedReportId || !generatedSection || isLoadingSummary || isLoadingImprovements || isLoadingSection || isSavingSection} 
+                variant="outline"
+                className="w-full sm:w-auto"
+              >
+              {isSavingSection ? <Loader2 className="me-2 h-5 w-5 animate-spin" /> : <Save className="me-2 h-5 w-5" />}
+              حفظ القسم في التقرير المحدد
+            </Button>
+          </div>
         </CardContent>
       </Card>
 
@@ -220,3 +308,4 @@ export default function AiReportToolPage() {
     </div>
   );
 }
+
