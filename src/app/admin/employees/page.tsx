@@ -133,6 +133,7 @@ export default function AdminEmployeesPage() {
       await updateDoc(employeeRef, {
         ...data,
         joinDate: Timestamp.fromDate(data.joinDate),
+        // We don't update createdAt on edit
       });
       toast({ title: "تم التعديل بنجاح", description: `تم تعديل بيانات الموظف ${data.name}.` });
       setIsEditEmployeeDialogOpen(false);
@@ -148,7 +149,11 @@ export default function AdminEmployeesPage() {
     setEditingEmployee(employee);
     editEmployeeForm.reset({
       ...employee,
-      joinDate: employee.joinDate instanceof Timestamp ? employee.joinDate.toDate() : employee.joinDate,
+      joinDate: employee.joinDate instanceof Timestamp ? employee.joinDate.toDate() : new Date(employee.joinDate),
+      // Ensure all optional fields are at least empty strings for the form
+      nationalId: employee.nationalId || "",
+      address: employee.address || "",
+      profileImageUrl: employee.profileImageUrl || "",
     });
     setIsEditEmployeeDialogOpen(true);
   };
@@ -272,7 +277,7 @@ export default function AdminEmployeesPage() {
           </div>
           <Dialog open={isAddEmployeeDialogOpen} onOpenChange={setIsAddEmployeeDialogOpen}>
             <DialogTrigger asChild>
-                <Button className="mt-4 md:mt-0" onClick={() => addEmployeeForm.reset()}>
+                <Button className="mt-4 md:mt-0" onClick={() => addEmployeeForm.reset({ joinDate: new Date(), status: "نشط", name: "", employeeId: "", jobTitle: "", department: "", phone: "", email: "", nationalId: "", address: "", profileImageUrl: "" })}> {/* Reset with defaults explicitly */}
                     <PlusCircle className="me-2 h-5 w-5" />
                     إضافة موظف جديد
                 </Button>
@@ -287,7 +292,7 @@ export default function AdminEmployeesPage() {
               <Form {...addEmployeeForm}>
                 <form onSubmit={addEmployeeForm.handleSubmit(handleAddEmployeeSubmit)} className="space-y-4 py-4 max-h-[70vh] overflow-y-auto px-2">
                   {renderEmployeeFormFields(addEmployeeForm)}
-                  <DialogFooter className="pt-4">
+                  <DialogFooter className="pt-4 sticky bottom-0 bg-card pb-4">
                     <Button type="button" variant="outline" onClick={() => setIsAddEmployeeDialogOpen(false)} disabled={addEmployeeForm.formState.isSubmitting}>إلغاء</Button>
                     <Button type="submit" disabled={addEmployeeForm.formState.isSubmitting}>
                       {addEmployeeForm.formState.isSubmitting && <Loader2 className="me-2 h-4 w-4 animate-spin" />}
@@ -365,7 +370,7 @@ export default function AdminEmployeesPage() {
             <Form {...editEmployeeForm}>
               <form onSubmit={editEmployeeForm.handleSubmit(handleEditEmployeeSubmit)} className="space-y-4 py-4 max-h-[70vh] overflow-y-auto px-2">
                 {renderEmployeeFormFields(editEmployeeForm)}
-                <DialogFooter className="pt-4">
+                <DialogFooter className="pt-4 sticky bottom-0 bg-card pb-4">
                   <Button type="button" variant="outline" onClick={() => setIsEditEmployeeDialogOpen(false)} disabled={editEmployeeForm.formState.isSubmitting}>إلغاء</Button>
                   <Button type="submit" disabled={editEmployeeForm.formState.isSubmitting}>
                     {editEmployeeForm.formState.isSubmitting && <Loader2 className="me-2 h-4 w-4 animate-spin" />}
@@ -380,6 +385,8 @@ export default function AdminEmployeesPage() {
     </div>
   );
 }
+    
+
     
 
     
