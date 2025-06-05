@@ -23,6 +23,8 @@ import { db } from "@/lib/firebase";
 import { collection, addDoc, getDocs, serverTimestamp, Timestamp, query, orderBy, deleteDoc, doc, updateDoc } from "firebase/firestore";
 import { cn } from "@/lib/utils";
 import { InvoiceDetailsDialog } from "@/components/admin/InvoiceDetailsDialog";
+import { useAuth } from "@/context/AuthContext";
+import { logActivity } from "@/lib/activityLogger";
 
 interface Invoice {
   id: string;
@@ -64,6 +66,7 @@ export default function AdminInvoicesPage() {
   const [isViewDetailsDialogOpen, setIsViewDetailsDialogOpen] = useState(false);
   const [searchTerm, setSearchTerm] = useState("");
   const { toast } = useToast();
+  const { user: adminUser } = useAuth();
 
   const [clients, setClients] = useState<ClientOption[]>([]);
 
@@ -124,7 +127,7 @@ export default function AdminInvoicesPage() {
     }
 
     try {
-      await addDoc(collection(db, "invoices"), {
+      const docRef = await addDoc(collection(db, "invoices"), {
         ...data,
         clientName: selectedClient.name, 
         issueDate: Timestamp.fromDate(data.issueDate),
@@ -132,6 +135,17 @@ export default function AdminInvoicesPage() {
         createdAt: serverTimestamp(),
       });
       toast({ title: "تم بنجاح", description: `تمت إضافة الفاتورة رقم ${data.invoiceNumber} بنجاح.` });
+      
+      if (adminUser) {
+        await logActivity({
+          actionType: "INVOICE_CREATED",
+          description: `Admin ${adminUser.displayName || adminUser.email} created invoice: ${data.invoiceNumber} for client ${selectedClient.name}.`,
+          actor: { id: adminUser.uid, role: adminUser.role, name: adminUser.displayName },
+          target: { id: docRef.id, type: "invoice", name: data.invoiceNumber },
+          details: { clientId: selectedClient.id, clientName: selectedClient.name, totalAmount: data.totalAmount, status: data.status },
+        });
+      }
+
       addInvoiceForm.reset();
       setIsAddInvoiceDialogOpen(false);
       fetchInvoices(); 
@@ -154,11 +168,22 @@ export default function AdminInvoicesPage() {
       const invoiceRef = doc(db, "invoices", editingInvoice.id);
       await updateDoc(invoiceRef, {
         ...data,
-        clientName: selectedClient.name, // Ensure clientName is updated if clientId changes
+        clientName: selectedClient.name, 
         issueDate: Timestamp.fromDate(data.issueDate),
         dueDate: Timestamp.fromDate(data.dueDate),
       });
       toast({ title: "تم التعديل بنجاح", description: `تم تعديل الفاتورة رقم ${data.invoiceNumber}.` });
+
+      if (adminUser) {
+        await logActivity({
+          actionType: "INVOICE_UPDATED",
+          description: `Admin ${adminUser.displayName || adminUser.email} updated invoice: ${data.invoiceNumber} for client ${selectedClient.name}.`,
+          actor: { id: adminUser.uid, role: adminUser.role, name: adminUser.displayName },
+          target: { id: editingInvoice.id, type: "invoice", name: data.invoiceNumber },
+          details: { clientId: selectedClient.id, clientName: selectedClient.name, totalAmount: data.totalAmount, status: data.status },
+        });
+      }
+
       setIsEditInvoiceDialogOpen(false);
       setEditingInvoice(null);
       fetchInvoices();
@@ -190,8 +215,19 @@ export default function AdminInvoicesPage() {
   const handleDeleteInvoice = async (invoiceId: string, invoiceNumber: string) => { 
     if (!window.confirm(`هل أنت متأكد أنك تريد حذف الفاتورة رقم ${invoiceNumber}؟ هذا الإجراء لا يمكن التراجع عنه.`)) return;
     try {
+      const deletedInvoice = invoices.find(inv => inv.id === invoiceId); // Get details before deleting
       await deleteDoc(doc(db, "invoices", invoiceId));
       toast({ title: "تم الحذف", description: `تم حذف الفاتورة رقم ${invoiceNumber} بنجاح.` });
+
+      if (adminUser && deletedInvoice) {
+        await logActivity({
+          actionType: "INVOICE_DELETED",
+          description: `Admin ${adminUser.displayName || adminUser.email} deleted invoice: ${invoiceNumber} for client ${deletedInvoice.clientName}.`,
+          actor: { id: adminUser.uid, role: adminUser.role, name: adminUser.displayName },
+          target: { id: invoiceId, type: "invoice", name: invoiceNumber },
+          details: { clientName: deletedInvoice.clientName, totalAmount: deletedInvoice.totalAmount },
+        });
+      }
       fetchInvoices(); 
     } catch (error) {
       console.error("Error deleting invoice:", error);
@@ -263,7 +299,7 @@ export default function AdminInvoicesPage() {
         render={({ field }) => (
           <FormItem>
             <FormLabel>رقم الفاتورة</FormLabel>
-            <FormControl><Input placeholder="مثال: INV-2024-001" {...field} /></FormControl> {/* Allow editing invoice number for now */}
+            <FormControl><Input placeholder="مثال: INV-2024-001" {...field} /></FormControl> 
             <FormMessage />
           </FormItem>
         )}

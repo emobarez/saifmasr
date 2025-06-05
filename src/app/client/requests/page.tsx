@@ -11,10 +11,11 @@ import { zodResolver } from "@hookform/resolvers/zod";
 import * as z from "zod";
 import { Form, FormControl, FormDescription, FormField, FormItem, FormLabel, FormMessage } from "@/components/ui/form";
 import { useToast } from "@/hooks/use-toast";
-import { db, storage } from "@/lib/firebase"; // Import db and storage
+import { db, storage } from "@/lib/firebase"; 
 import { collection, addDoc, serverTimestamp } from "firebase/firestore"; 
-import { ref, uploadBytesResumable, getDownloadURL } from "firebase/storage"; // Import Storage functions
+import { ref, uploadBytesResumable, getDownloadURL } from "firebase/storage"; 
 import { useAuth } from "@/context/AuthContext";
+import { logActivity } from "@/lib/activityLogger";
 
 const serviceRequestSchema = z.object({
   serviceType: z.string({ required_error: "يرجى اختيار نوع الخدمة" }).min(1, "يرجى اختيار نوع الخدمة"),
@@ -52,9 +53,10 @@ export default function ClientServiceRequestsPage() {
 
     let attachmentURL: string | null = null;
     let originalFilename: string | null = null;
+    let docRefId: string | null = null; // To store the doc ID for logging
 
     try {
-      form.control.handleSubmit // to ensure isSubmitting is true
+      form.control.handleSubmit 
       
       const file = data.attachments?.[0] as File | undefined;
 
@@ -68,7 +70,6 @@ export default function ClientServiceRequestsPage() {
         await new Promise<void>((resolve, reject) => {
           uploadTask.on('state_changed',
             (snapshot) => {
-              // Optional: handle progress
             },
             (error) => {
               console.error("Upload failed:", error);
@@ -86,7 +87,7 @@ export default function ClientServiceRequestsPage() {
 
       const { attachments, ...requestDataToSave } = data;
 
-      await addDoc(collection(db, "serviceRequests"), {
+      const docRef = await addDoc(collection(db, "serviceRequests"), {
         ...requestDataToSave,
         clientId: user.uid,
         clientName: user.displayName || "غير متوفر", 
@@ -96,12 +97,22 @@ export default function ClientServiceRequestsPage() {
         ...(attachmentURL && { attachmentURL }),
         ...(originalFilename && { attachmentFilename: originalFilename }),
       });
+      docRefId = docRef.id; // Store doc ID
 
       toast({
         title: "تم إرسال الطلب بنجاح",
         description: "سنقوم بمراجعة طلبك والتواصل معك قريباً.",
       });
-      reset(); // Reset form fields, including file input
+      
+      await logActivity({
+        actionType: "SERVICE_REQUEST_SUBMITTED",
+        description: `Client ${user.displayName || user.email} submitted service request: ${data.requestTitle}.`,
+        actor: { id: user.uid, role: "client", name: user.displayName },
+        target: { id: docRefId, type: "serviceRequest", name: data.requestTitle },
+        details: { serviceType: data.serviceType, hasAttachment: !!attachmentURL },
+      });
+
+      reset(); 
     } catch (error: any) {
       console.error("Error submitting service request:", error);
       let errorMessage = "حدث خطأ أثناء محاولة إرسال طلبك. يرجى المحاولة مرة أخرى.";
@@ -191,7 +202,7 @@ export default function ClientServiceRequestsPage() {
                         onChange={(e) => onChange(e.target.files)} 
                         {...restField}
                         disabled={isSubmitting}
-                        className="pt-2" // Added padding for better visual alignment
+                        className="pt-2" 
                       />
                     </FormControl>
                     <FormDescription>

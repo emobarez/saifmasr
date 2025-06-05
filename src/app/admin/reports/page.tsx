@@ -18,23 +18,24 @@ import { useToast } from "@/hooks/use-toast";
 import { db } from "@/lib/firebase";
 import { collection, addDoc, getDocs, serverTimestamp, Timestamp, query, orderBy, deleteDoc, doc, updateDoc } from "firebase/firestore";
 import Link from "next/link";
-import { ReportDetailsDialog } from "@/components/admin/ReportDetailsDialog"; // New import
+import { ReportDetailsDialog } from "@/components/admin/ReportDetailsDialog"; 
+import { useAuth } from "@/context/AuthContext";
+import { logActivity } from "@/lib/activityLogger";
 
 interface Report {
   id: string;
   title: string;
   description: string;
-  content: string; // Added content field
+  content: string; 
   status: "مسودة" | "قيد المراجعة" | "منشور" | "مؤرشف";
   createdAt: Timestamp;
   updatedAt: Timestamp;
-  // createdBy: string; // Future enhancement
 }
 
 const reportSchema = z.object({
   title: z.string().min(3, { message: "عنوان التقرير يجب أن لا يقل عن 3 أحرف" }),
   description: z.string().min(10, { message: "وصف التقرير يجب أن لا يقل عن 10 أحرف" }).max(500, { message: "وصف التقرير يجب أن لا يتجاوز 500 حرف" }),
-  content: z.string().optional(), // Content is optional for now, can be filled later
+  content: z.string().optional(), 
   status: z.enum(["مسودة", "قيد المراجعة", "منشور", "مؤرشف"], { required_error: "يرجى اختيار حالة التقرير" }),
 });
 
@@ -46,10 +47,11 @@ export default function AdminReportsPage() {
   const [isAddReportDialogOpen, setIsAddReportDialogOpen] = useState(false);
   const [isEditReportDialogOpen, setIsEditReportDialogOpen] = useState(false);
   const [editingReport, setEditingReport] = useState<Report | null>(null);
-  const [viewingReport, setViewingReport] = useState<Report | null>(null); // State for viewing report
-  const [isViewReportDialogOpen, setIsViewReportDialogOpen] = useState(false); // State for view dialog
+  const [viewingReport, setViewingReport] = useState<Report | null>(null); 
+  const [isViewReportDialogOpen, setIsViewReportDialogOpen] = useState(false); 
   const [searchTerm, setSearchTerm] = useState("");
   const { toast } = useToast();
+  const { user: adminUser } = useAuth();
 
   const fetchReports = async () => {
     setIsLoadingReports(true);
@@ -81,12 +83,23 @@ export default function AdminReportsPage() {
 
   const handleAddReportSubmit = async (data: ReportFormValues) => {
     try {
-      await addDoc(collection(db, "reports"), {
+      const docRef = await addDoc(collection(db, "reports"), {
         ...data,
         createdAt: serverTimestamp(),
         updatedAt: serverTimestamp(),
       });
       toast({ title: "تم بنجاح", description: `تم إنشاء التقرير "${data.title}" بنجاح.` });
+
+      if (adminUser) {
+        await logActivity({
+          actionType: "REPORT_CREATED",
+          description: `Admin ${adminUser.displayName || adminUser.email} created report: ${data.title}.`,
+          actor: { id: adminUser.uid, role: adminUser.role, name: adminUser.displayName },
+          target: { id: docRef.id, type: "report", name: data.title },
+          details: { status: data.status },
+        });
+      }
+
       addReportForm.reset();
       setIsAddReportDialogOpen(false);
       fetchReports(); 
@@ -105,6 +118,17 @@ export default function AdminReportsPage() {
         updatedAt: serverTimestamp(),
       });
       toast({ title: "تم التعديل بنجاح", description: `تم تعديل بيانات التقرير "${data.title}".` });
+
+      if (adminUser) {
+        await logActivity({
+          actionType: "REPORT_UPDATED",
+          description: `Admin ${adminUser.displayName || adminUser.email} updated report: ${data.title}.`,
+          actor: { id: adminUser.uid, role: adminUser.role, name: adminUser.displayName },
+          target: { id: editingReport.id, type: "report", name: data.title },
+          details: { status: data.status },
+        });
+      }
+
       setIsEditReportDialogOpen(false);
       setEditingReport(null);
       fetchReports();
@@ -119,7 +143,7 @@ export default function AdminReportsPage() {
     editReportForm.reset({
       title: report.title,
       description: report.description,
-      content: report.content || "", // Ensure content is at least an empty string
+      content: report.content || "", 
       status: report.status,
     });
     setIsEditReportDialogOpen(true);
@@ -135,6 +159,15 @@ export default function AdminReportsPage() {
     try {
       await deleteDoc(doc(db, "reports", reportId));
       toast({ title: "تم الحذف", description: `تم حذف التقرير "${reportTitle}" بنجاح.` });
+
+      if (adminUser) {
+        await logActivity({
+          actionType: "REPORT_DELETED",
+          description: `Admin ${adminUser.displayName || adminUser.email} deleted report: ${reportTitle}.`,
+          actor: { id: adminUser.uid, role: adminUser.role, name: adminUser.displayName },
+          target: { id: reportId, type: "report", name: reportTitle },
+        });
+      }
       fetchReports();
     } catch (error) {
       console.error("Error deleting report:", error);
@@ -331,5 +364,3 @@ export default function AdminReportsPage() {
     </div>
   );
 }
-
-    
