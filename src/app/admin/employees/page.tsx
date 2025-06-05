@@ -22,6 +22,8 @@ import { useToast } from "@/hooks/use-toast";
 import { db } from "@/lib/firebase";
 import { collection, addDoc, getDocs, serverTimestamp, Timestamp, query, orderBy, deleteDoc, doc, updateDoc } from "firebase/firestore";
 import { cn } from "@/lib/utils";
+import { useAuth } from "@/context/AuthContext";
+import { logActivity } from "@/lib/activityLogger";
 
 // Interface for Employee data
 export interface Employee {
@@ -66,6 +68,7 @@ export default function AdminEmployeesPage() {
   const [editingEmployee, setEditingEmployee] = useState<Employee | null>(null);
   const [searchTerm, setSearchTerm] = useState("");
   const { toast } = useToast();
+  const { user: adminUser } = useAuth();
 
   const fetchEmployees = async () => {
     setIsLoadingEmployees(true);
@@ -111,12 +114,22 @@ export default function AdminEmployeesPage() {
 
   const handleAddEmployeeSubmit = async (data: EmployeeFormValues) => {
     try {
-      await addDoc(collection(db, "employees"), {
+      const docRef = await addDoc(collection(db, "employees"), {
         ...data,
         joinDate: Timestamp.fromDate(data.joinDate),
         createdAt: serverTimestamp(),
       });
       toast({ title: "تم بنجاح", description: `تمت إضافة الموظف ${data.name} بنجاح.` });
+
+      if (adminUser) {
+        await logActivity({
+          actionType: "EMPLOYEE_CREATED",
+          description: `Admin ${adminUser.displayName || adminUser.email} added new employee: ${data.name}.`,
+          actor: { id: adminUser.uid, role: adminUser.role, name: adminUser.displayName },
+          target: { id: docRef.id, type: "employee", name: data.name },
+        });
+      }
+
       addEmployeeForm.reset();
       setIsAddEmployeeDialogOpen(false);
       fetchEmployees(); 
@@ -136,6 +149,16 @@ export default function AdminEmployeesPage() {
         // We don't update createdAt on edit
       });
       toast({ title: "تم التعديل بنجاح", description: `تم تعديل بيانات الموظف ${data.name}.` });
+
+      if (adminUser) {
+        await logActivity({
+          actionType: "EMPLOYEE_UPDATED",
+          description: `Admin ${adminUser.displayName || adminUser.email} updated employee: ${data.name}.`,
+          actor: { id: adminUser.uid, role: adminUser.role, name: adminUser.displayName },
+          target: { id: editingEmployee.id, type: "employee", name: data.name },
+        });
+      }
+
       setIsEditEmployeeDialogOpen(false);
       setEditingEmployee(null);
       fetchEmployees();
@@ -150,7 +173,6 @@ export default function AdminEmployeesPage() {
     editEmployeeForm.reset({
       ...employee,
       joinDate: employee.joinDate instanceof Timestamp ? employee.joinDate.toDate() : new Date(employee.joinDate),
-      // Ensure all optional fields are at least empty strings for the form
       nationalId: employee.nationalId || "",
       address: employee.address || "",
       profileImageUrl: employee.profileImageUrl || "",
@@ -163,7 +185,16 @@ export default function AdminEmployeesPage() {
     try {
       await deleteDoc(doc(db, "employees", employeeId));
       toast({ title: "تم الحذف", description: `تم حذف الموظف ${employeeName} بنجاح.` });
-      fetchEmployees(); // Refresh list
+
+      if (adminUser) {
+        await logActivity({
+          actionType: "EMPLOYEE_DELETED",
+          description: `Admin ${adminUser.displayName || adminUser.email} deleted employee: ${employeeName}.`,
+          actor: { id: adminUser.uid, role: adminUser.role, name: adminUser.displayName },
+          target: { id: employeeId, type: "employee", name: employeeName },
+        });
+      }
+      fetchEmployees(); 
     } catch (error) {
       console.error("Error deleting employee:", error);
       toast({ title: "خطأ", description: "حدث خطأ أثناء حذف الموظف.", variant: "destructive" });

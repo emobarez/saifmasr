@@ -3,29 +3,42 @@
 import { Card, CardHeader, CardTitle, CardDescription, CardContent } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
-import { Label } from "@/components/ui/label";
 import { Switch } from "@/components/ui/switch";
-import { Save, Bell, ShieldCheck, Palette, Loader2, Settings as SettingsIcon } from "lucide-react"; // Renamed ShieldQuestion to ShieldCheck, Settings to SettingsIcon
+import { Save, Bell, ShieldCheck, Palette, Loader2, Settings as SettingsIcon } from "lucide-react";
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
 import { useState, useEffect } from "react";
 import { useToast } from "@/hooks/use-toast";
 import { db } from "@/lib/firebase";
 import { doc, getDoc, setDoc } from "firebase/firestore";
+import { useForm } from "react-hook-form";
+import { zodResolver } from "@hookform/resolvers/zod";
+import * as z from "zod";
+import { Form, FormControl, FormField, FormItem, FormLabel, FormMessage } from "@/components/ui/form";
+import { useAuth } from "@/context/AuthContext";
+import { logActivity } from "@/lib/activityLogger";
 
-interface SystemSettings {
-  portalName: string;
-  maintenanceMode: boolean;
-  adminEmail?: string; // Kept for UI, not functional for saving yet
-}
+const settingsSchema = z.object({
+  portalName: z.string().min(3, { message: "اسم البوابة يجب أن لا يقل عن 3 أحرف." }),
+  adminEmail: z.string().email({ message: "البريد الإلكتروني للمسؤول غير صالح." }),
+  maintenanceMode: z.boolean(),
+});
+
+type SettingsFormValues = z.infer<typeof settingsSchema>;
 
 export default function AdminSettingsPage() {
-  const [portalName, setPortalName] = useState("سيف مصر الوطنية للأمن");
-  const [maintenanceMode, setMaintenanceMode] = useState(false);
-  const [adminEmail, setAdminEmail] = useState("admin@saifmasr.com"); // Default, not saved yet
-
-  const [isLoading, setIsLoading] = useState(true);
-  const [isSaving, setIsSaving] = useState(false);
   const { toast } = useToast();
+  const { user: adminUser } = useAuth();
+  const [isLoading, setIsLoading] = useState(true);
+  
+  const form = useForm<SettingsFormValues>({
+    resolver: zodResolver(settingsSchema),
+    defaultValues: {
+      portalName: "سيف مصر الوطنية للأمن",
+      adminEmail: "admin@saifmasr.com",
+      maintenanceMode: false,
+    },
+  });
+  const { handleSubmit, control, reset, formState: {isSubmitting} } = form;
 
   const settingsDocRef = doc(db, "systemSettings", "general");
 
@@ -35,13 +48,11 @@ export default function AdminSettingsPage() {
       try {
         const docSnap = await getDoc(settingsDocRef);
         if (docSnap.exists()) {
-          const data = docSnap.data() as SystemSettings;
-          setPortalName(data.portalName);
-          setMaintenanceMode(data.maintenanceMode);
-          if (data.adminEmail) setAdminEmail(data.adminEmail); // For display if ever saved
+          const data = docSnap.data() as SettingsFormValues;
+          reset(data); // Populate form with fetched data
         } else {
-          // Use default values if no settings found
           console.log("No settings document found, using defaults.");
+          // Default values are already set in useForm
         }
       } catch (error) {
         console.error("Error fetching settings:", error);
@@ -55,21 +66,23 @@ export default function AdminSettingsPage() {
       }
     };
     fetchSettings();
-  }, []);
+  }, [reset, toast]);
 
-  const handleSaveSettings = async () => {
-    setIsSaving(true);
+  const handleSaveSettings = async (data: SettingsFormValues) => {
     try {
-      const settingsToSave: SystemSettings = {
-        portalName,
-        maintenanceMode,
-        // adminEmail, // Not saving this yet
-      };
-      await setDoc(settingsDocRef, settingsToSave, { merge: true });
+      await setDoc(settingsDocRef, data, { merge: true });
       toast({
         title: "تم الحفظ بنجاح",
         description: "تم تحديث إعدادات النظام.",
       });
+       if (adminUser) {
+        await logActivity({
+          actionType: "SETTINGS_UPDATED",
+          description: `Admin ${adminUser.displayName || adminUser.email} updated system settings. Portal name: ${data.portalName}, Maintenance: ${data.maintenanceMode}.`,
+          actor: { id: adminUser.uid, role: adminUser.role, name: adminUser.displayName },
+          details: { portalName: data.portalName, maintenanceMode: data.maintenanceMode, adminEmail: data.adminEmail },
+        });
+      }
     } catch (error) {
       console.error("Error saving settings:", error);
       toast({
@@ -77,8 +90,6 @@ export default function AdminSettingsPage() {
         description: "لم نتمكن من حفظ التغييرات. يرجى المحاولة مرة أخرى.",
         variant: "destructive",
       });
-    } finally {
-      setIsSaving(false);
     }
   };
 
@@ -118,30 +129,62 @@ export default function AdminSettingsPage() {
             <TabsContent value="general" className="mt-6 space-y-6">
               <Card>
                 <CardHeader><CardTitle className="flex items-center gap-2"><SettingsIcon className="h-5 w-5" />الإعدادات العامة</CardTitle></CardHeader>
-                <CardContent className="space-y-4">
-                  <div>
-                    <Label htmlFor="portalName">اسم البوابة</Label>
-                    <Input 
-                      id="portalName" 
-                      value={portalName} 
-                      onChange={(e) => setPortalName(e.target.value)} 
-                      disabled={isSaving}
-                    />
-                  </div>
-                  <div>
-                    <Label htmlFor="adminEmail">بريد المسؤول الرئيسي (للعرض فقط)</Label>
-                    <Input id="adminEmail" type="email" value={adminEmail} disabled />
-                    <p className="text-xs text-muted-foreground mt-1">هذا الحقل للعرض فقط ولا يمكن تعديله من هنا حالياً.</p>
-                  </div>
-                   <div className="flex items-center space-x-2 space-x-reverse pt-2">
-                    <Switch 
-                      id="maintenanceMode" 
-                      checked={maintenanceMode}
-                      onCheckedChange={setMaintenanceMode}
-                      disabled={isSaving}
-                    />
-                    <Label htmlFor="maintenanceMode">تفعيل وضع الصيانة</Label>
-                  </div>
+                <CardContent>
+                  <Form {...form}>
+                    <form onSubmit={handleSubmit(handleSaveSettings)} className="space-y-4">
+                      <FormField
+                        control={control}
+                        name="portalName"
+                        render={({ field }) => (
+                          <FormItem>
+                            <FormLabel>اسم البوابة</FormLabel>
+                            <FormControl>
+                              <Input {...field} disabled={isSubmitting} />
+                            </FormControl>
+                            <FormMessage />
+                          </FormItem>
+                        )}
+                      />
+                      <FormField
+                        control={control}
+                        name="adminEmail"
+                        render={({ field }) => (
+                          <FormItem>
+                            <FormLabel>بريد المسؤول الرئيسي</FormLabel>
+                            <FormControl>
+                              <Input type="email" {...field} disabled={isSubmitting} />
+                            </FormControl>
+                            <FormMessage />
+                          </FormItem>
+                        )}
+                      />
+                      <FormField
+                        control={control}
+                        name="maintenanceMode"
+                        render={({ field }) => (
+                          <FormItem className="flex flex-row items-center justify-between rounded-lg border p-3 shadow-sm">
+                            <div className="space-y-0.5">
+                              <FormLabel>تفعيل وضع الصيانة</FormLabel>
+                              <FormMessage />
+                            </div>
+                            <FormControl>
+                               <Switch
+                                checked={field.value}
+                                onCheckedChange={field.onChange}
+                                disabled={isSubmitting}
+                              />
+                            </FormControl>
+                          </FormItem>
+                        )}
+                      />
+                      <div className="mt-8 flex justify-end">
+                        <Button type="submit" disabled={isSubmitting || isLoading}>
+                          {isSubmitting ? <Loader2 className="me-2 h-5 w-5 animate-spin" /> : <Save className="me-2 h-5 w-5" />}
+                          حفظ الإعدادات
+                        </Button>
+                      </div>
+                    </form>
+                  </Form>
                 </CardContent>
               </Card>
             </TabsContent>
@@ -152,12 +195,6 @@ export default function AdminSettingsPage() {
                 <CardHeader><CardTitle className="flex items-center gap-2"><Bell className="h-5 w-5" />إعدادات الإشعارات</CardTitle></CardHeader>
                 <CardContent className="space-y-4">
                    <p className="text-muted-foreground">هذه الميزة غير متاحة بعد.</p>
-                  {/* 
-                  <div className="flex items-center space-x-2 space-x-reverse">
-                    <Switch id="emailNewUser" defaultChecked disabled />
-                    <Label htmlFor="emailNewUser">إرسال بريد ترحيبي للمستخدمين الجدد</Label>
-                  </div>
-                  */}
                 </CardContent>
               </Card>
             </TabsContent>
@@ -167,12 +204,6 @@ export default function AdminSettingsPage() {
                 <CardHeader><CardTitle className="flex items-center gap-2"><ShieldCheck className="h-5 w-5" />إعدادات الأمان</CardTitle></CardHeader>
                 <CardContent className="space-y-4">
                   <p className="text-muted-foreground">هذه الميزة غير متاحة بعد.</p>
-                  {/*
-                  <div className="flex items-center space-x-2 space-x-reverse">
-                    <Switch id="twoFactorAuth" disabled/>
-                    <Label htmlFor="twoFactorAuth">تفعيل المصادقة الثنائية للمسؤولين</Label>
-                  </div>
-                  */}
                 </CardContent>
               </Card>
             </TabsContent>
@@ -182,24 +213,10 @@ export default function AdminSettingsPage() {
                 <CardHeader><CardTitle className="flex items-center gap-2"><Palette className="h-5 w-5" />إعدادات المظهر</CardTitle></CardHeader>
                 <CardContent className="space-y-4">
                    <p className="text-muted-foreground">هذه الميزة غير متاحة بعد.</p>
-                 {/* 
-                  <div>
-                    <Label htmlFor="logoUpload">شعار البوابة</Label>
-                    <Input id="logoUpload" type="file" disabled/>
-                    <p className="text-sm text-muted-foreground mt-1">يفضل أن يكون الشعار بأبعاد 200x50 بكسل.</p>
-                  </div>
-                  */}
                 </CardContent>
               </Card>
             </TabsContent>
           </Tabs>
-
-          <div className="mt-8 flex justify-end">
-            <Button onClick={handleSaveSettings} disabled={isSaving || isLoading}>
-              {isSaving ? <Loader2 className="me-2 h-5 w-5 animate-spin" /> : <Save className="me-2 h-5 w-5" />}
-              حفظ الإعدادات
-            </Button>
-          </div>
         </CardContent>
       </Card>
     </div>

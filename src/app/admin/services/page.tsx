@@ -20,6 +20,8 @@ import { db } from "@/lib/firebase";
 import { collection, addDoc, getDocs, serverTimestamp, Timestamp, query, orderBy, doc, updateDoc, deleteDoc } from "firebase/firestore";
 import { suggestServiceCategory } from "@/ai/flows/suggest-service-category";
 import { generateServiceFAQs, GenerateServiceFAQsOutput, GenerateServiceFAQsInput } from "@/ai/flows/generate-service-faqs";
+import { useAuth } from "@/context/AuthContext";
+import { logActivity } from "@/lib/activityLogger";
 
 interface FAQItem {
   question: string;
@@ -57,6 +59,7 @@ export default function AdminServicesPage() {
   const [generatedFAQs, setGeneratedFAQs] = useState<FAQItem[] | null>(null);
   const [searchTerm, setSearchTerm] = useState("");
   const { toast } = useToast();
+  const { user: adminUser } = useAuth();
 
   const fetchServices = async () => {
     setIsLoadingServices(true);
@@ -94,12 +97,22 @@ export default function AdminServicesPage() {
 
   const handleAddServiceSubmit = async (data: ServiceFormValues) => {
     try {
-      await addDoc(collection(db, "services"), {
+      const docRef = await addDoc(collection(db, "services"), {
         ...data,
         createdAt: serverTimestamp(),
         ...(generatedFAQs && generatedFAQs.length > 0 && { faqs: generatedFAQs }),
       });
       toast({ title: "تم بنجاح", description: `تمت إضافة الخدمة ${data.name} بنجاح.` });
+      
+      if (adminUser) {
+        await logActivity({
+          actionType: "SERVICE_CREATED",
+          description: `Admin ${adminUser.displayName || adminUser.email} added new service: ${data.name}.`,
+          actor: { id: adminUser.uid, role: adminUser.role, name: adminUser.displayName },
+          target: { id: docRef.id, type: "service", name: data.name },
+        });
+      }
+
       addServiceForm.reset();
       setIsAddServiceDialogOpen(false);
       resetDialogStates();
@@ -119,6 +132,16 @@ export default function AdminServicesPage() {
         faqs: generatedFAQs && generatedFAQs.length > 0 ? generatedFAQs : (editingService.faqs || [])
       });
       toast({ title: "تم التعديل بنجاح", description: `تم تعديل بيانات الخدمة ${data.name}.` });
+
+      if (adminUser) {
+        await logActivity({
+          actionType: "SERVICE_UPDATED",
+          description: `Admin ${adminUser.displayName || adminUser.email} updated service: ${data.name}.`,
+          actor: { id: adminUser.uid, role: adminUser.role, name: adminUser.displayName },
+          target: { id: editingService.id, type: "service", name: data.name },
+        });
+      }
+
       setIsEditServiceDialogOpen(false);
       setEditingService(null);
       resetDialogStates();
@@ -154,6 +177,15 @@ export default function AdminServicesPage() {
     try {
       await deleteDoc(doc(db, "services", serviceId));
       toast({ title: "تم الحذف", description: `تم حذف الخدمة ${serviceName} بنجاح.` });
+
+      if (adminUser) {
+        await logActivity({
+          actionType: "SERVICE_DELETED",
+          description: `Admin ${adminUser.displayName || adminUser.email} deleted service: ${serviceName}.`,
+          actor: { id: adminUser.uid, role: adminUser.role, name: adminUser.displayName },
+          target: { id: serviceId, type: "service", name: serviceName },
+        });
+      }
       fetchServices();
     } catch (error) {
       console.error("Error deleting service:", error);
