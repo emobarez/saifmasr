@@ -3,13 +3,14 @@
 import { Card, CardHeader, CardTitle, CardDescription, CardContent } from "@/components/ui/card";
 import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from "@/components/ui/table";
 import { Badge } from "@/components/ui/badge";
-import { Download, Printer, Loader2 } from "lucide-react";
+import { Download, Printer, Loader2, Eye } from "lucide-react"; // Added Eye icon
 import { Button } from "@/components/ui/button";
 import { useState, useEffect } from "react";
 import { useAuth } from "@/context/AuthContext";
 import { db } from "@/lib/firebase";
 import { collection, query, where, getDocs, orderBy, Timestamp } from "firebase/firestore";
 import { useToast } from "@/hooks/use-toast";
+import { InvoiceDetailsDialog } from "@/components/client/InvoiceDetailsDialog"; // Import new dialog
 
 // Interface for invoice data from Firestore
 interface Invoice {
@@ -19,13 +20,14 @@ interface Invoice {
   dueDate: Timestamp;
   totalAmount: number;
   status: "مستحقة" | "مدفوعة" | "متأخرة" | "ملغاة";
-  // Optional: description if needed, but not displayed in this table for brevity
-  // description: string; 
+  description: string; 
 }
 
 export default function ClientInvoicesPage() {
   const [invoices, setInvoices] = useState<Invoice[]>([]);
   const [isLoading, setIsLoading] = useState(true);
+  const [viewingInvoice, setViewingInvoice] = useState<Invoice | null>(null);
+  const [isViewDetailsDialogOpen, setIsViewDetailsDialogOpen] = useState(false);
   const { user } = useAuth();
   const { toast } = useToast();
 
@@ -81,6 +83,11 @@ export default function ClientInvoicesPage() {
     return "default";
   };
 
+  const handleViewDetails = (invoice: Invoice) => {
+    setViewingInvoice(invoice);
+    setIsViewDetailsDialogOpen(true);
+  };
+
   return (
     <div className="space-y-6">
       <Card>
@@ -114,6 +121,9 @@ export default function ClientInvoicesPage() {
                     <Badge variant={getStatusVariant(invoice.status)}>{invoice.status}</Badge>
                   </TableCell>
                   <TableCell className="space-x-1 space-x-reverse">
+                    <Button variant="ghost" size="icon" aria-label="عرض تفاصيل الفاتورة" onClick={() => handleViewDetails(invoice)}>
+                      <Eye className="h-5 w-5" />
+                    </Button>
                     <Button variant="ghost" size="icon" aria-label="تحميل الفاتورة" disabled>
                       <Download className="h-5 w-5" />
                     </Button>
@@ -130,6 +140,14 @@ export default function ClientInvoicesPage() {
           )}
         </CardContent>
       </Card>
+
+      {viewingInvoice && (
+        <InvoiceDetailsDialog
+          invoice={viewingInvoice}
+          isOpen={isViewDetailsDialogOpen}
+          onOpenChange={setIsViewDetailsDialogOpen}
+        />
+      )}
     </div>
   );
 }
