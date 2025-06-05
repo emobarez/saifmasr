@@ -143,11 +143,18 @@ export default function AdminInvoicesPage() {
   
   const handleEditInvoiceSubmit = async (data: InvoiceFormValues) => {
     if (!editingInvoice) return;
+    
+    const selectedClient = clients.find(c => c.id === data.clientId);
+     if (!selectedClient) {
+      toast({ title: "خطأ", description: "العميل المحدد غير موجود.", variant: "destructive" });
+      return;
+    }
 
     try {
       const invoiceRef = doc(db, "invoices", editingInvoice.id);
       await updateDoc(invoiceRef, {
         ...data,
+        clientName: selectedClient.name, // Ensure clientName is updated if clientId changes
         issueDate: Timestamp.fromDate(data.issueDate),
         dueDate: Timestamp.fromDate(data.dueDate),
       });
@@ -234,7 +241,7 @@ export default function AdminInvoicesPage() {
         render={({ field }) => (
           <FormItem>
             <FormLabel>العميل</FormLabel>
-            <Select onValueChange={field.onChange} value={field.value} dir="rtl" disabled={isEditing || clients.length === 0}>
+            <Select onValueChange={field.onChange} value={field.value} dir="rtl" disabled={clients.length === 0}>
               <FormControl>
                 <SelectTrigger>
                   <SelectValue placeholder={clients.length === 0 ? "جارٍ تحميل العملاء..." : "اختر العميل"} />
@@ -256,7 +263,7 @@ export default function AdminInvoicesPage() {
         render={({ field }) => (
           <FormItem>
             <FormLabel>رقم الفاتورة</FormLabel>
-            <FormControl><Input placeholder="مثال: INV-2024-001" {...field} disabled={isEditing} /></FormControl>
+            <FormControl><Input placeholder="مثال: INV-2024-001" {...field} /></FormControl> {/* Allow editing invoice number for now */}
             <FormMessage />
           </FormItem>
         )}
@@ -292,7 +299,7 @@ export default function AdminInvoicesPage() {
                   </FormControl>
                 </PopoverTrigger>
                 <PopoverContent className="w-auto p-0" align="start">
-                  <Calendar mode="single" selected={field.value} onSelect={field.onChange} initialFocus />
+                  <Calendar mode="single" selected={field.value} onSelect={field.onChange} initialFocus captionLayout="dropdown-buttons" fromYear={2020} toYear={new Date().getFullYear() + 5} />
                 </PopoverContent>
               </Popover>
               <FormMessage />
@@ -318,7 +325,7 @@ export default function AdminInvoicesPage() {
                   </FormControl>
                 </PopoverTrigger>
                 <PopoverContent className="w-auto p-0" align="start">
-                  <Calendar mode="single" selected={field.value} onSelect={field.onChange} initialFocus />
+                  <Calendar mode="single" selected={field.value} onSelect={field.onChange} initialFocus captionLayout="dropdown-buttons" fromYear={2020} toYear={new Date().getFullYear() + 10} />
                 </PopoverContent>
               </Popover>
               <FormMessage />
@@ -385,7 +392,7 @@ export default function AdminInvoicesPage() {
               <Form {...addInvoiceForm}>
                 <form onSubmit={addInvoiceForm.handleSubmit(handleAddInvoiceSubmit)} className="space-y-4 py-4 max-h-[70vh] overflow-y-auto px-2">
                   {renderInvoiceFormFields(addInvoiceForm)}
-                  <DialogFooter className="pt-4">
+                  <DialogFooter className="pt-4 sticky bottom-0 bg-card pb-4">
                     <Button type="button" variant="outline" onClick={() => setIsAddInvoiceDialogOpen(false)} disabled={addInvoiceForm.formState.isSubmitting}>إلغاء</Button>
                     <Button type="submit" disabled={addInvoiceForm.formState.isSubmitting}>
                       {addInvoiceForm.formState.isSubmitting && <Loader2 className="me-2 h-4 w-4 animate-spin" />}
@@ -464,7 +471,7 @@ export default function AdminInvoicesPage() {
             <Form {...editInvoiceForm}>
               <form onSubmit={editInvoiceForm.handleSubmit(handleEditInvoiceSubmit)} className="space-y-4 py-4 max-h-[70vh] overflow-y-auto px-2">
                 {renderInvoiceFormFields(editInvoiceForm, true)}
-                <DialogFooter className="pt-4">
+                <DialogFooter className="pt-4 sticky bottom-0 bg-card pb-4">
                   <Button type="button" variant="outline" onClick={() => setIsEditInvoiceDialogOpen(false)} disabled={editInvoiceForm.formState.isSubmitting}>إلغاء</Button>
                   <Button type="submit" disabled={editInvoiceForm.formState.isSubmitting}>
                     {editInvoiceForm.formState.isSubmitting && <Loader2 className="me-2 h-4 w-4 animate-spin" />}
