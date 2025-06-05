@@ -7,8 +7,9 @@ import Link from "next/link";
 import { useAuth } from "@/context/AuthContext";
 import { useState, useEffect } from "react";
 import { db } from "@/lib/firebase";
-import { collection, getDocs } from "firebase/firestore";
+import { collection, getDocs, query, orderBy, limit, Timestamp } from "firebase/firestore";
 import { useToast } from "@/hooks/use-toast";
+import type { ActivityActionType } from "@/lib/activityLogger";
 
 const adminQuickActions = [
   { title: "إدارة العملاء", description: "عرض وتعديل بيانات العملاء.", icon: <Users className="h-8 w-8 text-primary" />, href: "/admin/clients", dataAiHint: "client management" },
@@ -24,19 +25,41 @@ interface QuickStats {
   totalServiceRequests: number;
 }
 
-interface ActivityLog {
+interface ActivityLogEntry {
   id: string;
+  actionType: ActivityActionType;
   description: string;
-  timestamp: string;
+  timestamp: Timestamp;
+  actor?: {
+    id: string | null;
+    role?: "client" | "admin" | string | null;
+    name?: string | null;
+  };
+  target?: {
+    id?: string | null;
+    type?: string | null;
+    name?: string | null;
+  };
 }
 
 export default function AdminDashboardPage() {
   const { user } = useAuth();
   const { toast } = useToast();
   const [stats, setStats] = useState<QuickStats | null>(null);
-  const [activities, setActivities] = useState<ActivityLog[]>([]); // Placeholder for activities
+  const [activities, setActivities] = useState<ActivityLogEntry[]>([]);
   const [isLoadingStats, setIsLoadingStats] = useState(true);
-  const [isLoadingActivities, setIsLoadingActivities] = useState(true); // Placeholder
+  const [isLoadingActivities, setIsLoadingActivities] = useState(true);
+
+  const formatDate = (timestamp: Timestamp | undefined): string => {
+    if (!timestamp) return "غير متوفر";
+    return timestamp.toDate().toLocaleString('ar-EG', {
+      day: 'numeric',
+      month: 'short',
+      year: 'numeric',
+      hour: '2-digit',
+      minute: '2-digit'
+    });
+  };
 
   useEffect(() => {
     const fetchStats = async () => {
@@ -61,12 +84,18 @@ export default function AdminDashboardPage() {
     };
 
     const fetchActivities = async () => {
-      // Simulate fetching activities for now
       setIsLoadingActivities(true);
-      setTimeout(() => {
-        setActivities([]); // No real activities yet
+      try {
+        const q = query(collection(db, "activityLogs"), orderBy("timestamp", "desc"), limit(7));
+        const querySnapshot = await getDocs(q);
+        const fetchedActivities = querySnapshot.docs.map(doc => ({ id: doc.id, ...doc.data() } as ActivityLogEntry));
+        setActivities(fetchedActivities);
+      } catch (error) {
+        console.error("Error fetching activities:", error);
+        toast({ title: "خطأ", description: "لم نتمكن من تحميل سجل الأنشطة.", variant: "destructive" });
+      } finally {
         setIsLoadingActivities(false);
-      }, 1200);
+      }
     };
 
     fetchStats();
@@ -151,9 +180,12 @@ export default function AdminDashboardPage() {
             {isLoadingActivities ? (
                <div className="flex justify-center items-center py-4"><Loader2 className="h-6 w-6 animate-spin text-primary" /><p className="ms-2 text-sm">جارٍ تحميل الأنشطة...</p></div>
             ) : activities.length > 0 ? (
-              <ul className="space-y-2 text-sm text-muted-foreground">
+              <ul className="space-y-3 text-sm">
                 {activities.map((activity) => (
-                  <li key={activity.id}>- {activity.description} ({activity.timestamp})</li>
+                  <li key={activity.id} className="border-b border-border pb-2 last:border-b-0">
+                    <p className="text-foreground leading-tight">{activity.description}</p>
+                    <p className="text-xs text-muted-foreground">{formatDate(activity.timestamp)}</p>
+                  </li>
                 ))}
               </ul>
             ) : (

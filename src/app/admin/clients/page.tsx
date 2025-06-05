@@ -16,6 +16,8 @@ import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@
 import { useToast } from "@/hooks/use-toast";
 import { db } from "@/lib/firebase";
 import { collection, addDoc, getDocs, serverTimestamp, Timestamp, query, orderBy, deleteDoc, doc, updateDoc } from "firebase/firestore";
+import { useAuth } from "@/context/AuthContext";
+import { logActivity, ActivityActionType } from "@/lib/activityLogger";
 
 interface Client {
   id: string;
@@ -41,6 +43,7 @@ export default function AdminClientsPage() {
   const [editingClient, setEditingClient] = useState<Client | null>(null);
   const [searchTerm, setSearchTerm] = useState("");
   const { toast } = useToast();
+  const { user: adminUser } = useAuth();
 
   const fetchClients = async () => {
     setIsLoadingClients(true);
@@ -72,11 +75,21 @@ export default function AdminClientsPage() {
 
   const handleAddClientSubmit = async (data: ClientFormValues) => {
     try {
-      await addDoc(collection(db, "clients"), {
+      const docRef = await addDoc(collection(db, "clients"), {
         ...data,
         joinDate: serverTimestamp(),
       });
       toast({ title: "تم بنجاح", description: `تمت إضافة العميل ${data.name} بنجاح.` });
+      
+      if (adminUser) {
+        await logActivity({
+          actionType: "CLIENT_CREATED",
+          description: `Admin ${adminUser.displayName || adminUser.email} added new client: ${data.name}.`,
+          actor: { id: adminUser.uid, role: adminUser.role, name: adminUser.displayName },
+          target: { id: docRef.id, type: "client", name: data.name },
+        });
+      }
+
       addClientForm.reset();
       setIsAddClientDialogOpen(false);
       fetchClients(); // Refresh list
@@ -96,6 +109,16 @@ export default function AdminClientsPage() {
         status: data.status,
       });
       toast({ title: "تم التعديل بنجاح", description: `تم تعديل بيانات العميل ${data.name}.` });
+      
+      if (adminUser) {
+         await logActivity({
+          actionType: "CLIENT_UPDATED",
+          description: `Admin ${adminUser.displayName || adminUser.email} updated client: ${data.name}.`,
+          actor: { id: adminUser.uid, role: adminUser.role, name: adminUser.displayName },
+          target: { id: editingClient.id, type: "client", name: data.name },
+        });
+      }
+
       setIsEditClientDialogOpen(false);
       setEditingClient(null);
       fetchClients(); // Refresh list
@@ -120,6 +143,15 @@ export default function AdminClientsPage() {
     try {
       await deleteDoc(doc(db, "clients", clientId));
       toast({ title: "تم الحذف", description: `تم حذف العميل ${clientName} بنجاح.` });
+
+      if (adminUser) {
+        await logActivity({
+          actionType: "CLIENT_DELETED",
+          description: `Admin ${adminUser.displayName || adminUser.email} deleted client: ${clientName}.`,
+          actor: { id: adminUser.uid, role: adminUser.role, name: adminUser.displayName },
+          target: { id: clientId, type: "client", name: clientName },
+        });
+      }
       fetchClients(); // Refresh list
     } catch (error) {
       console.error("Error deleting client:", error);
@@ -327,6 +359,3 @@ export default function AdminClientsPage() {
     </div>
   );
 }
-
-
-    
