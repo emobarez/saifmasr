@@ -36,7 +36,7 @@ import { useAuth } from "@/context/AuthContext";
 import { Avatar, AvatarFallback, AvatarImage } from "@/components/ui/avatar";
 import { usePortalName } from '@/hooks/usePortalName';
 import type { NavItemConfig } from '@/config/dashboardNavs';
-import { ThemeSwitcher } from "./ThemeSwitcher"; // Added import
+import { ThemeSwitcher } from "./ThemeSwitcher"; 
 
 const iconMap: { [key: string]: ElementType } = {
   LayoutDashboard,
@@ -54,6 +54,11 @@ const iconMap: { [key: string]: ElementType } = {
   ShieldHalf 
 };
 
+interface DashboardLayoutProps {
+  children: ReactNode;
+  navItems: NavItemConfig[];
+}
+
 
 export function DashboardLayout({ children, navItems }: DashboardLayoutProps) {
   const pathname = usePathname();
@@ -66,7 +71,13 @@ export function DashboardLayout({ children, navItems }: DashboardLayoutProps) {
     return name.split(" ").map(n => n[0]).join("").toUpperCase();
   };
 
-  if (authLoading || isLoadingPortalName) {
+  useEffect(() => {
+    if (!authLoading && !user) {
+      router.push('/auth/login');
+    }
+  }, [authLoading, user, router]);
+
+  if (authLoading || isLoadingPortalName || !user) {
     return (
       <div className="flex items-center justify-center min-h-screen bg-background">
         <p className="text-lg text-primary font-semibold">جارٍ التحميل...</p>
@@ -74,10 +85,12 @@ export function DashboardLayout({ children, navItems }: DashboardLayoutProps) {
     );
   }
 
-  if (!user) {
-    router.push('/auth/login');
-    return null; 
-  }
+  // This check should ideally be handled by the AuthContext's redirection logic,
+  // but as a safeguard here:
+  // if (!user) {
+  //   // router.push('/auth/login'); // This was causing the "setState in render" error. Moved to useEffect.
+  //   return null; 
+  // }
 
   const filteredNavItems = navItems.filter(item => item.allowedRoles.includes(user.role!));
   
@@ -129,7 +142,7 @@ export function DashboardLayout({ children, navItems }: DashboardLayoutProps) {
                 </div>
               </div>
             <div className="flex items-center justify-between group-data-[collapsible=icon]:flex-col group-data-[collapsible=icon]:gap-2">
-              <ThemeSwitcher />
+              <ThemeSwitcher className="text-sidebar-foreground hover:text-sidebar-accent-foreground hover:bg-sidebar-accent" />
               <SidebarMenuButton
                 onClick={signOut}
                 tooltip={{ children: "تسجيل الخروج", side: 'left' }}

@@ -4,8 +4,13 @@
 import { Moon, Sun } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { useEffect, useState } from "react";
+import type { ComponentProps } from "react";
 
-export function ThemeSwitcher() {
+interface ThemeSwitcherProps extends Omit<ComponentProps<typeof Button>, "onClick" | "aria-label" | "variant" | "size" > {
+  // We omit props that are set internally by ThemeSwitcher
+}
+
+export function ThemeSwitcher({ className, ...props }: ThemeSwitcherProps) {
   const [mounted, setMounted] = useState(false);
   const [theme, setTheme] = useState<"light" | "dark">("light");
 
@@ -43,7 +48,14 @@ export function ThemeSwitcher() {
   }
 
   return (
-    <Button variant="ghost" size="icon" onClick={toggleTheme} aria-label="Toggle theme" className="text-sidebar-foreground hover:text-sidebar-accent-foreground hover:bg-sidebar-accent">
+    <Button 
+      variant="ghost" 
+      size="icon" 
+      onClick={toggleTheme} 
+      aria-label="Toggle theme" 
+      className={className}
+      {...props}
+    >
       {theme === "light" ? <Moon className="h-5 w-5" /> : <Sun className="h-5 w-5" />}
     </Button>
   );
