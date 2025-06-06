@@ -7,8 +7,8 @@ import { Menu, ShieldHalf } from "lucide-react";
 import { useAuth } from "@/context/AuthContext";
 import { useRouter } from "next/navigation";
 import { usePortalName } from '@/hooks/usePortalName';
-import { useState } from "react";
-import { ThemeSwitcher } from "./ThemeSwitcher"; // Added ThemeSwitcher import
+import { useState, useEffect } from "react"; // Added useEffect
+import { ThemeSwitcher } from "./ThemeSwitcher";
 
 const navLinks = [
   { href: "/#services", label: "الخدمات" },

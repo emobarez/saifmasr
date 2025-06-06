@@ -34,8 +34,8 @@ export function AuthLayout({ children, title, description }: AuthLayoutProps) {
         <Image
           src="https://placehold.co/1000x1200.png"
           alt="Authentication Background"
-          layout="fill"
-          objectFit="cover"
+          fill // Changed from layout="fill"
+          style={{objectFit:"cover"}} // Changed from objectFit="cover"
           data-ai-hint="modern office"
         />
         <div className="absolute inset-0 bg-primary/70 flex flex-col items-center justify-center p-12 text-primary-foreground text-center">

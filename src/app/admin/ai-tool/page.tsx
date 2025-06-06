@@ -8,7 +8,7 @@ import { Textarea } from "@/components/ui/textarea";
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
-import { Sparkles, Lightbulb, Loader2, FileText, Save, DownloadCloud } from "lucide-react";
+import { Sparkles, Lightbulb, Loader2, FileText, Save } from "lucide-react"; // Removed DownloadCloud
 import { generateReportSummary, GenerateReportSummaryOutput } from "@/ai/flows/generate-report-summary";
 import { suggestReportImprovements, SuggestReportImprovementsOutput } from "@/ai/flows/suggest-report-improvements";
 import { generateReportSection, GenerateReportSectionInput, GenerateReportSectionOutput } from "@/ai/flows/generate-report-section";
@@ -16,6 +16,8 @@ import { useToast } from "@/hooks/use-toast";
 import { Accordion, AccordionContent, AccordionItem, AccordionTrigger } from "@/components/ui/accordion";
 import { db } from "@/lib/firebase";
 import { collection, getDocs, doc, updateDoc, getDoc } from "firebase/firestore";
+import { useAuth } from "@/context/AuthContext";
+import { logActivity } from "@/lib/activityLogger";
 
 interface ReportOption {
   id: string;
@@ -40,6 +42,7 @@ export default function AiReportToolPage() {
   const [isLoadingReportContent, setIsLoadingReportContent] = useState(false);
 
   const { toast } = useToast();
+  const { user: adminUser } = useAuth();
 
   useEffect(() => {
     const fetchReports = async () => {
@@ -61,7 +64,7 @@ export default function AiReportToolPage() {
   useEffect(() => {
     const loadReportContent = async () => {
       if (!selectedReportId) {
-        setReportText(""); // Clear text area if no report is selected
+        setReportText(""); 
         setSummaryResult(null);
         setImprovementSuggestions(null);
         return;
@@ -104,6 +107,15 @@ export default function AiReportToolPage() {
       const result = await generateReportSummary({ reportText });
       setSummaryResult(result);
       toast({ title: "تم بنجاح", description: "تم إنشاء ملخص التقرير واستخلاص الرؤى." });
+      if (adminUser) {
+        await logActivity({
+            actionType: "AI_REPORT_SUMMARY_GENERATED",
+            description: `Admin ${adminUser.displayName || adminUser.email} generated a summary for a report.`,
+            actor: { id: adminUser.uid, role: "admin", name: adminUser.displayName },
+            target: { type: "report", id: selectedReportId || undefined, name: selectedReportId ? reports.find(r=>r.id === selectedReportId)?.title : "Unspecified Report" },
+            details: { reportLength: reportText.length, summaryLength: result.summary.length }
+        });
+      }
     } catch (error) {
       console.error("Error generating summary:", error);
       toast({ title: "خطأ في إنشاء الملخص", description: "حدث خطأ أثناء محاولة إنشاء الملخص.", variant: "destructive" });
@@ -124,6 +136,15 @@ export default function AiReportToolPage() {
       const result = await suggestReportImprovements({ report: textToImprove });
       setImprovementSuggestions(result);
       toast({ title: "تم بنجاح", description: "تم اقتراح تحسينات للتقرير." });
+       if (adminUser) {
+        await logActivity({
+            actionType: "AI_REPORT_IMPROVEMENTS_SUGGESTED",
+            description: `Admin ${adminUser.displayName || adminUser.email} requested improvements for a report.`,
+            actor: { id: adminUser.uid, role: "admin", name: adminUser.displayName },
+            target: { type: "report", id: selectedReportId || undefined, name: selectedReportId ? reports.find(r=>r.id === selectedReportId)?.title : "Unspecified Report" },
+            details: { reportLength: textToImprove.length, suggestionsCount: result.suggestions.length }
+        });
+      }
     } catch (error) {
       console.error("Error suggesting improvements:", error);
       toast({ title: "خطأ في اقتراح التحسينات", description: "حدث خطأ أثناء محاولة اقتراح التحسينات.", variant: "destructive" });
@@ -147,6 +168,15 @@ export default function AiReportToolPage() {
       const result = await generateReportSection(input);
       setGeneratedSection(result);
       toast({ title: "تم بنجاح", description: "تم إنشاء قسم التقرير." });
+      if (adminUser) {
+        await logActivity({
+            actionType: "AI_REPORT_SECTION_GENERATED",
+            description: `Admin ${adminUser.displayName || adminUser.email} generated a new report section. Topic: ${sectionTopic}.`,
+            actor: { id: adminUser.uid, role: "admin", name: adminUser.displayName },
+            target: { type: "reportSection", name: sectionTopic },
+            details: { topic: sectionTopic, keywords: sectionKeywords, sectionLength: result.generatedSectionText.length }
+        });
+      }
     } catch (error) {
       console.error("Error generating section:", error);
       toast({ title: "خطأ في إنشاء القسم", description: "حدث خطأ أثناء محاولة إنشاء قسم التقرير.", variant: "destructive" });
@@ -176,6 +206,7 @@ export default function AiReportToolPage() {
       
       await updateDoc(reportRef, { content: newContent });
       toast({ title: "تم الحفظ بنجاح", description: "تم حفظ القسم في التقرير المحدد." });
+      // Optionally log this save action too
     } catch (error) {
       console.error("Error saving section to report:", error);
       toast({ title: "خطأ في الحفظ", description: "حدث خطأ أثناء محاولة حفظ القسم في التقرير.", variant: "destructive" });
