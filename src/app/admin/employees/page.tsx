@@ -130,7 +130,7 @@ export default function AdminEmployeesPage() {
         });
       }
 
-      addEmployeeForm.reset();
+      addEmployeeForm.reset({ name: "", employeeId: "", jobTitle: "", department: "", joinDate: new Date(), status: "نشط", phone: "", email: "", nationalId: "", address: "", profileImageUrl: "" });
       setIsAddEmployeeDialogOpen(false);
       fetchEmployees(); 
     } catch (error) {
@@ -204,7 +204,7 @@ export default function AdminEmployeesPage() {
   const getStatusVariant = (status: Employee["status"]): "default" | "secondary" | "destructive" => {
     if (status === "نشط") return "default";
     if (status === "غير نشط") return "secondary";
-    if (status === "في إجازة") return "destructive"; 
+    if (status === "في إجازة") return "secondary"; // Changed to secondary for "في إجازة" to be less alarming
     return "default";
   };
 
