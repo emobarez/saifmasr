@@ -13,6 +13,7 @@ import {
 import type { ReactNode } from "react";
 import React, { createContext, useContext, useEffect, useState } from "react";
 import { useRouter, usePathname } from "next/navigation";
+import { logActivity } from "@/lib/activityLogger";
 
 interface User {
   uid: string;
@@ -59,13 +60,21 @@ export const AuthProvider = ({ children }: { children: ReactNode }) => {
   const signIn = async (email: string, pass: string): Promise<FirebaseUser> => {
     const userCredential = await signInWithEmailAndPassword(auth, email, pass);
     const firebaseUser = userCredential.user;
+    const appUserRole = firebaseUser.email?.includes("admin@saifmasr.com") || firebaseUser.email?.includes("admin@example.com") ? "admin" : "client";
     const appUser: User = {
         uid: firebaseUser.uid,
         email: firebaseUser.email,
         displayName: firebaseUser.displayName,
-        role: firebaseUser.email?.includes("admin@saifmasr.com") || firebaseUser.email?.includes("admin@example.com") ? "admin" : "client",
+        role: appUserRole,
     };
     setUser(appUser);
+
+    await logActivity({
+      actionType: "USER_LOGIN",
+      description: `User ${appUser.email} logged in. Role: ${appUser.role}.`,
+      actor: { id: appUser.uid, role: appUser.role, name: appUser.displayName },
+    });
+
     if (appUser.role === 'admin') {
       router.push('/admin/dashboard');
     } else {
@@ -82,15 +91,29 @@ export const AuthProvider = ({ children }: { children: ReactNode }) => {
     const appUser: User = {
         uid: firebaseUser.uid,
         email: firebaseUser.email,
-        displayName: name, // Use the name from registration
-        role: 'client', // New users default to client role
+        displayName: name, 
+        role: 'client', 
     };
     setUser(appUser);
-    router.push('/client/dashboard'); // Redirect new users to client dashboard
+
+    await logActivity({
+      actionType: "USER_REGISTERED",
+      description: `New user registered: ${appUser.email}. Name: ${appUser.displayName}.`,
+      actor: { id: appUser.uid, role: appUser.role, name: appUser.displayName },
+    });
+
+    router.push('/client/dashboard'); 
     return firebaseUser;
   };
   
   const signOut = async () => {
+    if (user) { // Log before user object becomes null
+      await logActivity({
+        actionType: "USER_LOGOUT",
+        description: `User ${user.email} logged out.`,
+        actor: { id: user.uid, role: user.role, name: user.displayName },
+      });
+    }
     await firebaseSignOut(auth);
     setUser(null);
     router.push("/auth/login");
@@ -130,3 +153,4 @@ export const useAuth = (): AuthContextType => {
   }
   return context;
 };
+

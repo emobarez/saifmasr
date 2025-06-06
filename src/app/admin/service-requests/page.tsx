@@ -16,6 +16,8 @@ import {
   SelectTrigger,
   SelectValue,
 } from "@/components/ui/select"
+import { useAuth } from "@/context/AuthContext";
+import { logActivity } from "@/lib/activityLogger";
 
 interface ServiceRequest {
   id: string;
@@ -43,6 +45,7 @@ export default function AdminServiceRequestsPage() {
   const [requests, setRequests] = useState<ServiceRequestWithPriority[]>([]);
   const [isLoading, setIsLoading] = useState(true);
   const { toast } = useToast();
+  const { user: adminUser } = useAuth();
 
   const fetchAndPrioritizeRequests = useCallback(async () => {
     setIsLoading(true);
@@ -80,13 +83,28 @@ export default function AdminServiceRequestsPage() {
   }, [fetchAndPrioritizeRequests]);
 
   const handleStatusChange = async (requestId: string, newStatus: ServiceRequest["status"]) => {
+    const originalRequest = requests.find(req => req.id === requestId);
+    if (!originalRequest) return;
+
     try {
       const requestRef = doc(db, "serviceRequests", requestId);
       await updateDoc(requestRef, { status: newStatus });
+      
       setRequests(prevRequests => 
         prevRequests.map(req => req.id === requestId ? { ...req, status: newStatus } : req)
       );
       toast({ title: "تم التحديث", description: `تم تحديث حالة الطلب إلى ${newStatus}.` });
+
+      if (adminUser) {
+        await logActivity({
+          actionType: "SERVICE_REQUEST_STATUS_UPDATED",
+          description: `Admin ${adminUser.displayName || adminUser.email} updated status for request "${originalRequest.requestTitle}" to ${newStatus}.`,
+          actor: { id: adminUser.uid, role: "admin", name: adminUser.displayName },
+          target: { id: requestId, type: "serviceRequest", name: originalRequest.requestTitle },
+          details: { clientId: originalRequest.clientId, clientName: originalRequest.clientName, newStatus: newStatus, oldStatus: originalRequest.status },
+        });
+      }
+
     } catch (error) {
       console.error("Error updating request status:", error);
       toast({ title: "خطأ", description: "لم نتمكن من تحديث حالة الطلب.", variant: "destructive" });
@@ -98,7 +116,7 @@ export default function AdminServiceRequestsPage() {
     switch (status) {
       case "جديد": return "default"; 
       case "قيد المعالجة": return "secondary"; 
-      case "مكتمل": return "outline"; // Using outline for success. A dedicated 'success' variant would be green.
+      case "مكتمل": return "outline"; 
       case "ملغى": return "destructive";
       default: return "default";
     }
@@ -108,8 +126,8 @@ export default function AdminServiceRequestsPage() {
     if (!priority) return <MinusCircle className="h-5 w-5 text-muted-foreground" />;
     switch (priority) {
       case "عالية": return <AlertTriangle className="h-5 w-5 text-destructive" />;
-      case "متوسطة": return <Info className="h-5 w-5 text-yellow-500" />; // text-yellow-500 might need to be added or use an existing color
-      case "منخفضة": return <ThumbsUp className="h-5 w-5 text-green-500" />; // text-green-500 might need to be added or use an existing color
+      case "متوسطة": return <Info className="h-5 w-5 text-yellow-500" />; 
+      case "منخفضة": return <ThumbsUp className="h-5 w-5 text-green-500" />; 
       default: return <MinusCircle className="h-5 w-5 text-muted-foreground" />;
     }
   };
