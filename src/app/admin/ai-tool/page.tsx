@@ -8,7 +8,7 @@ import { Textarea } from "@/components/ui/textarea";
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
-import { Sparkles, Lightbulb, Loader2, FileText, Save } from "lucide-react";
+import { Sparkles, Lightbulb, Loader2, FileText, Save, DownloadCloud } from "lucide-react";
 import { generateReportSummary, GenerateReportSummaryOutput } from "@/ai/flows/generate-report-summary";
 import { suggestReportImprovements, SuggestReportImprovementsOutput } from "@/ai/flows/suggest-report-improvements";
 import { generateReportSection, GenerateReportSectionInput, GenerateReportSectionOutput } from "@/ai/flows/generate-report-section";
@@ -35,8 +35,9 @@ export default function AiReportToolPage() {
   const [isLoadingSection, setIsLoadingSection] = useState(false);
 
   const [reports, setReports] = useState<ReportOption[]>([]);
-  const [selectedReportId, setSelectedReportId] = useState<string | null>(null);
+  const [selectedReportId, setSelectedReportId] = useState<string | undefined>(undefined);
   const [isSavingSection, setIsSavingSection] = useState(false);
+  const [isLoadingReportContent, setIsLoadingReportContent] = useState(false);
 
   const { toast } = useToast();
 
@@ -56,6 +57,40 @@ export default function AiReportToolPage() {
     };
     fetchReports();
   }, [toast]);
+
+  useEffect(() => {
+    const loadReportContent = async () => {
+      if (!selectedReportId) {
+        setReportText(""); // Clear text area if no report is selected
+        setSummaryResult(null);
+        setImprovementSuggestions(null);
+        return;
+      }
+      setIsLoadingReportContent(true);
+      setSummaryResult(null);
+      setImprovementSuggestions(null);
+      try {
+        const reportRef = doc(db, "reports", selectedReportId);
+        const reportSnap = await getDoc(reportRef);
+        if (reportSnap.exists()) {
+          const reportData = reportSnap.data();
+          setReportText(reportData?.content || "");
+          toast({ title: "تم التحميل", description: `تم تحميل محتوى التقرير: ${reportData?.title}` });
+        } else {
+          setReportText("");
+          toast({ title: "خطأ", description: "التقرير المحدد غير موجود أو لا يحتوي على محتوى.", variant: "destructive" });
+        }
+      } catch (error) {
+        console.error("Error loading report content:", error);
+        setReportText("");
+        toast({ title: "خطأ في التحميل", description: "حدث خطأ أثناء محاولة تحميل محتوى التقرير.", variant: "destructive" });
+      } finally {
+        setIsLoadingReportContent(false);
+      }
+    };
+    loadReportContent();
+  }, [selectedReportId, toast]);
+
 
   const handleGenerateSummary = async () => {
     if (!reportText.trim()) {
@@ -131,6 +166,7 @@ export default function AiReportToolPage() {
       const reportSnap = await getDoc(reportRef);
       if (!reportSnap.exists()) {
         toast({ title: "خطأ", description: "التقرير المحدد غير موجود.", variant: "destructive" });
+        setIsSavingSection(false);
         return;
       }
       const currentContent = reportSnap.data()?.content || "";
@@ -158,27 +194,51 @@ export default function AiReportToolPage() {
             <CardTitle className="font-headline text-2xl text-primary">أداة تحليل وتحسين التقارير بالذكاء الاصطناعي</CardTitle>
           </div>
           <CardDescription>
-            استخدم هذه الأداة لإدخال نص تقرير والحصول على ملخص، رؤى رئيسية، واقتراحات للتحسين مدعومة بالذكاء الاصطناعي.
+            اختر تقريرًا لتحميل محتواه، أو أدخل نصًا جديدًا. ثم استخدم الأدوات لإنشاء ملخص، اقتراح تحسينات، أو إنشاء أقسام جديدة.
           </CardDescription>
         </CardHeader>
         <CardContent className="space-y-6">
+           <div>
+            <Label htmlFor="loadReport" className="text-lg font-medium mb-2 block">تحميل محتوى من تقرير موجود</Label>
+            <div className="flex items-center gap-2">
+              <Select 
+                onValueChange={(value) => setSelectedReportId(value === "none" ? undefined : value)} 
+                value={selectedReportId || "none"}
+                dir="rtl"
+                disabled={isLoadingReportContent || isLoadingSummary || isLoadingImprovements || isLoadingSection || isSavingSection || reports.length === 0}
+              >
+                <SelectTrigger id="loadReport" className="w-full">
+                  <SelectValue placeholder={reports.length === 0 ? "لا توجد تقارير متاحة" : "-- اختر تقريرًا لتحميل محتواه --"} />
+                </SelectTrigger>
+                <SelectContent>
+                  <SelectItem value="none">-- اختر تقريرًا لتحميل محتواه --</SelectItem>
+                  {reports.map(report => (
+                    <SelectItem key={report.id} value={report.id}>{report.title}</SelectItem>
+                  ))}
+                </SelectContent>
+              </Select>
+              {isLoadingReportContent && <Loader2 className="h-5 w-5 animate-spin" />}
+            </div>
+          </div>
+
           <div>
             <Label htmlFor="reportText" className="text-lg font-medium mb-2 block">نص التقرير الخام</Label>
             <Textarea
               id="reportText"
               value={reportText}
               onChange={(e) => setReportText(e.target.value)}
-              placeholder="الصق أو اكتب نص التقرير هنا..."
+              placeholder="الصق أو اكتب نص التقرير هنا، أو قم بتحميله من تقرير موجود أعلاه..."
               rows={10}
               className="border-2 focus:border-primary transition-colors"
+              disabled={isLoadingReportContent || isLoadingSummary || isLoadingImprovements || isLoadingSection || isSavingSection}
             />
           </div>
           <div className="flex flex-col sm:flex-row gap-4">
-            <Button onClick={handleGenerateSummary} disabled={isLoadingSummary || isLoadingImprovements || isLoadingSection || isSavingSection} className="w-full sm:w-auto">
+            <Button onClick={handleGenerateSummary} disabled={isLoadingReportContent || isLoadingSummary || isLoadingImprovements || isLoadingSection || isSavingSection || !reportText.trim()} className="w-full sm:w-auto">
               {isLoadingSummary ? <Loader2 className="me-2 h-5 w-5 animate-spin" /> : <Sparkles className="me-2 h-5 w-5" />}
               إنشاء ملخص ورؤى
             </Button>
-            <Button onClick={handleSuggestImprovements} variant="outline" disabled={isLoadingSummary || isLoadingImprovements || isLoadingSection || isSavingSection || (!reportText && !summaryResult)} className="w-full sm:w-auto">
+            <Button onClick={handleSuggestImprovements} variant="outline" disabled={isLoadingReportContent || isLoadingSummary || isLoadingImprovements || isLoadingSection || isSavingSection || (!reportText.trim() && !summaryResult)} className="w-full sm:w-auto">
               {isLoadingImprovements ? <Loader2 className="me-2 h-5 w-5 animate-spin" /> : <Lightbulb className="me-2 h-5 w-5" />}
               اقتراح تحسينات
             </Button>
@@ -232,7 +292,7 @@ export default function AiReportToolPage() {
             <CardTitle className="font-headline text-2xl text-primary">إنشاء قسم تقرير بالذكاء الاصطناعي</CardTitle>
           </div>
           <CardDescription>
-            قم بتوفير موضوع وكلمات مفتاحية (اختياري) لإنشاء مسودة قسم لتقريرك. يمكنك حفظ القسم المنشأ في أحد التقارير الموجودة.
+            قم بتوفير موضوع وكلمات مفتاحية (اختياري) لإنشاء مسودة قسم لتقريرك. يمكنك حفظ القسم المنشأ في أحد التقارير الموجودة (يجب تحديده في الأعلى أولاً).
           </CardDescription>
         </CardHeader>
         <CardContent className="space-y-6">
@@ -244,7 +304,7 @@ export default function AiReportToolPage() {
               onChange={(e) => setSectionTopic(e.target.value)}
               placeholder="مثال: تحليل المخاطر الأمنية للربع الحالي"
               className="border-2 focus:border-primary transition-colors"
-              disabled={isLoadingSummary || isLoadingImprovements || isLoadingSection || isSavingSection}
+              disabled={isLoadingReportContent || isLoadingSummary || isLoadingImprovements || isLoadingSection || isSavingSection}
             />
           </div>
           <div>
@@ -255,42 +315,27 @@ export default function AiReportToolPage() {
               onChange={(e) => setSectionKeywords(e.target.value)}
               placeholder="مثال: الأمن السيبراني، الهندسة الاجتماعية، تحديثات الأنظمة"
               className="border-2 focus:border-primary transition-colors"
-              disabled={isLoadingSummary || isLoadingImprovements || isLoadingSection || isSavingSection}
+              disabled={isLoadingReportContent || isLoadingSummary || isLoadingImprovements || isLoadingSection || isSavingSection}
             />
           </div>
-           <div>
-            <Label htmlFor="selectReport" className="text-lg font-medium mb-2 block">اختر تقريرًا لحفظ القسم فيه (اختياري)</Label>
-            <Select 
-              onValueChange={setSelectedReportId} 
-              value={selectedReportId || undefined}
-              dir="rtl"
-              disabled={isLoadingSummary || isLoadingImprovements || isLoadingSection || isSavingSection || reports.length === 0}
-            >
-              <SelectTrigger id="selectReport" className="w-full">
-                <SelectValue placeholder={reports.length === 0 ? "لا توجد تقارير متاحة" : "اختر تقريرًا..."} />
-              </SelectTrigger>
-              <SelectContent>
-                {reports.map(report => (
-                  <SelectItem key={report.id} value={report.id}>{report.title}</SelectItem>
-                ))}
-              </SelectContent>
-            </Select>
-          </div>
           <div className="flex flex-col sm:flex-row gap-4">
-            <Button onClick={handleGenerateSection} disabled={isLoadingSummary || isLoadingImprovements || isLoadingSection || isSavingSection} className="w-full sm:w-auto">
+            <Button onClick={handleGenerateSection} disabled={isLoadingReportContent || isLoadingSummary || isLoadingImprovements || isLoadingSection || isSavingSection} className="w-full sm:w-auto">
               {isLoadingSection ? <Loader2 className="me-2 h-5 w-5 animate-spin" /> : <FileText className="me-2 h-5 w-5" />}
               إنشاء قسم التقرير
             </Button>
              <Button 
                 onClick={handleSaveSectionToReport} 
-                disabled={!selectedReportId || !generatedSection || isLoadingSummary || isLoadingImprovements || isLoadingSection || isSavingSection} 
+                disabled={!selectedReportId || !generatedSection || isLoadingReportContent || isLoadingSummary || isLoadingImprovements || isLoadingSection || isSavingSection} 
                 variant="outline"
                 className="w-full sm:w-auto"
               >
               {isSavingSection ? <Loader2 className="me-2 h-5 w-5 animate-spin" /> : <Save className="me-2 h-5 w-5" />}
-              حفظ القسم في التقرير المحدد
+              حفظ القسم في التقرير المحدد (أعلاه)
             </Button>
           </div>
+           { !selectedReportId && generatedSection && (
+            <p className="text-sm text-destructive">ملاحظة: لحفظ هذا القسم، يرجى تحديد تقرير من القائمة في أعلى الصفحة أولاً.</p>
+           )}
         </CardContent>
       </Card>
 
@@ -308,4 +353,3 @@ export default function AiReportToolPage() {
     </div>
   );
 }
-
