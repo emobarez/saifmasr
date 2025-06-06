@@ -25,7 +25,7 @@ interface ActivityLogPayload {
   };
   target?: {
     id?: string | null;
-    type?: string | null; // e.g., "client", "service"
+    type?: string | null; // e.g., "client", "service", "employee"
     name?: string | null;
   };
   details?: Record<string, any>;
