@@ -3,19 +3,21 @@ rules_version = '2';
 
 service firebase.storage {
   match /b/{bucket}/o {
-    // Match any file in the service-request-attachments directory
+    // Files for service requests
+    // Path: service-request-attachments/{userId}/{filename}
     match /service-request-attachments/{userId}/{allPaths=**} {
-      // Allow write (upload) only if the requesting user's ID matches the {userId} in the path
-      // and the file size is less than 5MB (5 * 1024 * 1024 bytes)
-      allow write: if request.auth != null && request.auth.uid == userId && request.resource.size < 5 * 1024 * 1024;
+      // Allow write (upload) only if the user is authenticated and their UID matches the {userId} in the path.
+      // This ensures users can only upload to their own "folder".
+      allow write: if request.auth != null && request.auth.uid == userId;
 
-      // Allow read for any authenticated user.
-      // This allows the uploader (client) and admins to read the files.
-      // Download URLs generated will respect these rules.
+      // Allow read if the user is authenticated.
+      // The actual access to the download URL should be controlled by your Firestore security rules
+      // (e.g., only the client who owns the request or an admin can see the request document containing the URL).
+      // Unpredictable URLs provide a layer of security by obscurity.
       allow read: if request.auth != null;
     }
 
-    // Fallback: Default deny all other paths if not explicitly matched
+    // Default deny for all other paths not explicitly matched
     match /{allPaths=**} {
       allow read, write: if false;
     }
