@@ -108,3 +108,4 @@ export function ServiceRequestDetailsDialog({ request, isOpen, onOpenChange }: S
     </Dialog>
   );
 }
+
