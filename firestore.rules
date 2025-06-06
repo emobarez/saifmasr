@@ -4,86 +4,79 @@ rules_version = '2';
 service cloud.firestore {
   match /databases/{database}/documents {
 
-    // Helper function to check if user is an admin
-    function isAdmin() {
-      return exists(/databases/$(database)/documents/users/$(request.auth.uid)) &&
-             get(/databases/$(database)/documents/users/$(request.auth.uid)).data.role == 'admin';
+    // Allow public read access to the system settings document for the portal name
+    match /systemSettings/general {
+      allow read: if true;
+      allow write: if request.auth != null && request.auth.token.role == 'admin'; // Only admins can write
     }
 
-    // Helper function to check if user is the owner of the document
-    function isOwner(userId) {
-      return request.auth != null && request.auth.uid == userId;
-    }
-
-    // Users collection:
-    // Admins can read/write all user documents (for role management, etc.)
-    // Authenticated users can read their own document
-    match /users/{userId} {
-      allow read: if isAdmin() || isOwner(userId);
-      allow write: if isAdmin(); // Or allow create for new users if self-registration sets roles
-    }
-
-    // Clients collection:
-    // Admins can manage all client data
-    // (No client self-service for this data based on current app structure)
+    // Clients:
+    // - Can only read/write their own documents in 'clients' if authenticated.
+    // - This rule is a placeholder, typically client documents might not be directly writable by clients themselves
+    //   or might be managed via backend functions or more specific rules.
+    // - For now, assuming admins manage clients.
     match /clients/{clientId} {
-      allow read, write, create, delete: if isAdmin();
+      allow read, write: if request.auth != null && request.auth.token.role == 'admin';
+      // Example for client self-access if needed (adjust based on actual UID usage)
+      // allow read, update: if request.auth != null && request.auth.uid == clientId;
     }
 
-    // Services collection:
-    // Admins can manage all services
-    // Authenticated users (clients) can read services
+    // Services:
+    // - Anyone can read services (for public listing).
+    // - Only admins can create, update, delete services.
     match /services/{serviceId} {
-      allow read: if request.auth != null;
-      allow write, create, delete: if isAdmin();
+      allow read: if true;
+      allow write: if request.auth != null && request.auth.token.role == 'admin';
     }
 
-    // Service Requests collection:
-    // Clients can create their own requests
-    // Clients can read their own requests
-    // Admins can read all requests and update status
+    // Service Requests:
+    // - Clients can create their own service requests.
+    // - Clients can read their own service requests.
+    // - Admins can read/write all service requests.
     match /serviceRequests/{requestId} {
       allow create: if request.auth != null && request.resource.data.clientId == request.auth.uid;
-      allow read: if isAdmin() || (request.auth != null && resource.data.clientId == request.auth.uid);
-      allow update: if isAdmin(); // Admins can update status, etc.
-      // No delete for clients, maybe for admins if needed
+      allow read: if request.auth != null && (request.auth.token.role == 'admin' || resource.data.clientId == request.auth.uid);
+      allow update: if request.auth != null && request.auth.token.role == 'admin'; // Only admins can update (e.g., status)
+      allow delete: if request.auth != null && request.auth.token.role == 'admin';
     }
 
-    // Invoices collection:
-    // Admins can manage all invoices
-    // Clients can read their own invoices
+    // Invoices:
+    // - Clients can read their own invoices.
+    // - Admins can read/write all invoices.
     match /invoices/{invoiceId} {
-      allow read: if isAdmin() || (request.auth != null && resource.data.clientId == request.auth.uid);
-      allow write, create, delete: if isAdmin();
+      allow create: if request.auth != null && request.auth.token.role == 'admin'; // Admins create invoices
+      allow read: if request.auth != null && (request.auth.token.role == 'admin' || resource.data.clientId == request.auth.uid);
+      allow update, delete: if request.auth != null && request.auth.token.role == 'admin';
+    }
+
+    // Reports:
+    // - Only admins can read/write reports.
+    match /reports/{reportId} {
+      allow read, write: if request.auth != null && request.auth.token.role == 'admin';
+    }
+
+    // Employees:
+    // - Only admins can read/write employee data.
+    match /employees/{employeeId} {
+      allow read, write: if request.auth != null && request.auth.token.role == 'admin';
     }
     
-    // Employees collection:
-    // Admins can manage all employee data
-    match /employees/{employeeId} {
-      allow read, write, create, delete: if isAdmin();
-    }
-
-    // Reports collection:
-    // Admins can manage all reports
-    match /reports/{reportId} {
-      allow read, write, create, delete: if isAdmin();
-    }
-
-    // System Settings collection:
-    // Admins can read/write system settings
-    // Authenticated users might read some settings (like portalName - handled by hook safely)
-    match /systemSettings/{settingId} {
-      allow read: if request.auth != null; // Portal name is read by all auth users via hook
-      allow write: if isAdmin();
-    }
-
-    // Activity Logs collection:
-    // Authenticated users can create (log their own actions)
-    // Admins can read all logs
+    // Activity Logs:
+    // - Only admins can read activity logs.
+    // - Backend (or trusted admin clients) should write activity logs. For simplicity, allow admin write here.
     match /activityLogs/{logId} {
-      allow create: if request.auth != null;
-      allow read: if isAdmin();
-      // No update/delete for logs generally
+      allow read, write: if request.auth != null && request.auth.token.role == 'admin';
     }
+
+    // Function to check user role (example, assuming role is stored in custom claims)
+    // You would need to set these custom claims on your users via Firebase Admin SDK
+    // For this app, role is determined client-side based on email for simplicity,
+    // but for true security, custom claims are preferred for rules.
+    // function isAdmin() {
+    //   return request.auth.token.role == 'admin';
+    // }
+    // function isClient() {
+    //  return request.auth.token.role == 'client';
+    // }
   }
 }
