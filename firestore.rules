@@ -1,86 +1,89 @@
+
 rules_version = '2';
 
 service cloud.firestore {
   match /databases/{database}/documents {
 
-    // Helper function to check if a user is an admin
+    // Helper function to check if user is an admin
     function isAdmin() {
-      return request.auth.token.email == "admin@saifmasr.com" || request.auth.token.email == "admin@example.com";
+      return exists(/databases/$(database)/documents/users/$(request.auth.uid)) &&
+             get(/databases/$(database)/documents/users/$(request.auth.uid)).data.role == 'admin';
     }
 
-    // System Settings
+    // Helper function to check if user is the owner of the document
+    function isOwner(userId) {
+      return request.auth != null && request.auth.uid == userId;
+    }
+
+    // Users collection:
+    // Admins can read/write all user documents (for role management, etc.)
+    // Authenticated users can read their own document
+    match /users/{userId} {
+      allow read: if isAdmin() || isOwner(userId);
+      allow write: if isAdmin(); // Or allow create for new users if self-registration sets roles
+    }
+
+    // Clients collection:
+    // Admins can manage all client data
+    // (No client self-service for this data based on current app structure)
+    match /clients/{clientId} {
+      allow read, write, create, delete: if isAdmin();
+    }
+
+    // Services collection:
+    // Admins can manage all services
+    // Authenticated users (clients) can read services
+    match /services/{serviceId} {
+      allow read: if request.auth != null;
+      allow write, create, delete: if isAdmin();
+    }
+
+    // Service Requests collection:
+    // Clients can create their own requests
+    // Clients can read their own requests
+    // Admins can read all requests and update status
+    match /serviceRequests/{requestId} {
+      allow create: if request.auth != null && request.resource.data.clientId == request.auth.uid;
+      allow read: if isAdmin() || (request.auth != null && resource.data.clientId == request.auth.uid);
+      allow update: if isAdmin(); // Admins can update status, etc.
+      // No delete for clients, maybe for admins if needed
+    }
+
+    // Invoices collection:
+    // Admins can manage all invoices
+    // Clients can read their own invoices
+    match /invoices/{invoiceId} {
+      allow read: if isAdmin() || (request.auth != null && resource.data.clientId == request.auth.uid);
+      allow write, create, delete: if isAdmin();
+    }
+    
+    // Employees collection:
+    // Admins can manage all employee data
+    match /employees/{employeeId} {
+      allow read, write, create, delete: if isAdmin();
+    }
+
+    // Reports collection:
+    // Admins can manage all reports
+    match /reports/{reportId} {
+      allow read, write, create, delete: if isAdmin();
+    }
+
+    // System Settings collection:
+    // Admins can read/write system settings
+    // Authenticated users might read some settings (like portalName - handled by hook safely)
     match /systemSettings/{settingId} {
-      allow read: if true; // Publicly readable for portal name
+      allow read: if request.auth != null; // Portal name is read by all auth users via hook
       allow write: if isAdmin();
     }
 
-    // Clients
-    match /clients/{clientId} {
-      allow read, update, delete: if isAdmin();
-      allow create: if isAdmin(); // Admins can create clients
-      // Clients can potentially read/update their own info if tied to auth.uid
-      // allow read, update: if request.auth.uid == clientId; // Example if client ID is user UID
-    }
-    match /clients/{document=**} { // For listing
-        allow list: if isAdmin();
-    }
-
-
-    // Services
-    match /services/{serviceId} {
-      allow read: if request.auth != null; // Authenticated users can read services
-      allow create, update, delete: if isAdmin();
-    }
-     match /services/{document=**} { // For listing
-        allow list: if request.auth != null;
-    }
-
-    // Service Requests
-    match /serviceRequests/{requestId} {
-      allow read, update: if isAdmin() || request.auth.uid == resource.data.clientId;
-      allow create: if request.auth.uid == request.resource.data.clientId; // User can only create for themselves
-      allow delete: if isAdmin();
-    }
-    match /serviceRequests/{document=**} { // For listing
-        allow list: if isAdmin(); // Admins can list all
-        // Clients might list their own using queries, rule would be on the query
-    }
-
-    // Invoices
-    match /invoices/{invoiceId} {
-      allow read: if isAdmin() || request.auth.uid == resource.data.clientId;
-      allow create, update, delete: if isAdmin();
-    }
-     match /invoices/{document=**} { // For listing
-        allow list: if isAdmin();
-        // Clients might list their own using queries
-    }
-
-    // Employees
-    match /employees/{employeeId} {
-        allow read, create, update, delete: if isAdmin();
-    }
-    match /employees/{document=**} {
-        allow list: if isAdmin();
-    }
-
-    // Reports
-    match /reports/{reportId} {
-        allow read, create, update, delete: if isAdmin();
-    }
-    match /reports/{document=**} {
-        allow list: if isAdmin();
-    }
-
-    // Activity Logs
+    // Activity Logs collection:
+    // Authenticated users can create (log their own actions)
+    // Admins can read all logs
     match /activityLogs/{logId} {
-      allow read: if isAdmin(); // Admins can read logs
-      allow create: if request.auth != null; // Authenticated users can create logs
+      allow create: if request.auth != null;
+      allow read: if isAdmin();
       // No update/delete for logs generally
     }
-    match /activityLogs/{document=**} {
-        allow list: if isAdmin();
-    }
-
   }
 }
