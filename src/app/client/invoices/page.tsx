@@ -88,6 +88,20 @@ export default function ClientInvoicesPage() {
     setIsViewDetailsDialogOpen(true);
   };
 
+  const handleDownloadInvoice = () => {
+    toast({
+      title: "قيد التطوير",
+      description: "ميزة تحميل الفاتورة كملف PDF لا تزال تحت التطوير.",
+    });
+  };
+
+  const handlePrintInvoice = () => {
+    toast({
+      title: "قيد التطوير",
+      description: "ميزة طباعة الفاتورة لا تزال تحت التطوير.",
+    });
+  };
+
   return (
     <div className="space-y-6">
       <Card>
@@ -124,10 +138,10 @@ export default function ClientInvoicesPage() {
                     <Button variant="ghost" size="icon" aria-label="عرض تفاصيل الفاتورة" onClick={() => handleViewDetails(invoice)}>
                       <Eye className="h-5 w-5" />
                     </Button>
-                    <Button variant="ghost" size="icon" aria-label="تحميل الفاتورة" disabled>
+                    <Button variant="ghost" size="icon" aria-label="تحميل الفاتورة" onClick={handleDownloadInvoice}>
                       <Download className="h-5 w-5" />
                     </Button>
-                    <Button variant="ghost" size="icon" aria-label="طباعة الفاتورة" disabled>
+                    <Button variant="ghost" size="icon" aria-label="طباعة الفاتورة" onClick={handlePrintInvoice}>
                       <Printer className="h-5 w-5" />
                     </Button>
                   </TableCell>
@@ -151,3 +165,4 @@ export default function ClientInvoicesPage() {
     </div>
   );
 }
+
