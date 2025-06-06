@@ -11,7 +11,7 @@ import { useState, useEffect } from "react"; // Added useEffect
 import { ThemeSwitcher } from "./ThemeSwitcher";
 
 const navLinks = [
-  { href: "/#services", label: "الخدمات" },
+  { href: "/services", label: "الخدمات" }, // Updated href
   { href: "/#about", label: "من نحن" },
   { href: "/#contact", label: "اتصل بنا" },
 ];
