@@ -8,7 +8,7 @@ import { Textarea } from "@/components/ui/textarea";
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
-import { Sparkles, Lightbulb, Loader2, FileText, Save } from "lucide-react"; // Removed DownloadCloud
+import { Sparkles, Lightbulb, Loader2, FileText, Save } from "lucide-react"; 
 import { generateReportSummary, GenerateReportSummaryOutput } from "@/ai/flows/generate-report-summary";
 import { suggestReportImprovements, SuggestReportImprovementsOutput } from "@/ai/flows/suggest-report-improvements";
 import { generateReportSection, GenerateReportSectionInput, GenerateReportSectionOutput } from "@/ai/flows/generate-report-section";
@@ -191,6 +191,7 @@ export default function AiReportToolPage() {
       return;
     }
     setIsSavingSection(true);
+    const reportToUpdate = reports.find(r => r.id === selectedReportId);
     try {
       const reportRef = doc(db, "reports", selectedReportId);
       const reportSnap = await getDoc(reportRef);
@@ -206,7 +207,16 @@ export default function AiReportToolPage() {
       
       await updateDoc(reportRef, { content: newContent });
       toast({ title: "تم الحفظ بنجاح", description: "تم حفظ القسم في التقرير المحدد." });
-      // Optionally log this save action too
+      
+      if (adminUser && reportToUpdate) {
+        await logActivity({
+            actionType: "AI_REPORT_SECTION_APPENDED",
+            description: `Admin ${adminUser.displayName || adminUser.email} appended a generated section to report: ${reportToUpdate.title}.`,
+            actor: { id: adminUser.uid, role: "admin", name: adminUser.displayName },
+            target: { type: "report", id: selectedReportId, name: reportToUpdate.title },
+            details: { appendedSectionLength: generatedSection.generatedSectionText.length }
+        });
+      }
     } catch (error) {
       console.error("Error saving section to report:", error);
       toast({ title: "خطأ في الحفظ", description: "حدث خطأ أثناء محاولة حفظ القسم في التقرير.", variant: "destructive" });
@@ -384,3 +394,4 @@ export default function AiReportToolPage() {
     </div>
   );
 }
+
