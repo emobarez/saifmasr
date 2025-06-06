@@ -19,7 +19,7 @@ import { useToast } from "@/hooks/use-toast";
 import { db } from "@/lib/firebase";
 import { collection, addDoc, getDocs, serverTimestamp, Timestamp, query, orderBy, doc, updateDoc, deleteDoc } from "firebase/firestore";
 import { suggestServiceCategory } from "@/ai/flows/suggest-service-category";
-import { generateServiceFAQs, GenerateServiceFAQsOutput, GenerateServiceFAQsInput } from "@/ai/flows/generate-service-faqs";
+import { generateServiceFAQs, GenerateServiceFAQsInput } from "@/ai/flows/generate-service-faqs";
 import { useAuth } from "@/context/AuthContext";
 import { logActivity } from "@/lib/activityLogger";
 
@@ -78,7 +78,7 @@ export default function AdminServicesPage() {
 
   useEffect(() => {
     fetchServices();
-  }, []);
+  }, [toast]);
   
   const resetDialogStates = () => {
     setGeneratedFAQs(null);
@@ -110,6 +110,7 @@ export default function AdminServicesPage() {
           description: `Admin ${adminUser.displayName || adminUser.email} added new service: ${data.name}.`,
           actor: { id: adminUser.uid, role: adminUser.role, name: adminUser.displayName },
           target: { id: docRef.id, type: "service", name: data.name },
+          details: { category: data.category, price: data.price, status: data.status, faqsCount: generatedFAQs?.length || 0 }
         });
       }
 
@@ -139,6 +140,7 @@ export default function AdminServicesPage() {
           description: `Admin ${adminUser.displayName || adminUser.email} updated service: ${data.name}.`,
           actor: { id: adminUser.uid, role: adminUser.role, name: adminUser.displayName },
           target: { id: editingService.id, type: "service", name: data.name },
+          details: { category: data.category, price: data.price, status: data.status, faqsCount: generatedFAQs?.length || editingService.faqs?.length || 0 }
         });
       }
 
@@ -212,6 +214,15 @@ export default function AdminServicesPage() {
       if (result.suggestedCategory) {
         formInstance.setValue("category", result.suggestedCategory, { shouldValidate: true });
         toast({ title: "تم اقتراح فئة", description: `الفئة المقترحة: ${result.suggestedCategory}` });
+        if (adminUser) {
+          await logActivity({
+            actionType: "AI_SERVICE_CATEGORY_SUGGESTED",
+            description: `Admin ${adminUser.displayName || adminUser.email} used AI to suggest category for service: ${serviceName}. Suggested: ${result.suggestedCategory}.`,
+            actor: { id: adminUser.uid, role: adminUser.role, name: adminUser.displayName },
+            target: { type: "service", name: serviceName },
+            details: { serviceName, serviceDescription, suggestedCategory: result.suggestedCategory },
+          });
+        }
       } else {
         toast({ title: "لم يتم العثور على اقتراح", description: "لم يتمكن الذكاء الاصطناعي من اقتراح فئة.", variant: "default" });
       }
@@ -238,11 +249,20 @@ export default function AdminServicesPage() {
     
     setIsGeneratingFAQs(true);
     try {
-      const input: GenerateServiceFAQsInput = { serviceName, serviceDescription, faqCount: 3 }; // Request 3 FAQs
+      const input: GenerateServiceFAQsInput = { serviceName, serviceDescription, faqCount: 3 }; 
       const result = await generateServiceFAQs(input);
       if (result.faqs && result.faqs.length > 0) {
         setGeneratedFAQs(result.faqs);
         toast({ title: "تم إنشاء الأسئلة الشائعة", description: `تم إنشاء ${result.faqs.length} أسئلة.` });
+        if (adminUser) {
+          await logActivity({
+            actionType: "AI_SERVICE_FAQS_GENERATED",
+            description: `Admin ${adminUser.displayName || adminUser.email} used AI to generate FAQs for service: ${serviceName}. Generated ${result.faqs.length} FAQs.`,
+            actor: { id: adminUser.uid, role: adminUser.role, name: adminUser.displayName },
+            target: { type: "service", name: serviceName },
+            details: { serviceName, serviceDescription, faqCount: result.faqs.length },
+          });
+        }
       } else {
         setGeneratedFAQs([]); 
         toast({ title: "لم يتم إنشاء أسئلة", description: "لم يتمكن الذكاء الاصطناعي من إنشاء أسئلة شائعة. يمكنك المحاولة مرة أخرى.", variant: "default" });
@@ -289,7 +309,7 @@ export default function AdminServicesPage() {
       )} />
       <FormField control={formInstance.control} name="status" render={({ field }) => (
         <FormItem><FormLabel>حالة الخدمة</FormLabel>
-          <Select onValueChange={field.onChange} defaultValue={field.value} dir="rtl">
+          <Select onValueChange={field.onChange} value={field.value} dir="rtl">
             <FormControl><SelectTrigger><SelectValue placeholder="اختر حالة الخدمة" /></SelectTrigger></FormControl>
             <SelectContent>
               <SelectItem value="متاحة">متاحة</SelectItem>
@@ -386,35 +406,37 @@ export default function AdminServicesPage() {
           {isLoadingServices ? (
             <div className="flex justify-center items-center py-8"><Loader2 className="h-8 w-8 animate-spin text-primary" /><p className="ms-2">جارٍ تحميل الخدمات...</p></div>
           ) : filteredServices.length > 0 ? (
-            <Table>
-              <TableHeader>
-                <TableRow>
-                  <TableHead>اسم الخدمة</TableHead>
-                  <TableHead>الفئة</TableHead>
-                  <TableHead>السعر</TableHead>
-                  <TableHead>الحالة</TableHead>
-                  <TableHead>إجراءات</TableHead>
-                </TableRow>
-              </TableHeader>
-              <TableBody>
-                {filteredServices.map((service) => (
-                  <TableRow key={service.id}>
-                    <TableCell className="font-medium">{service.name}</TableCell>
-                    <TableCell>{service.category}</TableCell>
-                    <TableCell>{service.price}</TableCell>
-                    <TableCell><Badge variant={getStatusVariant(service.status)}>{service.status}</Badge></TableCell>
-                    <TableCell className="space-x-1 space-x-reverse">
-                      <Button variant="ghost" size="icon" aria-label="تعديل الخدمة" onClick={() => openEditDialog(service)}>
-                        <Edit className="h-5 w-5" />
-                      </Button>
-                      <Button variant="ghost" size="icon" aria-label="حذف الخدمة" className="text-destructive hover:text-destructive" onClick={() => handleDeleteService(service.id, service.name)}>
-                        <Trash2 className="h-5 w-5" />
-                      </Button>
-                    </TableCell>
+            <div className="overflow-x-auto">
+              <Table>
+                <TableHeader>
+                  <TableRow>
+                    <TableHead className="min-w-[150px]">اسم الخدمة</TableHead>
+                    <TableHead className="min-w-[120px]">الفئة</TableHead>
+                    <TableHead className="min-w-[100px]">السعر</TableHead>
+                    <TableHead className="min-w-[120px]">الحالة</TableHead>
+                    <TableHead className="min-w-[100px]">إجراءات</TableHead>
                   </TableRow>
-                ))}
-              </TableBody>
-            </Table>
+                </TableHeader>
+                <TableBody>
+                  {filteredServices.map((service) => (
+                    <TableRow key={service.id}>
+                      <TableCell className="font-medium">{service.name}</TableCell>
+                      <TableCell>{service.category}</TableCell>
+                      <TableCell>{service.price}</TableCell>
+                      <TableCell><Badge variant={getStatusVariant(service.status)}>{service.status}</Badge></TableCell>
+                      <TableCell className="space-x-1 space-x-reverse">
+                        <Button variant="ghost" size="icon" aria-label="تعديل الخدمة" onClick={() => openEditDialog(service)}>
+                          <Edit className="h-5 w-5" />
+                        </Button>
+                        <Button variant="ghost" size="icon" aria-label="حذف الخدمة" className="text-destructive hover:text-destructive" onClick={() => handleDeleteService(service.id, service.name)}>
+                          <Trash2 className="h-5 w-5" />
+                        </Button>
+                      </TableCell>
+                    </TableRow>
+                  ))}
+                </TableBody>
+              </Table>
+            </div>
           ) : (
             <p className="text-muted-foreground text-center py-8">
               {searchTerm ? "لم يتم العثور على خدمات تطابق بحثك." : "لا توجد خدمات لعرضها حالياً. قم بإضافة خدمة جديدة."}
@@ -432,18 +454,20 @@ export default function AdminServicesPage() {
               قم بتحديث بيانات الخدمة {editingService?.name}.
             </DialogDescription>
           </DialogHeader>
-          <Form {...editServiceForm}>
-            <form onSubmit={editServiceForm.handleSubmit(handleEditServiceSubmit)} className="space-y-4 py-4 max-h-[70vh] overflow-y-auto px-2">
-              {renderServiceFormFields(editServiceForm)}
-              <DialogFooter className="pt-4 sticky bottom-0 bg-card pb-4">
-                <Button type="button" variant="outline" onClick={() => {setIsEditServiceDialogOpen(false); resetDialogStates();}} disabled={editServiceForm.formState.isSubmitting || isSuggestingCategory || isGeneratingFAQs}>إلغاء</Button>
-                <Button type="submit" disabled={editServiceForm.formState.isSubmitting || isSuggestingCategory || isGeneratingFAQs}>
-                  {editServiceForm.formState.isSubmitting && <Loader2 className="me-2 h-4 w-4 animate-spin" />}
-                  حفظ التعديلات
-                </Button>
-              </DialogFooter>
-            </form>
-          </Form>
+          {editingService && (
+            <Form {...editServiceForm}>
+              <form onSubmit={editServiceForm.handleSubmit(handleEditServiceSubmit)} className="space-y-4 py-4 max-h-[70vh] overflow-y-auto px-2">
+                {renderServiceFormFields(editServiceForm)}
+                <DialogFooter className="pt-4 sticky bottom-0 bg-card pb-4">
+                  <Button type="button" variant="outline" onClick={() => {setIsEditServiceDialogOpen(false); resetDialogStates();}} disabled={editServiceForm.formState.isSubmitting || isSuggestingCategory || isGeneratingFAQs}>إلغاء</Button>
+                  <Button type="submit" disabled={editServiceForm.formState.isSubmitting || isSuggestingCategory || isGeneratingFAQs}>
+                    {editServiceForm.formState.isSubmitting && <Loader2 className="me-2 h-4 w-4 animate-spin" />}
+                    حفظ التعديلات
+                  </Button>
+                </DialogFooter>
+              </form>
+            </Form>
+          )}
         </DialogContent>
       </Dialog>
     </div>
