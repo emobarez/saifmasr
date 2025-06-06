@@ -213,16 +213,16 @@ export default function AdminInvoicesPage() {
   };
 
   const handleDeleteInvoice = async (invoiceId: string, invoiceNumber: string) => { 
-    if (!window.confirm(`هل أنت متأكد أنك تريد حذف الفاتورة رقم ${invoiceNumber}؟ هذا الإجراء لا يمكن التراجع عنه.`)) return;
+    if (!window.confirm(\`هل أنت متأكد أنك تريد حذف الفاتورة رقم ${invoiceNumber}؟ هذا الإجراء لا يمكن التراجع عنه.\`)) return;
     try {
       const deletedInvoice = invoices.find(inv => inv.id === invoiceId); // Get details before deleting
       await deleteDoc(doc(db, "invoices", invoiceId));
-      toast({ title: "تم الحذف", description: `تم حذف الفاتورة رقم ${invoiceNumber} بنجاح.` });
+      toast({ title: "تم الحذف", description: \`تم حذف الفاتورة رقم ${invoiceNumber} بنجاح.\` });
 
       if (adminUser && deletedInvoice) {
         await logActivity({
           actionType: "INVOICE_DELETED",
-          description: `Admin ${adminUser.displayName || adminUser.email} deleted invoice: ${invoiceNumber} for client ${deletedInvoice.clientName}.`,
+          description: \`Admin ${adminUser.displayName || adminUser.email} deleted invoice: ${invoiceNumber} for client ${deletedInvoice.clientName}.\`,
           actor: { id: adminUser.uid, role: adminUser.role, name: adminUser.displayName },
           target: { id: invoiceId, type: "invoice", name: invoiceNumber },
           details: { clientName: deletedInvoice.clientName, totalAmount: deletedInvoice.totalAmount },
@@ -530,3 +530,4 @@ export default function AdminInvoicesPage() {
     </div>
   );
 }
+

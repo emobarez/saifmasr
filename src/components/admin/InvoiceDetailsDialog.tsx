@@ -107,3 +107,4 @@ export function InvoiceDetailsDialog({ invoice, isOpen, onOpenChange }: InvoiceD
     </Dialog>
   );
 }
+
