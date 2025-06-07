@@ -38,9 +38,17 @@ export default function AdminDashboardPage() {
   const [isLoadingStats, setIsLoadingStats] = useState(true);
   const [isLoadingActivities, setIsLoadingActivities] = useState(true);
 
-  const formatDate = (timestamp: Timestamp | undefined): string => {
+  const formatDate = (timestamp: Timestamp | Date | undefined): string => {
     if (!timestamp) return "غير متوفر";
-    return timestamp.toDate().toLocaleString('ar-EG', {
+    let date: Date;
+    if (timestamp instanceof Timestamp) {
+        date = timestamp.toDate();
+    } else if (timestamp instanceof Date) {
+        date = timestamp;
+    } else {
+        return "تاريخ غير صالح";
+    }
+    return date.toLocaleString('ar-EG', {
       day: 'numeric',
       month: 'short',
       year: 'numeric',
@@ -53,11 +61,11 @@ export default function AdminDashboardPage() {
     const fetchStats = async () => {
       setIsLoadingStats(true);
       try {
-        const clientsSnapshot = await getDocs(collection(db, "clients"));
-        const servicesSnapshot = await getDocs(collection(db, "services"));
-        const serviceRequestsSnapshot = await getDocs(collection(db, "serviceRequests"));
-        const employeesSnapshot = await getDocs(collection(db, "employees"));
-        const invoicesSnapshot = await getDocs(collection(db, "invoices"));
+        const clientsSnapshot = await getCountFromServer(collection(db, "clients"));
+        const servicesSnapshot = await getCountFromServer(collection(db, "services"));
+        const serviceRequestsSnapshot = await getCountFromServer(collection(db, "serviceRequests"));
+        const employeesSnapshot = await getCountFromServer(collection(db, "employees"));
+        const invoicesSnapshot = await getCountFromServer(collection(db, "invoices"));
 
         const sevenDaysAgo = new Date();
         sevenDaysAgo.setDate(sevenDaysAgo.getDate() - 7);
@@ -70,11 +78,11 @@ export default function AdminDashboardPage() {
         const recentServiceRequestsCountSnapshot = await getCountFromServer(recentServiceRequestsQuery);
         
         setStats({
-          totalClients: clientsSnapshot.size,
-          totalServices: servicesSnapshot.size,
-          totalServiceRequests: serviceRequestsSnapshot.size,
-          totalEmployees: employeesSnapshot.size,
-          totalInvoices: invoicesSnapshot.size,
+          totalClients: clientsSnapshot.data().count,
+          totalServices: servicesSnapshot.data().count,
+          totalServiceRequests: serviceRequestsSnapshot.data().count,
+          totalEmployees: employeesSnapshot.data().count,
+          totalInvoices: invoicesSnapshot.data().count,
           recentServiceRequestsCount: recentServiceRequestsCountSnapshot.data().count,
         });
       } catch (error) {
@@ -199,13 +207,20 @@ export default function AdminDashboardPage() {
                 {activities.map((activity) => (
                   <li key={activity.id} className="border-b border-border pb-2 last:border-b-0">
                     <p className="text-foreground leading-tight">{activity.description}</p>
-                    <p className="text-xs text-muted-foreground">{formatDate(activity.timestamp)}</p>
+                    <p className="text-xs text-muted-foreground">{formatDate(activity.timestamp instanceof Timestamp ? activity.timestamp : (activity.timestamp as any)?.toDate?.())}</p>
                   </li>
                 ))}
               </ul>
             ) : (
               <p className="text-muted-foreground text-center py-4">لا توجد أنشطة حديثة لعرضها.</p>
             )}
+             <div className="mt-4">
+                <Button asChild variant="outline" size="sm" className="w-full">
+                    <Link href="/admin/activity-log">
+                        عرض سجل الأنشطة الكامل <ArrowLeftCircle className="ms-2 h-4 w-4" />
+                    </Link>
+                </Button>
+            </div>
           </CardContent>
         </Card>
       </div>
