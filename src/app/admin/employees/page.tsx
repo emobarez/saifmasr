@@ -231,11 +231,14 @@ export default function AdminEmployeesPage() {
 
   const filteredEmployees = useMemo(() => {
     if (!searchTerm) return employees;
+    const lowercasedFilter = searchTerm.toLowerCase();
     return employees.filter(employee =>
-      employee.name.toLowerCase().includes(searchTerm.toLowerCase()) ||
-      employee.employeeId.toLowerCase().includes(searchTerm.toLowerCase()) ||
-      employee.jobTitle.toLowerCase().includes(searchTerm.toLowerCase()) ||
-      employee.department.toLowerCase().includes(searchTerm.toLowerCase())
+      employee.name.toLowerCase().includes(lowercasedFilter) ||
+      employee.employeeId.toLowerCase().includes(lowercasedFilter) ||
+      employee.jobTitle.toLowerCase().includes(lowercasedFilter) ||
+      employee.department.toLowerCase().includes(lowercasedFilter) ||
+      employee.email.toLowerCase().includes(lowercasedFilter) ||
+      employee.phone.includes(searchTerm) // Phone might not need toLowerCase
     );
   }, [employees, searchTerm]);
 
@@ -354,7 +357,7 @@ export default function AdminEmployeesPage() {
         <CardContent>
           <div className="mb-4 relative max-w-sm">
             <Input 
-              placeholder="ابحث (بالاسم, الرقم الوظيفي, المسمى, القسم)..." 
+              placeholder="ابحث (الاسم، الرقم الوظيفي، الإيميل...)" 
               className="ps-10"
               value={searchTerm}
               onChange={(e) => setSearchTerm(e.target.value)}
@@ -444,4 +447,5 @@ export default function AdminEmployeesPage() {
     
 
     
+
 
