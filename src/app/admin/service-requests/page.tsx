@@ -1,11 +1,12 @@
 
 "use client";
-import { useState, useEffect, useCallback } from "react";
+import { useState, useEffect, useCallback, useMemo } from "react";
 import { Card, CardHeader, CardTitle, CardDescription, CardContent } from "@/components/ui/card";
 import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from "@/components/ui/table";
 import { Badge } from "@/components/ui/badge";
-import { Loader2, AlertTriangle, Info, ThumbsUp, MinusCircle, Eye } from "lucide-react";
+import { Loader2, AlertTriangle, Info, ThumbsUp, MinusCircle, Eye, Search, ClipboardList } from "lucide-react";
 import { Button } from "@/components/ui/button";
+import { Input } from "@/components/ui/input";
 import { useToast } from "@/hooks/use-toast";
 import { db } from "@/lib/firebase";
 import { collection, getDocs, query, orderBy, Timestamp, doc, updateDoc } from "firebase/firestore";
@@ -44,6 +45,18 @@ interface ServiceRequestWithPriority extends ServiceRequest {
 
 const statusOptions: ServiceRequest["status"][] = ["جديد", "قيد المعالجة", "مكتمل", "ملغى"];
 
+const getServiceTypeName = (typeKey: string): string => {
+  const types: {[key: string]: string} = {
+      "consulting": "خدمات استشارية",
+      "security": "حلول أمنية",
+      "reports": "إدارة التقارير",
+      "audit": "التدقيق والمراجعة",
+      "other": "أخرى"
+  };
+  return types[typeKey] || typeKey;
+};
+
+
 export default function AdminServiceRequestsPage() {
   const [requests, setRequests] = useState<ServiceRequestWithPriority[]>([]);
   const [isLoading, setIsLoading] = useState(true);
@@ -51,6 +64,7 @@ export default function AdminServiceRequestsPage() {
   const { user: adminUser } = useAuth();
   const [selectedRequest, setSelectedRequest] = useState<ServiceRequestWithPriority | null>(null);
   const [isDetailsDialogOpen, setIsDetailsDialogOpen] = useState(false);
+  const [searchTerm, setSearchTerm] = useState("");
 
   const fetchAndPrioritizeRequests = useCallback(async () => {
     setIsLoading(true);
@@ -121,7 +135,6 @@ export default function AdminServiceRequestsPage() {
     setIsDetailsDialogOpen(true);
   };
 
-
   const getStatusVariant = (status: ServiceRequest["status"]): "default" | "secondary" | "destructive" | "outline" => {
     switch (status) {
       case "جديد": return "default"; 
@@ -153,17 +166,41 @@ export default function AdminServiceRequestsPage() {
     return "تاريخ غير صالح";
   };
 
+  const filteredRequests = useMemo(() => {
+    if (!searchTerm) return requests;
+    const lowercasedFilter = searchTerm.toLowerCase();
+    return requests.filter(req => 
+      req.requestTitle.toLowerCase().includes(lowercasedFilter) ||
+      req.clientName.toLowerCase().includes(lowercasedFilter) ||
+      req.clientEmail.toLowerCase().includes(lowercasedFilter) ||
+      getServiceTypeName(req.serviceType).toLowerCase().includes(lowercasedFilter) ||
+      req.status.toLowerCase().includes(lowercasedFilter)
+    );
+  }, [requests, searchTerm]);
+
   return (
     <div className="space-y-6">
       <Card>
         <CardHeader>
-          <CardTitle className="font-headline text-xl text-primary">طلبات الخدمة الواردة</CardTitle>
+          <div className="flex items-center gap-2">
+            <ClipboardList className="h-7 w-7 text-primary" />
+            <CardTitle className="font-headline text-xl text-primary">طلبات الخدمة الواردة</CardTitle>
+          </div>
           <CardDescription>عرض وإدارة طلبات الخدمة المقدمة من العملاء مع اقتراحات الأولوية من الذكاء الاصطناعي.</CardDescription>
         </CardHeader>
         <CardContent>
+           <div className="mb-4 relative max-w-md">
+            <Input 
+              placeholder="ابحث عن طلب (بالعنوان، العميل، نوع الخدمة، الحالة)..." 
+              className="ps-10"
+              value={searchTerm}
+              onChange={(e) => setSearchTerm(e.target.value)}
+            />
+            <Search className="absolute start-3 top-1/2 -translate-y-1/2 h-5 w-5 text-muted-foreground" />
+          </div>
           {isLoading ? (
             <div className="flex justify-center items-center py-8"><Loader2 className="h-8 w-8 animate-spin text-primary" /><p className="ms-2">جارٍ تحميل طلبات الخدمة...</p></div>
-          ) : requests.length > 0 ? (
+          ) : filteredRequests.length > 0 ? (
             <div className="overflow-x-auto">
               <TooltipProvider>
                 <Table>
@@ -179,7 +216,7 @@ export default function AdminServiceRequestsPage() {
                     </TableRow>
                   </TableHeader>
                   <TableBody>
-                    {requests.map((request) => (
+                    {filteredRequests.map((request) => (
                       <TableRow key={request.id}>
                         <TableCell className="font-medium align-top">
                           {request.requestTitle}
@@ -244,7 +281,9 @@ export default function AdminServiceRequestsPage() {
               </TooltipProvider>
             </div>
           ) : (
-             <p className="text-muted-foreground text-center py-8">لا توجد طلبات خدمة لعرضها حالياً.</p>
+             <p className="text-muted-foreground text-center py-8">
+               {searchTerm ? "لم يتم العثور على طلبات تطابق بحثك." : "لا توجد طلبات خدمة لعرضها حالياً."}
+            </p>
           )}
         </CardContent>
       </Card>
