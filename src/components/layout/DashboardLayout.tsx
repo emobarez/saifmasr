@@ -4,7 +4,7 @@
 import type { ReactNode, ElementType } from "react";
 import Link from "next/link";
 import { usePathname, useRouter } from "next/navigation";
-import { useEffect } from "react"; // Added useEffect import
+import { useEffect } from "react";
 import {
   SidebarProvider,
   Sidebar,
@@ -35,7 +35,7 @@ import {
 } from "lucide-react";
 import { useAuth } from "@/context/AuthContext";
 import { Avatar, AvatarFallback, AvatarImage } from "@/components/ui/avatar";
-import { usePortalName } from '@/hooks/usePortalName';
+import { useSiteSettings } from '@/hooks/useSiteSettings'; // Updated import
 import type { NavItemConfig } from '@/config/dashboardNavs';
 import { ThemeSwitcher } from "./ThemeSwitcher"; 
 
@@ -65,7 +65,7 @@ export function DashboardLayout({ children, navItems }: DashboardLayoutProps) {
   const pathname = usePathname();
   const { user, signOut, loading: authLoading } = useAuth();
   const router = useRouter();
-  const { portalName: dynamicPortalName, isLoadingPortalName } = usePortalName();
+  const { portalName, isLoadingSiteSettings } = useSiteSettings(); // Updated hook usage
 
   const getInitials = (name?: string | null) => {
     if (!name) return "SM";
@@ -78,7 +78,7 @@ export function DashboardLayout({ children, navItems }: DashboardLayoutProps) {
     }
   }, [authLoading, user, router]);
 
-  if (authLoading || isLoadingPortalName || !user) {
+  if (authLoading || isLoadingSiteSettings || !user) {
     return (
       <div className="flex items-center justify-center min-h-screen bg-background">
         <p className="text-lg text-primary font-semibold">جارٍ التحميل...</p>
@@ -86,16 +86,9 @@ export function DashboardLayout({ children, navItems }: DashboardLayoutProps) {
     );
   }
 
-  // This check should ideally be handled by the AuthContext's redirection logic,
-  // but as a safeguard here:
-  // if (!user) {
-  //   // router.push('/auth/login'); // This was causing the "setState in render" error. Moved to useEffect.
-  //   return null; 
-  // }
-
   const filteredNavItems = navItems.filter(item => item.allowedRoles.includes(user.role!));
   
-  const displaySidebarPortalName = isLoadingPortalName ? "..." : dynamicPortalName.split(" ").slice(0, 2).join(" ");
+  const displaySidebarPortalName = isLoadingSiteSettings ? "..." : portalName.split(" ").slice(0, 2).join(" ");
 
 
   return (

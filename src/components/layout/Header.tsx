@@ -6,12 +6,12 @@ import { Sheet, SheetContent, SheetTrigger, SheetTitle, SheetClose } from "@/com
 import { Menu, ShieldHalf } from "lucide-react";
 import { useAuth } from "@/context/AuthContext";
 import { useRouter } from "next/navigation";
-import { usePortalName } from '@/hooks/usePortalName';
-import { useState, useEffect } from "react"; // Added useEffect
+import { useSiteSettings } from '@/hooks/useSiteSettings'; // Updated import
+import { useState, useEffect } from "react"; 
 import { ThemeSwitcher } from "./ThemeSwitcher";
 
 const navLinks = [
-  { href: "/services", label: "الخدمات" }, // Updated href
+  { href: "/services", label: "الخدمات" }, 
   { href: "/#about", label: "من نحن" },
   { href: "/#contact", label: "اتصل بنا" },
 ];
@@ -19,7 +19,7 @@ const navLinks = [
 export function Header() {
   const { user, signOut, loading: authLoading } = useAuth();
   const router = useRouter();
-  const { portalName: dynamicPortalName, isLoadingPortalName } = usePortalName();
+  const { portalName, isLoadingSiteSettings } = useSiteSettings(); // Updated hook usage
   const [isMobileMenuOpen, setIsMobileMenuOpen] = useState(false); 
 
   const handleAuthAction = () => {
@@ -39,7 +39,7 @@ export function Header() {
     return user ? "لوحة التحكم" : "تسجيل الدخول";
   }
 
-  const displayPortalName = isLoadingPortalName ? "..." : dynamicPortalName;
+  const displayPortalName = isLoadingSiteSettings ? "..." : portalName;
 
   const handleMobileLinkClick = () => {
     setIsMobileMenuOpen(false); 

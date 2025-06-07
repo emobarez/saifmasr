@@ -4,7 +4,7 @@ import { Card, CardHeader, CardTitle, CardDescription, CardContent } from "@/com
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Switch } from "@/components/ui/switch";
-import { Save, Bell, ShieldCheck, Palette, Loader2, Settings as SettingsIcon } from "lucide-react";
+import { Save, Bell, ShieldCheck, Palette, Loader2, Settings as SettingsIcon, Phone, Mail, MapPin } from "lucide-react";
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
 import { useState, useEffect } from "react";
 import { useToast } from "@/hooks/use-toast";
@@ -16,11 +16,15 @@ import * as z from "zod";
 import { Form, FormControl, FormField, FormItem, FormLabel, FormMessage } from "@/components/ui/form";
 import { useAuth } from "@/context/AuthContext";
 import { logActivity } from "@/lib/activityLogger";
+import { Textarea } from "@/components/ui/textarea";
 
 const settingsSchema = z.object({
   portalName: z.string().min(3, { message: "اسم البوابة يجب أن لا يقل عن 3 أحرف." }),
   adminEmail: z.string().email({ message: "البريد الإلكتروني للمسؤول غير صالح." }),
   maintenanceMode: z.boolean(),
+  companyPhone: z.string().optional(),
+  companyAddress: z.string().max(250, { message: "العنوان يجب ألا يتجاوز 250 حرفًا."}).optional(),
+  publicEmail: z.string().email({ message: "البريد الإلكتروني العام غير صالح." }).optional().or(z.literal('')),
 });
 
 type SettingsFormValues = z.infer<typeof settingsSchema>;
@@ -28,7 +32,7 @@ type SettingsFormValues = z.infer<typeof settingsSchema>;
 export default function AdminSettingsPage() {
   const { toast } = useToast();
   const { user: adminUser } = useAuth();
-  const [isLoading, setIsLoading] = useState(true);
+  const [isFetchingSettings, setIsFetchingSettings] = useState(true); // Renamed from isLoading
   
   const form = useForm<SettingsFormValues>({
     resolver: zodResolver(settingsSchema),
@@ -36,6 +40,9 @@ export default function AdminSettingsPage() {
       portalName: "سيف مصر الوطنية للأمن",
       adminEmail: "admin@saifmasr.com",
       maintenanceMode: false,
+      companyPhone: "",
+      companyAddress: "",
+      publicEmail: "",
     },
   });
   const { handleSubmit, control, reset, formState: {isSubmitting} } = form;
@@ -44,15 +51,23 @@ export default function AdminSettingsPage() {
 
   useEffect(() => {
     const fetchSettings = async () => {
-      setIsLoading(true);
+      setIsFetchingSettings(true);
       try {
         const docSnap = await getDoc(settingsDocRef);
         if (docSnap.exists()) {
-          const data = docSnap.data() as SettingsFormValues;
-          reset(data); // Populate form with fetched data
+          const data = docSnap.data();
+          // Ensure all fields have fallbacks if not present in Firestore
+          reset({
+            portalName: data?.portalName || "سيف مصر الوطنية للأمن",
+            adminEmail: data?.adminEmail || "admin@saifmasr.com",
+            maintenanceMode: data?.maintenanceMode || false,
+            companyPhone: data?.companyPhone || "",
+            companyAddress: data?.companyAddress || "",
+            publicEmail: data?.publicEmail || "",
+          });
         } else {
           console.log("No settings document found, using defaults.");
-          // Default values are already set in useForm
+          // Default values are already set in useForm via defaultValues
         }
       } catch (error) {
         console.error("Error fetching settings:", error);
@@ -62,7 +77,7 @@ export default function AdminSettingsPage() {
           variant: "destructive",
         });
       } finally {
-        setIsLoading(false);
+        setIsFetchingSettings(false);
       }
     };
     fetchSettings();
@@ -70,7 +85,14 @@ export default function AdminSettingsPage() {
 
   const handleSaveSettings = async (data: SettingsFormValues) => {
     try {
-      await setDoc(settingsDocRef, data, { merge: true });
+      // Filter out empty optional fields so they don't overwrite with empty strings if not intended
+      const dataToSave = { ...data };
+      if (dataToSave.companyPhone === "") delete dataToSave.companyPhone;
+      if (dataToSave.companyAddress === "") delete dataToSave.companyAddress;
+      if (dataToSave.publicEmail === "") delete dataToSave.publicEmail;
+
+
+      await setDoc(settingsDocRef, dataToSave, { merge: true });
       toast({
         title: "تم الحفظ بنجاح",
         description: "تم تحديث إعدادات النظام.",
@@ -78,9 +100,9 @@ export default function AdminSettingsPage() {
        if (adminUser) {
         await logActivity({
           actionType: "SETTINGS_UPDATED",
-          description: `Admin ${adminUser.displayName || adminUser.email} updated system settings. Portal name: ${data.portalName}, Maintenance: ${data.maintenanceMode}.`,
+          description: `Admin ${adminUser.displayName || adminUser.email} updated system settings.`,
           actor: { id: adminUser.uid, role: adminUser.role, name: adminUser.displayName },
-          details: { portalName: data.portalName, maintenanceMode: data.maintenanceMode, adminEmail: data.adminEmail },
+          details: dataToSave, 
         });
       }
     } catch (error) {
@@ -93,7 +115,7 @@ export default function AdminSettingsPage() {
     }
   };
 
-  if (isLoading) {
+  if (isFetchingSettings) {
     return (
       <div className="flex justify-center items-center h-full">
         <Loader2 className="h-8 w-8 animate-spin text-primary" />
@@ -107,13 +129,13 @@ export default function AdminSettingsPage() {
       <Card>
         <CardHeader>
           <CardTitle className="font-headline text-xl text-primary">إعدادات النظام</CardTitle>
-          <CardDescription>إدارة الإعدادات العامة لـ سيف مصر الوطنية للأمن.</CardDescription>
+          <CardDescription>إدارة الإعدادات العامة ومعلومات الاتصال لـ سيف مصر الوطنية للأمن.</CardDescription>
         </CardHeader>
         <CardContent>
           <Tabs defaultValue="general" className="w-full" dir="rtl">
             <TabsList className="grid w-full grid-cols-2 md:grid-cols-4">
               <TabsTrigger value="general" className="flex items-center gap-2">
-                <SettingsIcon className="h-5 w-5" /> عامة
+                <SettingsIcon className="h-5 w-5" /> عامة ومعلومات الاتصال
               </TabsTrigger>
               <TabsTrigger value="notifications" disabled className="flex items-center gap-2">
                 <Bell className="h-5 w-5" /> الإشعارات
@@ -131,7 +153,7 @@ export default function AdminSettingsPage() {
                 <CardHeader><CardTitle className="flex items-center gap-2"><SettingsIcon className="h-5 w-5" />الإعدادات العامة</CardTitle></CardHeader>
                 <CardContent>
                   <Form {...form}>
-                    <form onSubmit={handleSubmit(handleSaveSettings)} className="space-y-4">
+                    <form onSubmit={handleSubmit(handleSaveSettings)} className="space-y-6">
                       <FormField
                         control={control}
                         name="portalName"
@@ -177,8 +199,57 @@ export default function AdminSettingsPage() {
                           </FormItem>
                         )}
                       />
+                      
+                      <div className="pt-6 border-t">
+                        <h3 className="text-lg font-medium mb-4 text-primary flex items-center gap-2">
+                            <Phone className="h-5 w-5" />
+                            معلومات الاتصال العامة
+                        </h3>
+                        <div className="space-y-6">
+                            <FormField
+                                control={control}
+                                name="publicEmail"
+                                render={({ field }) => (
+                                <FormItem>
+                                    <FormLabel className="flex items-center gap-1"><Mail className="h-4 w-4 text-muted-foreground" />البريد الإلكتروني العام (للتواصل)</FormLabel>
+                                    <FormControl>
+                                    <Input type="email" placeholder="contact@example.com" {...field} disabled={isSubmitting} />
+                                    </FormControl>
+                                    <FormMessage />
+                                </FormItem>
+                                )}
+                            />
+                            <FormField
+                                control={control}
+                                name="companyPhone"
+                                render={({ field }) => (
+                                <FormItem>
+                                    <FormLabel className="flex items-center gap-1"><Phone className="h-4 w-4 text-muted-foreground" />رقم الهاتف</FormLabel>
+                                    <FormControl>
+                                    <Input placeholder="مثال: +201234567890" {...field} disabled={isSubmitting} />
+                                    </FormControl>
+                                    <FormMessage />
+                                </FormItem>
+                                )}
+                            />
+                            <FormField
+                                control={control}
+                                name="companyAddress"
+                                render={({ field }) => (
+                                <FormItem>
+                                    <FormLabel className="flex items-center gap-1"><MapPin className="h-4 w-4 text-muted-foreground" />العنوان الفعلي</FormLabel>
+                                    <FormControl>
+                                    <Textarea placeholder="مثال: 123 شارع النصر، القاهرة، مصر" {...field} disabled={isSubmitting} rows={3} />
+                                    </FormControl>
+                                    <FormMessage />
+                                </FormItem>
+                                )}
+                            />
+                        </div>
+                      </div>
+
                       <div className="mt-8 flex justify-end">
-                        <Button type="submit" disabled={isSubmitting || isLoading}>
+                        <Button type="submit" disabled={isSubmitting || isFetchingSettings}>
                           {isSubmitting ? <Loader2 className="me-2 h-5 w-5 animate-spin" /> : <Save className="me-2 h-5 w-5" />}
                           حفظ الإعدادات
                         </Button>

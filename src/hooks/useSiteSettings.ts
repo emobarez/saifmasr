@@ -7,7 +7,7 @@ import { doc, onSnapshot } from 'firebase/firestore';
 
 const DEFAULT_PORTAL_NAME = "سيف مصر الوطنية للأمن";
 
-interface SiteSettings {
+export interface SiteSettings { // Exporting the interface
   portalName: string;
   maintenanceMode: boolean;
   adminEmail: string;
@@ -19,7 +19,7 @@ interface SiteSettings {
 const DEFAULT_SETTINGS: SiteSettings = {
   portalName: DEFAULT_PORTAL_NAME,
   maintenanceMode: false,
-  adminEmail: "admin@saifmasr.com", // Default admin email
+  adminEmail: "admin@saifmasr.com", 
   companyPhone: "",
   companyAddress: "",
   publicEmail: "",

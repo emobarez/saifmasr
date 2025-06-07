@@ -1,13 +1,13 @@
 
 "use client";
 import { ShieldAlert, Tool } from "lucide-react";
-import { usePortalName } from "@/hooks/usePortalName";
+import { useSiteSettings } from "@/hooks/useSiteSettings"; // Updated import
 import Link from "next/link";
 import { Button } from "@/components/ui/button";
 
 export default function MaintenancePage() {
-  const { portalName, isLoadingPortalName } = usePortalName();
-  const displayPortalName = isLoadingPortalName ? "..." : portalName;
+  const { portalName, isLoadingSiteSettings } = useSiteSettings(); // Updated hook usage
+  const displayPortalName = isLoadingSiteSettings ? "..." : portalName;
 
   return (
     <div className="min-h-screen flex flex-col items-center justify-center bg-background text-center p-6" dir="rtl">

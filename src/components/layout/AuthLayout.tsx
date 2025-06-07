@@ -3,7 +3,7 @@
 import { ShieldHalf } from "lucide-react";
 import Image from "next/image";
 import Link from "next/link";
-import { usePortalName } from '@/hooks/usePortalName';
+import { useSiteSettings } from '@/hooks/useSiteSettings'; // Updated import
 
 interface AuthLayoutProps {
   children: React.ReactNode;
@@ -12,8 +12,8 @@ interface AuthLayoutProps {
 }
 
 export function AuthLayout({ children, title, description }: AuthLayoutProps) {
-  const { portalName: dynamicPortalName, isLoadingPortalName } = usePortalName();
-  const displayPortalName = isLoadingPortalName ? "..." : dynamicPortalName;
+  const { portalName, isLoadingSiteSettings } = useSiteSettings(); // Updated hook usage
+  const displayPortalName = isLoadingSiteSettings ? "..." : portalName;
 
   return (
     <div className="min-h-screen flex flex-col lg:flex-row bg-background">
@@ -34,8 +34,8 @@ export function AuthLayout({ children, title, description }: AuthLayoutProps) {
         <Image
           src="https://placehold.co/1000x1200.png"
           alt="Authentication Background"
-          fill // Changed from layout="fill"
-          style={{objectFit:"cover"}} // Changed from objectFit="cover"
+          fill 
+          style={{objectFit:"cover"}} 
           data-ai-hint="modern office"
         />
         <div className="absolute inset-0 bg-primary/70 flex flex-col items-center justify-center p-12 text-primary-foreground text-center">

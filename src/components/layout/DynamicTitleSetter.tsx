@@ -2,14 +2,14 @@
 "use client";
 
 import { useEffect } from 'react';
-import { usePortalName } from '@/hooks/usePortalName';
+import { useSiteSettings } from '@/hooks/useSiteSettings'; // Updated import
 
 export function DynamicTitleSetter() {
-  const { portalName } = usePortalName();
+  const { portalName } = useSiteSettings(); // Updated hook usage
   useEffect(() => {
     if (portalName) {
       document.title = portalName;
     }
   }, [portalName]);
-  return null; // This component doesn't render anything itself
+  return null; 
 }
