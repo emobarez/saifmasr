@@ -5,6 +5,7 @@ import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Textarea } from "@/components/ui/textarea";
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
+import { Progress } from "@/components/ui/progress"; // Import Progress component
 import { PlusCircle, Loader2, Paperclip } from "lucide-react";
 import { useForm } from "react-hook-form";
 import { zodResolver } from "@hookform/resolvers/zod";
@@ -16,6 +17,7 @@ import { collection, addDoc, serverTimestamp } from "firebase/firestore";
 import { ref, uploadBytesResumable, getDownloadURL } from "firebase/storage"; 
 import { useAuth } from "@/context/AuthContext";
 import { logActivity } from "@/lib/activityLogger";
+import { useState } from "react"; // Import useState
 
 const serviceRequestSchema = z.object({
   serviceType: z.string({ required_error: "يرجى اختيار نوع الخدمة" }).min(1, "يرجى اختيار نوع الخدمة"),
@@ -29,6 +31,9 @@ type ServiceRequestFormValues = z.infer<typeof serviceRequestSchema>;
 export default function ClientServiceRequestsPage() {
   const { toast } = useToast();
   const { user } = useAuth(); 
+  const [uploadProgress, setUploadProgress] = useState<number | null>(null);
+  const [isUploading, setIsUploading] = useState(false);
+
   const form = useForm<ServiceRequestFormValues>({
     resolver: zodResolver(serviceRequestSchema),
     defaultValues: {
@@ -39,7 +44,7 @@ export default function ClientServiceRequestsPage() {
     },
   });
   
-  const {formState: {isSubmitting}, reset} = form;
+  const {formState: {isSubmitting}, reset, control} = form; // Added control
 
   const onSubmit = async (data: ServiceRequestFormValues) => {
     if (!user) {
@@ -53,16 +58,16 @@ export default function ClientServiceRequestsPage() {
 
     let attachmentURL: string | null = null;
     let originalFilename: string | null = null;
-    let docRefId: string | null = null; // To store the doc ID for logging
+    let docRefId: string | null = null; 
 
     try {
-      form.control.handleSubmit 
-      
       const file = data.attachments?.[0] as File | undefined;
 
       if (file) {
-        toast({ title: "جارٍ رفع المرفق...", description: "قد يستغرق هذا بعض الوقت." });
-        const uniqueFilename = `${Date.now()}-${file.name}`;
+        setIsUploading(true);
+        setUploadProgress(0);
+        toast({ title: "جارٍ رفع المرفق...", description: `اسم الملف: ${file.name}` });
+        const uniqueFilename = `${Date.now()}-${file.name.replace(/\s+/g, '_')}`; // Sanitize filename
         const storageRef = ref(storage, `service-request-attachments/${user.uid}/${uniqueFilename}`);
         
         const uploadTask = uploadBytesResumable(storageRef, file);
@@ -70,14 +75,20 @@ export default function ClientServiceRequestsPage() {
         await new Promise<void>((resolve, reject) => {
           uploadTask.on('state_changed',
             (snapshot) => {
+              const progress = (snapshot.bytesTransferred / snapshot.totalBytes) * 100;
+              setUploadProgress(progress);
             },
             (error) => {
               console.error("Upload failed:", error);
+              setIsUploading(false);
+              setUploadProgress(null);
               reject(error);
             },
             async () => {
               attachmentURL = await getDownloadURL(uploadTask.snapshot.ref);
               originalFilename = file.name;
+              setUploadProgress(100); // Mark as complete
+              // setIsUploading(false); // Keep isUploading true until Firestore write is done or reset it slightly later
               resolve();
             }
           );
@@ -97,22 +108,25 @@ export default function ClientServiceRequestsPage() {
         ...(attachmentURL && { attachmentURL }),
         ...(originalFilename && { attachmentFilename: originalFilename }),
       });
-      docRefId = docRef.id; // Store doc ID
+      docRefId = docRef.id;
 
       toast({
         title: "تم إرسال الطلب بنجاح",
         description: "سنقوم بمراجعة طلبك والتواصل معك قريباً.",
       });
       
-      await logActivity({
-        actionType: "SERVICE_REQUEST_SUBMITTED",
-        description: `Client ${user.displayName || user.email} submitted service request: ${data.requestTitle}.`,
-        actor: { id: user.uid, role: "client", name: user.displayName },
-        target: { id: docRefId, type: "serviceRequest", name: data.requestTitle },
-        details: { serviceType: data.serviceType, hasAttachment: !!attachmentURL },
-      });
+      if (user) { // Ensure user is not null for logging
+          await logActivity({
+            actionType: "SERVICE_REQUEST_SUBMITTED",
+            description: `Client ${user.displayName || user.email} submitted service request: ${data.requestTitle}.`,
+            actor: { id: user.uid, role: "client", name: user.displayName },
+            target: { id: docRefId, type: "serviceRequest", name: data.requestTitle },
+            details: { serviceType: data.serviceType, hasAttachment: !!attachmentURL },
+          });
+      }
 
       reset(); 
+      setUploadProgress(null); // Reset progress after successful submission
     } catch (error: any) {
       console.error("Error submitting service request:", error);
       let errorMessage = "حدث خطأ أثناء محاولة إرسال طلبك. يرجى المحاولة مرة أخرى.";
@@ -124,6 +138,11 @@ export default function ClientServiceRequestsPage() {
         description: errorMessage,
         variant: "destructive",
       });
+    } finally {
+        setIsUploading(false); // Ensure isUploading is false in all cases
+        if (!docRefId) { // If submission failed before Firestore write, and we were uploading
+          setUploadProgress(null); // Clear progress if submit fails entirely
+        }
     }
   };
 
@@ -138,14 +157,14 @@ export default function ClientServiceRequestsPage() {
           <Form {...form}>
             <form onSubmit={form.handleSubmit(onSubmit)} className="space-y-6">
               <FormField
-                control={form.control}
+                control={control}
                 name="serviceType"
                 render={({ field }) => (
                   <FormItem>
                     <FormLabel>نوع الخدمة</FormLabel>
                     <Select onValueChange={field.onChange} defaultValue={field.value} dir="rtl">
                       <FormControl>
-                        <SelectTrigger disabled={isSubmitting}>
+                        <SelectTrigger disabled={isSubmitting || isUploading}>
                           <SelectValue placeholder="اختر نوع الخدمة" />
                         </SelectTrigger>
                       </FormControl>
@@ -162,33 +181,33 @@ export default function ClientServiceRequestsPage() {
                 )}
               />
               <FormField
-                control={form.control}
+                control={control}
                 name="requestTitle"
                 render={({ field }) => (
                   <FormItem>
                     <FormLabel>عنوان الطلب</FormLabel>
                     <FormControl>
-                      <Input placeholder="مثال: طلب استشارة أمنية لمشروع جديد" {...field} disabled={isSubmitting} />
+                      <Input placeholder="مثال: طلب استشارة أمنية لمشروع جديد" {...field} disabled={isSubmitting || isUploading} />
                     </FormControl>
                     <FormMessage />
                   </FormItem>
                 )}
               />
               <FormField
-                control={form.control}
+                control={control}
                 name="requestDetails"
                 render={({ field }) => (
                   <FormItem>
                     <FormLabel>تفاصيل الطلب</FormLabel>
                     <FormControl>
-                      <Textarea placeholder="يرجى تقديم وصف تفصيلي لطلبك، بما في ذلك أي معلومات ذات صلة..." rows={5} {...field} disabled={isSubmitting} />
+                      <Textarea placeholder="يرجى تقديم وصف تفصيلي لطلبك، بما في ذلك أي معلومات ذات صلة..." rows={5} {...field} disabled={isSubmitting || isUploading} />
                     </FormControl>
                     <FormMessage />
                   </FormItem>
                 )}
               />
               <FormField
-                control={form.control}
+                control={control}
                 name="attachments"
                 render={({ field: { onChange, value, ...restField } }) => ( 
                   <FormItem>
@@ -201,7 +220,7 @@ export default function ClientServiceRequestsPage() {
                         type="file" 
                         onChange={(e) => onChange(e.target.files)} 
                         {...restField}
-                        disabled={isSubmitting}
+                        disabled={isSubmitting || isUploading}
                         className="pt-2" 
                       />
                     </FormControl>
@@ -212,9 +231,21 @@ export default function ClientServiceRequestsPage() {
                   </FormItem>
                 )}
               />
-              <Button type="submit" className="w-full md:w-auto" disabled={isSubmitting}>
-                {isSubmitting ? <Loader2 className="me-2 h-4 w-4 animate-spin" /> : <PlusCircle className="me-2 h-5 w-5" />}
-                {isSubmitting ? 'جارٍ الإرسال...' : 'إرسال الطلب'}
+
+              {isUploading && uploadProgress !== null && uploadProgress < 100 && (
+                <div className="space-y-1 mt-2">
+                  <Progress value={uploadProgress} className="w-full h-2" />
+                  <p className="text-sm text-muted-foreground text-center">جارٍ رفع الملف: {Math.round(uploadProgress)}%</p>
+                </div>
+              )}
+               {isUploading && uploadProgress === 100 && (
+                <p className="text-sm text-green-600 dark:text-green-500 mt-2 text-center">اكتمل رفع الملف، جارٍ إرسال الطلب...</p>
+              )}
+
+
+              <Button type="submit" className="w-full md:w-auto" disabled={isSubmitting || isUploading}>
+                {(isSubmitting || isUploading) ? <Loader2 className="me-2 h-4 w-4 animate-spin" /> : <PlusCircle className="me-2 h-5 w-5" />}
+                {(isSubmitting || isUploading) ? 'جارٍ الإرسال...' : 'إرسال الطلب'}
               </Button>
             </form>
           </Form>
@@ -223,3 +254,4 @@ export default function ClientServiceRequestsPage() {
     </div>
   );
 }
+
