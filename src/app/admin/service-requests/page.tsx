@@ -4,8 +4,8 @@ import { useState, useEffect, useCallback } from "react";
 import { Card, CardHeader, CardTitle, CardDescription, CardContent } from "@/components/ui/card";
 import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from "@/components/ui/table";
 import { Badge } from "@/components/ui/badge";
-import { Loader2, AlertTriangle, Info, ThumbsUp, MinusCircle, Eye } from "lucide-react"; // Added Eye
-import { Button } from "@/components/ui/button"; // Added Button
+import { Loader2, AlertTriangle, Info, ThumbsUp, MinusCircle, Eye } from "lucide-react";
+import { Button } from "@/components/ui/button";
 import { useToast } from "@/hooks/use-toast";
 import { db } from "@/lib/firebase";
 import { collection, getDocs, query, orderBy, Timestamp, doc, updateDoc } from "firebase/firestore";
@@ -19,7 +19,8 @@ import {
 } from "@/components/ui/select"
 import { useAuth } from "@/context/AuthContext";
 import { logActivity } from "@/lib/activityLogger";
-import { AdminServiceRequestDetailsDialog } from "@/components/admin/ServiceRequestDetailsDialog"; // Added import
+import { AdminServiceRequestDetailsDialog } from "@/components/admin/ServiceRequestDetailsDialog";
+import { Tooltip, TooltipContent, TooltipProvider, TooltipTrigger } from "@/components/ui/tooltip";
 
 interface ServiceRequest {
   id: string;
@@ -48,8 +49,8 @@ export default function AdminServiceRequestsPage() {
   const [isLoading, setIsLoading] = useState(true);
   const { toast } = useToast();
   const { user: adminUser } = useAuth();
-  const [selectedRequest, setSelectedRequest] = useState<ServiceRequestWithPriority | null>(null); // Added state
-  const [isDetailsDialogOpen, setIsDetailsDialogOpen] = useState(false); // Added state
+  const [selectedRequest, setSelectedRequest] = useState<ServiceRequestWithPriority | null>(null);
+  const [isDetailsDialogOpen, setIsDetailsDialogOpen] = useState(false);
 
   const fetchAndPrioritizeRequests = useCallback(async () => {
     setIsLoading(true);
@@ -164,68 +165,83 @@ export default function AdminServiceRequestsPage() {
             <div className="flex justify-center items-center py-8"><Loader2 className="h-8 w-8 animate-spin text-primary" /><p className="ms-2">جارٍ تحميل طلبات الخدمة...</p></div>
           ) : requests.length > 0 ? (
             <div className="overflow-x-auto">
-              <Table>
-                <TableHeader>
-                  <TableRow>
-                    <TableHead className="min-w-[150px]">عنوان الطلب</TableHead>
-                    <TableHead className="min-w-[120px]">اسم العميل</TableHead>
-                    <TableHead className="min-w-[150px]">تاريخ التقديم</TableHead>
-                    <TableHead className="min-w-[120px]">الحالة</TableHead>
-                    <TableHead className="min-w-[150px]">الأولوية (AI)</TableHead>
-                    <TableHead className="min-w-[180px]">تغيير الحالة</TableHead>
-                    <TableHead className="min-w-[80px]">إجراءات</TableHead> 
-                  </TableRow>
-                </TableHeader>
-                <TableBody>
-                  {requests.map((request) => (
-                    <TableRow key={request.id}>
-                      <TableCell className="font-medium align-top">
-                        {request.requestTitle}
-                        {request.attachmentURL && (
-                           <a 
-                            href={request.attachmentURL} 
-                            target="_blank" 
-                            rel="noopener noreferrer" 
-                            className="block text-xs text-primary hover:underline mt-1"
-                          >
-                            ({request.attachmentFilename || 'مرفق'})
-                          </a>
-                        )}
-                      </TableCell>
-                      <TableCell className="align-top">{request.clientName}</TableCell>
-                      <TableCell className="align-top">{formatDate(request.createdAt)}</TableCell>
-                      <TableCell className="align-top"><Badge variant={getStatusVariant(request.status)}>{request.status}</Badge></TableCell>
-                      <TableCell className="align-top">
-                        <div className="flex items-center gap-2" title={request.aiReasoning || request.aiError || ""}>
-                          {getPriorityIcon(request.aiPriority)}
-                          {request.aiPriority || request.aiError || "N/A"}
-                        </div>
-                      </TableCell>
-                       <TableCell className="align-top">
-                        <Select 
-                          value={request.status} 
-                          onValueChange={(value) => handleStatusChange(request.id, value as ServiceRequest["status"])}
-                          dir="rtl"
-                        >
-                          <SelectTrigger className="h-9 w-full text-xs">
-                            <SelectValue placeholder="تغيير الحالة" />
-                          </SelectTrigger>
-                          <SelectContent>
-                            {statusOptions.map(option => (
-                              <SelectItem key={option} value={option}>{option}</SelectItem>
-                            ))}
-                          </SelectContent>
-                        </Select>
-                      </TableCell>
-                      <TableCell className="align-top">
-                        <Button variant="ghost" size="icon" onClick={() => handleViewDetails(request)}>
-                          <Eye className="h-5 w-5" />
-                        </Button>
-                      </TableCell>
+              <TooltipProvider>
+                <Table>
+                  <TableHeader>
+                    <TableRow>
+                      <TableHead className="min-w-[150px]">عنوان الطلب</TableHead>
+                      <TableHead className="min-w-[120px]">اسم العميل</TableHead>
+                      <TableHead className="min-w-[150px]">تاريخ التقديم</TableHead>
+                      <TableHead className="min-w-[120px]">الحالة</TableHead>
+                      <TableHead className="min-w-[150px]">الأولوية (AI)</TableHead>
+                      <TableHead className="min-w-[180px]">تغيير الحالة</TableHead>
+                      <TableHead className="min-w-[80px]">إجراءات</TableHead> 
                     </TableRow>
-                  ))}
-                </TableBody>
-              </Table>
+                  </TableHeader>
+                  <TableBody>
+                    {requests.map((request) => (
+                      <TableRow key={request.id}>
+                        <TableCell className="font-medium align-top">
+                          {request.requestTitle}
+                          {request.attachmentURL && (
+                             <a 
+                              href={request.attachmentURL} 
+                              target="_blank" 
+                              rel="noopener noreferrer" 
+                              className="block text-xs text-primary hover:underline mt-1"
+                            >
+                              ({request.attachmentFilename || 'مرفق'})
+                            </a>
+                          )}
+                        </TableCell>
+                        <TableCell className="align-top">{request.clientName}</TableCell>
+                        <TableCell className="align-top">{formatDate(request.createdAt)}</TableCell>
+                        <TableCell className="align-top"><Badge variant={getStatusVariant(request.status)}>{request.status}</Badge></TableCell>
+                        <TableCell className="align-top">
+                          <Tooltip>
+                            <TooltipTrigger asChild>
+                              <div className="flex items-center gap-2 cursor-default">
+                                {getPriorityIcon(request.aiPriority)}
+                                {request.aiPriority || request.aiError || "N/A"}
+                              </div>
+                            </TooltipTrigger>
+                            {(request.aiReasoning || request.aiError) && (
+                              <TooltipContent side="top" className="max-w-xs">
+                                <p className="text-xs">
+                                  {request.aiReasoning}
+                                  {request.aiReasoning && request.aiError && <br />}
+                                  {request.aiError && <span className="text-destructive">{request.aiError}</span>}
+                                </p>
+                              </TooltipContent>
+                            )}
+                          </Tooltip>
+                        </TableCell>
+                         <TableCell className="align-top">
+                          <Select 
+                            value={request.status} 
+                            onValueChange={(value) => handleStatusChange(request.id, value as ServiceRequest["status"])}
+                            dir="rtl"
+                          >
+                            <SelectTrigger className="h-9 w-full text-xs">
+                              <SelectValue placeholder="تغيير الحالة" />
+                            </SelectTrigger>
+                            <SelectContent>
+                              {statusOptions.map(option => (
+                                <SelectItem key={option} value={option}>{option}</SelectItem>
+                              ))}
+                            </SelectContent>
+                          </Select>
+                        </TableCell>
+                        <TableCell className="align-top">
+                          <Button variant="ghost" size="icon" onClick={() => handleViewDetails(request)}>
+                            <Eye className="h-5 w-5" />
+                          </Button>
+                        </TableCell>
+                      </TableRow>
+                    ))}
+                  </TableBody>
+                </Table>
+              </TooltipProvider>
             </div>
           ) : (
              <p className="text-muted-foreground text-center py-8">لا توجد طلبات خدمة لعرضها حالياً.</p>
@@ -243,3 +259,4 @@ export default function AdminServiceRequestsPage() {
     </div>
   );
 }
+
