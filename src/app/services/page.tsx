@@ -4,13 +4,15 @@ import { useState, useEffect } from "react";
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card";
 import { Badge } from "@/components/ui/badge";
 import { Accordion, AccordionContent, AccordionItem, AccordionTrigger } from "@/components/ui/accordion";
-import { Briefcase, Loader2, Tag, CreditCard, HelpCircle } from "lucide-react";
+import { Briefcase, Loader2, Tag, CreditCard, HelpCircle, Phone } from "lucide-react";
 import Image from "next/image";
 import { db } from "@/lib/firebase";
 import { collection, query, where, getDocs, orderBy, Timestamp } from "firebase/firestore";
 import { useToast } from "@/hooks/use-toast";
 import { Header } from "@/components/layout/Header";
 import { Footer } from "@/components/layout/Footer";
+import { Button } from "@/components/ui/button";
+import Link from "next/link";
 
 interface FAQItem {
   question: string;
@@ -132,9 +134,17 @@ export default function PublicServicesPage() {
             </div>
           ) : (
             <div className="text-center py-20">
-              <Briefcase className="h-16 w-16 text-muted-foreground mx-auto mb-4" />
-              <p className="text-xl text-muted-foreground">لا توجد خدمات متاحة لعرضها في الوقت الحالي.</p>
-              <p className="text-sm text-muted-foreground mt-2">يرجى التحقق مرة أخرى لاحقًا أو التواصل معنا للمزيد من المعلومات.</p>
+              <Briefcase className="h-16 w-16 text-primary/30 mx-auto mb-6" />
+              <p className="text-xl font-semibold text-foreground/90 mb-2">لا توجد خدمات متاحة حالياً.</p>
+              <p className="text-md text-muted-foreground mb-6 max-w-md mx-auto">
+                نعمل باستمرار على تحديث وإضافة خدمات جديدة. يرجى التحقق مرة أخرى لاحقًا أو التواصل معنا إذا كان لديك استفسار محدد.
+              </p>
+              <Button asChild>
+                <Link href="/#contact">
+                  <Phone className="me-2 h-5 w-5" />
+                  تواصل معنا
+                </Link>
+              </Button>
             </div>
           )}
         </div>
@@ -143,3 +153,4 @@ export default function PublicServicesPage() {
     </div>
   );
 }
+

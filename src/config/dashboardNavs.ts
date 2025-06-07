@@ -47,3 +47,4 @@ export const adminNavItems: NavItemConfig[] = [
 ];
 
 export const allNavItems: NavItemConfig[] = [...clientNavItems, ...adminNavItems];
+
