@@ -9,7 +9,7 @@ import { useState, useEffect } from "react";
 import { db } from "@/lib/firebase";
 import { collection, getDocs, query, orderBy, limit, Timestamp } from "firebase/firestore";
 import { useToast } from "@/hooks/use-toast";
-import type { ActivityActionType } from "@/lib/activityLogger";
+import type { ActivityLogEntry } from "@/lib/activityLogger"; // Updated import path
 
 const adminQuickActions = [
   { title: "إدارة العملاء", description: "عرض وتعديل بيانات العملاء.", icon: <Users className="h-8 w-8 text-primary" />, href: "/admin/clients", dataAiHint: "client management" },
@@ -29,22 +29,7 @@ interface QuickStats {
   totalInvoices: number;
 }
 
-interface ActivityLogEntry {
-  id: string;
-  actionType: ActivityActionType;
-  description: string;
-  timestamp: Timestamp;
-  actor?: {
-    id: string | null;
-    role?: "client" | "admin" | string | null;
-    name?: string | null;
-  };
-  target?: {
-    id?: string | null;
-    type?: string | null;
-    name?: string | null;
-  };
-}
+// ActivityLogEntry is now imported from activityLogger
 
 export default function AdminDashboardPage() {
   const { user } = useAuth();
@@ -100,7 +85,7 @@ export default function AdminDashboardPage() {
         setActivities(fetchedActivities);
       } catch (error) {
         console.error("Error fetching activities:", error);
-        toast({ title: "خطأ", description: "لم نتمكن من تحميل سجل الأنشطة.", variant: "destructive" });
+        toast({ title: "خطأ", description: "لم نتمكن من تحميل سجل الأنشطة. يرجى مراجعة وحدة التحكم للمزيد من التفاصيل.", variant: "destructive" });
       } finally {
         setIsLoadingActivities(false);
       }
@@ -213,5 +198,3 @@ export default function AdminDashboardPage() {
     </div>
   );
 }
-
-    

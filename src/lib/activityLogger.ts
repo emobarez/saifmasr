@@ -1,6 +1,6 @@
 
 import { db } from '@/lib/firebase';
-import { collection, addDoc, serverTimestamp } from 'firebase/firestore';
+import { collection, addDoc, serverTimestamp, Timestamp } from 'firebase/firestore';
 
 export type ActivityActionType = 
   | "CLIENT_CREATED" | "CLIENT_UPDATED" | "CLIENT_DELETED"
@@ -15,21 +15,31 @@ export type ActivityActionType =
   | "USER_LOGIN" | "USER_LOGOUT" | "USER_REGISTERED"
   | "UNKNOWN_ACTION";
 
+interface ActivityLogActor {
+  id: string | null;
+  role?: "client" | "admin" | null; // Refined type
+  name?: string | null;
+}
+
+interface ActivityLogTarget {
+  id?: string | null;
+  type?: string | null;
+  name?: string | null;
+}
+
 interface ActivityLogPayload {
   actionType: ActivityActionType;
   description: string;
-  actor?: {
-    id: string | null;
-    role?: "client" | "admin" | string | null;
-    name?: string | null; 
-  };
-  target?: {
-    id?: string | null;
-    type?: string | null; // e.g., "client", "service", "employee"
-    name?: string | null;
-  };
+  actor?: ActivityLogActor;
+  target?: ActivityLogTarget;
   details?: Record<string, any>;
 }
+
+export interface ActivityLogEntry extends ActivityLogPayload { // Added export for dashboard usage
+    id: string;
+    timestamp: Timestamp;
+}
+
 
 export async function logActivity(payload: ActivityLogPayload): Promise<void> {
   try {
@@ -42,4 +52,3 @@ export async function logActivity(payload: ActivityLogPayload): Promise<void> {
     // Optionally, handle this error more gracefully (e.g., report to an error service)
   }
 }
-
