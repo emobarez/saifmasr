@@ -3,7 +3,8 @@ import type {Metadata} from 'next';
 import './globals.css';
 import { Toaster } from "@/components/ui/toaster";
 import { AuthProvider } from '@/context/AuthContext';
-import { DynamicTitleSetter } from '@/components/layout/DynamicTitleSetter'; // Updated import
+import { DynamicTitleSetter } from '@/components/layout/DynamicTitleSetter';
+import { ThemeApplicator } from '@/components/layout/ThemeApplicator'; // New import
 
 export const metadata: Metadata = {
   title: 'سيف مصر الوطنية للأمن', // Default title, will be updated client-side
@@ -25,6 +26,7 @@ export default function RootLayout({
       </head>
       <body className="font-body antialiased" suppressHydrationWarning={true}>
         <AuthProvider>
+          <ThemeApplicator /> {/* Add ThemeApplicator here */}
           <DynamicTitleSetter />
           {children}
           <Toaster />
