@@ -6,7 +6,8 @@ import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from "@/components/ui/table";
 import { Badge } from "@/components/ui/badge";
-import { PlusCircle, Search, Edit, Trash2, Loader2, Users as UsersIcon, CalendarIcon } from "lucide-react";
+import { Avatar, AvatarFallback, AvatarImage } from "@/components/ui/avatar";
+import { PlusCircle, Search, Edit, Trash2, Loader2, Users as UsersIcon, CalendarIcon, UserSquare2 } from "lucide-react";
 import { Dialog, DialogContent, DialogDescription, DialogFooter, DialogHeader, DialogTitle, DialogTrigger } from "@/components/ui/dialog";
 import { useForm } from "react-hook-form";
 import { zodResolver } from "@hookform/resolvers/zod";
@@ -58,6 +59,13 @@ const employeeSchema = z.object({
 });
 
 type EmployeeFormValues = z.infer<typeof employeeSchema>;
+
+const getInitials = (name: string) => {
+  if (!name) return "SM"; // Saif Masr initials or a default
+  const nameParts = name.split(" ");
+  if (nameParts.length === 1) return nameParts[0].substring(0, 2).toUpperCase();
+  return (nameParts[0][0] + (nameParts[nameParts.length - 1][0] || '')).toUpperCase();
+};
 
 
 export default function AdminEmployeesPage() {
@@ -204,7 +212,7 @@ export default function AdminEmployeesPage() {
   const getStatusVariant = (status: Employee["status"]): "default" | "secondary" | "destructive" => {
     if (status === "نشط") return "default";
     if (status === "غير نشط") return "secondary";
-    if (status === "في إجازة") return "secondary"; // Changed to secondary for "في إجازة" to be less alarming
+    if (status === "في إجازة") return "secondary";
     return "default";
   };
 
@@ -232,8 +240,16 @@ export default function AdminEmployeesPage() {
   }, [employees, searchTerm]);
 
 
-  const renderEmployeeFormFields = (formInstance: typeof addEmployeeForm | typeof editEmployeeForm) => (
+  const renderEmployeeFormFields = (formInstance: typeof addEmployeeForm | typeof editEmployeeForm, currentImageUrl?: string) => (
     <>
+      {currentImageUrl && (
+        <div className="mb-4 flex justify-center">
+          <Avatar className="h-24 w-24">
+            <AvatarImage src={currentImageUrl} alt="الصورة الحالية" />
+            <AvatarFallback><UserSquare2 className="h-12 w-12 text-muted-foreground" /></AvatarFallback>
+          </Avatar>
+        </div>
+      )}
        <FormField control={formInstance.control} name="name" render={({ field }) => (
           <FormItem><FormLabel>اسم الموظف</FormLabel><FormControl><Input placeholder="الاسم بالكامل" {...field} /></FormControl><FormMessage /></FormItem>
         )}/>
@@ -308,7 +324,7 @@ export default function AdminEmployeesPage() {
           </div>
           <Dialog open={isAddEmployeeDialogOpen} onOpenChange={setIsAddEmployeeDialogOpen}>
             <DialogTrigger asChild>
-                <Button className="mt-4 md:mt-0" onClick={() => addEmployeeForm.reset({ joinDate: new Date(), status: "نشط", name: "", employeeId: "", jobTitle: "", department: "", phone: "", email: "", nationalId: "", address: "", profileImageUrl: "" })}> {/* Reset with defaults explicitly */}
+                <Button className="mt-4 md:mt-0" onClick={() => addEmployeeForm.reset({ joinDate: new Date(), status: "نشط", name: "", employeeId: "", jobTitle: "", department: "", phone: "", email: "", nationalId: "", address: "", profileImageUrl: "" })}>
                     <PlusCircle className="me-2 h-5 w-5" />
                     إضافة موظف جديد
                 </Button>
@@ -352,6 +368,7 @@ export default function AdminEmployeesPage() {
               <Table>
                 <TableHeader>
                   <TableRow>
+                    <TableHead className="min-w-[80px]">الصورة</TableHead>
                     <TableHead className="min-w-[120px]">الرقم الوظيفي</TableHead>
                     <TableHead className="min-w-[150px]">الاسم</TableHead>
                     <TableHead className="min-w-[150px]">المسمى الوظيفي</TableHead>
@@ -364,6 +381,12 @@ export default function AdminEmployeesPage() {
                 <TableBody>
                   {filteredEmployees.map((employee) => (
                     <TableRow key={employee.id}>
+                      <TableCell>
+                        <Avatar className="h-10 w-10">
+                          <AvatarImage src={employee.profileImageUrl || undefined} alt={employee.name} />
+                          <AvatarFallback>{getInitials(employee.name)}</AvatarFallback>
+                        </Avatar>
+                      </TableCell>
                       <TableCell className="font-medium">{employee.employeeId}</TableCell>
                       <TableCell>{employee.name}</TableCell>
                       <TableCell>{employee.jobTitle}</TableCell>
@@ -400,7 +423,7 @@ export default function AdminEmployeesPage() {
           {editingEmployee && (
             <Form {...editEmployeeForm}>
               <form onSubmit={editEmployeeForm.handleSubmit(handleEditEmployeeSubmit)} className="space-y-4 py-4 max-h-[70vh] overflow-y-auto px-2">
-                {renderEmployeeFormFields(editEmployeeForm)}
+                {renderEmployeeFormFields(editEmployeeForm, editingEmployee.profileImageUrl)}
                 <DialogFooter className="pt-4 sticky bottom-0 bg-card pb-4">
                   <Button type="button" variant="outline" onClick={() => setIsEditEmployeeDialogOpen(false)} disabled={editEmployeeForm.formState.isSubmitting}>إلغاء</Button>
                   <Button type="submit" disabled={editEmployeeForm.formState.isSubmitting}>
@@ -421,3 +444,4 @@ export default function AdminEmployeesPage() {
     
 
     
+
