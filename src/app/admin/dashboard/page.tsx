@@ -2,14 +2,14 @@
 "use client";
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
-import { ArrowLeftCircle, Users, BriefcaseBusiness, FilePieChart, Sparkles, Loader2, ClipboardList, Activity, TrendingUp, Receipt } from "lucide-react";
+import { ArrowLeftCircle, Users, BriefcaseBusiness, FilePieChart, Sparkles, Loader2, ClipboardList, Activity, TrendingUp, Receipt, CalendarClock } from "lucide-react";
 import Link from "next/link";
 import { useAuth } from "@/context/AuthContext";
 import { useState, useEffect } from "react";
 import { db } from "@/lib/firebase";
-import { collection, getDocs, query, orderBy, limit, Timestamp } from "firebase/firestore";
+import { collection, getDocs, query, orderBy, limit, Timestamp, where, getCountFromServer } from "firebase/firestore";
 import { useToast } from "@/hooks/use-toast";
-import type { ActivityLogEntry } from "@/lib/activityLogger"; // Updated import path
+import type { ActivityLogEntry } from "@/lib/activityLogger"; 
 
 const adminQuickActions = [
   { title: "إدارة العملاء", description: "عرض وتعديل بيانات العملاء.", icon: <Users className="h-8 w-8 text-primary" />, href: "/admin/clients", dataAiHint: "client management" },
@@ -27,9 +27,8 @@ interface QuickStats {
   totalServiceRequests: number;
   totalEmployees: number;
   totalInvoices: number;
+  recentServiceRequestsCount: number;
 }
-
-// ActivityLogEntry is now imported from activityLogger
 
 export default function AdminDashboardPage() {
   const { user } = useAuth();
@@ -59,6 +58,16 @@ export default function AdminDashboardPage() {
         const serviceRequestsSnapshot = await getDocs(collection(db, "serviceRequests"));
         const employeesSnapshot = await getDocs(collection(db, "employees"));
         const invoicesSnapshot = await getDocs(collection(db, "invoices"));
+
+        const sevenDaysAgo = new Date();
+        sevenDaysAgo.setDate(sevenDaysAgo.getDate() - 7);
+        const sevenDaysAgoTimestamp = Timestamp.fromDate(sevenDaysAgo);
+
+        const recentServiceRequestsQuery = query(
+          collection(db, "serviceRequests"),
+          where("createdAt", ">=", sevenDaysAgoTimestamp)
+        );
+        const recentServiceRequestsCountSnapshot = await getCountFromServer(recentServiceRequestsQuery);
         
         setStats({
           totalClients: clientsSnapshot.size,
@@ -66,11 +75,12 @@ export default function AdminDashboardPage() {
           totalServiceRequests: serviceRequestsSnapshot.size,
           totalEmployees: employeesSnapshot.size,
           totalInvoices: invoicesSnapshot.size,
+          recentServiceRequestsCount: recentServiceRequestsCountSnapshot.data().count,
         });
       } catch (error) {
         console.error("Error fetching stats:", error);
         toast({ title: "خطأ", description: "لم نتمكن من تحميل الإحصائيات.", variant: "destructive" });
-        setStats({ totalClients: 0, totalServices: 0, totalServiceRequests: 0, totalEmployees: 0, totalInvoices: 0 }); // Fallback
+        setStats({ totalClients: 0, totalServices: 0, totalServiceRequests: 0, totalEmployees: 0, totalInvoices: 0, recentServiceRequestsCount: 0 }); // Fallback
       } finally {
         setIsLoadingStats(false);
       }
@@ -155,6 +165,10 @@ export default function AdminDashboardPage() {
                 <div className="flex items-center justify-between">
                    <div className="flex items-center gap-2 text-muted-foreground"><ClipboardList className="h-5 w-5" /><span>إجمالي طلبات الخدمة:</span></div>
                    <span className="font-semibold text-lg text-foreground">{stats.totalServiceRequests}</span>
+                </div>
+                <div className="flex items-center justify-between">
+                   <div className="flex items-center gap-2 text-muted-foreground"><CalendarClock className="h-5 w-5" /><span>طلبات الخدمة (آخر 7 أيام):</span></div>
+                   <span className="font-semibold text-lg text-foreground">{stats.recentServiceRequestsCount}</span>
                 </div>
                 <div className="flex items-center justify-between">
                    <div className="flex items-center gap-2 text-muted-foreground"><Users className="h-5 w-5" /><span>إجمالي الموظفين:</span></div>
