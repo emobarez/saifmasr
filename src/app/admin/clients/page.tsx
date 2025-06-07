@@ -179,9 +179,10 @@ export default function AdminClientsPage() {
 
   const filteredClients = useMemo(() => {
     if (!searchTerm) return clients;
+    const lowercasedFilter = searchTerm.toLowerCase();
     return clients.filter(client =>
-      client.name.toLowerCase().includes(searchTerm.toLowerCase()) ||
-      client.email.toLowerCase().includes(searchTerm.toLowerCase())
+      client.name.toLowerCase().includes(lowercasedFilter) ||
+      client.email.toLowerCase().includes(lowercasedFilter)
     );
   }, [clients, searchTerm]);
 
@@ -266,37 +267,39 @@ export default function AdminClientsPage() {
           {isLoadingClients ? (
             <div className="flex justify-center items-center py-8"><Loader2 className="h-8 w-8 animate-spin text-primary" /><p className="ms-2">جارٍ تحميل العملاء...</p></div>
           ) : filteredClients.length > 0 ? (
-            <Table>
-              <TableHeader>
-                <TableRow>
-                  <TableHead>المعرف</TableHead>
-                  <TableHead>الاسم</TableHead>
-                  <TableHead>البريد الإلكتروني</TableHead>
-                  <TableHead>تاريخ الانضمام</TableHead>
-                  <TableHead>الحالة</TableHead>
-                  <TableHead>إجراءات</TableHead>
-                </TableRow>
-              </TableHeader>
-              <TableBody>
-                {filteredClients.map((client) => (
-                  <TableRow key={client.id}>
-                    <TableCell className="font-medium truncate max-w-[100px]">{client.id}</TableCell>
-                    <TableCell>{client.name}</TableCell>
-                    <TableCell>{client.email}</TableCell>
-                    <TableCell>{formatDate(client.joinDate)}</TableCell>
-                    <TableCell><Badge variant={getStatusVariant(client.status)}>{client.status}</Badge></TableCell>
-                    <TableCell className="space-x-1 space-x-reverse">
-                      <Button variant="ghost" size="icon" aria-label="تعديل العميل" onClick={() => openEditDialog(client)}>
-                        <Edit className="h-5 w-5" />
-                      </Button>
-                      <Button variant="ghost" size="icon" aria-label="حذف العميل" className="text-destructive hover:text-destructive" onClick={() => handleDeleteClient(client.id, client.name)}>
-                        <Trash2 className="h-5 w-5" />
-                      </Button>
-                    </TableCell>
+            <div className="overflow-x-auto">
+              <Table>
+                <TableHeader>
+                  <TableRow>
+                    <TableHead className="min-w-[100px]">المعرف</TableHead>
+                    <TableHead className="min-w-[150px]">الاسم</TableHead>
+                    <TableHead className="min-w-[200px]">البريد الإلكتروني</TableHead>
+                    <TableHead className="min-w-[120px]">تاريخ الانضمام</TableHead>
+                    <TableHead className="min-w-[100px]">الحالة</TableHead>
+                    <TableHead className="min-w-[100px]">إجراءات</TableHead>
                   </TableRow>
-                ))}
-              </TableBody>
-            </Table>
+                </TableHeader>
+                <TableBody>
+                  {filteredClients.map((client) => (
+                    <TableRow key={client.id}>
+                      <TableCell className="font-medium truncate max-w-[100px]">{client.id}</TableCell>
+                      <TableCell>{client.name}</TableCell>
+                      <TableCell>{client.email}</TableCell>
+                      <TableCell>{formatDate(client.joinDate)}</TableCell>
+                      <TableCell><Badge variant={getStatusVariant(client.status)}>{client.status}</Badge></TableCell>
+                      <TableCell className="space-x-1 space-x-reverse">
+                        <Button variant="ghost" size="icon" aria-label="تعديل العميل" onClick={() => openEditDialog(client)}>
+                          <Edit className="h-5 w-5" />
+                        </Button>
+                        <Button variant="ghost" size="icon" aria-label="حذف العميل" className="text-destructive hover:text-destructive" onClick={() => handleDeleteClient(client.id, client.name)}>
+                          <Trash2 className="h-5 w-5" />
+                        </Button>
+                      </TableCell>
+                    </TableRow>
+                  ))}
+                </TableBody>
+              </Table>
+            </div>
           ) : (
              <p className="text-muted-foreground text-center py-8">{searchTerm ? "لم يتم العثور على عملاء يطابقون بحثك." : "لا يوجد عملاء لعرضهم حالياً. قم بإضافة عميل جديد."}</p>
           )}
@@ -359,3 +362,5 @@ export default function AdminClientsPage() {
     </div>
   );
 }
+
+    
