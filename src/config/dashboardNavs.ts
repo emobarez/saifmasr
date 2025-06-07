@@ -12,7 +12,8 @@ import {
   Sparkles,
   Settings,
   ShieldEllipsis,
-  ClipboardList
+  ClipboardList,
+  HelpCircle // Added HelpCircle
 } from "lucide-react";
 
 export interface NavItemConfig {
@@ -28,6 +29,7 @@ export const clientNavItems: NavItemConfig[] = [
   { href: "/client/requests", label: "طلب خدمة", icon: "ListPlus", allowedRoles: ["client"] },
   { href: "/client/tracking", label: "تتبع الطلبات", icon: "History", allowedRoles: ["client"] },
   { href: "/client/invoices", label: "الفواتير", icon: "Receipt", allowedRoles: ["client"] },
+  { href: "/client/faq", label: "الأسئلة الشائعة", icon: "HelpCircle", allowedRoles: ["client"] },
   { href: "/client/profile", label: "الملف الشخصي", icon: "UserCircle", allowedRoles: ["client"] },
 ];
 
@@ -44,3 +46,4 @@ export const adminNavItems: NavItemConfig[] = [
 ];
 
 export const allNavItems: NavItemConfig[] = [...clientNavItems, ...adminNavItems];
+
