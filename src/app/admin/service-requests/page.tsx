@@ -4,7 +4,8 @@ import { useState, useEffect, useCallback } from "react";
 import { Card, CardHeader, CardTitle, CardDescription, CardContent } from "@/components/ui/card";
 import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from "@/components/ui/table";
 import { Badge } from "@/components/ui/badge";
-import { Loader2, AlertTriangle, Info, ThumbsUp, MinusCircle } from "lucide-react";
+import { Loader2, AlertTriangle, Info, ThumbsUp, MinusCircle, Eye } from "lucide-react"; // Added Eye
+import { Button } from "@/components/ui/button"; // Added Button
 import { useToast } from "@/hooks/use-toast";
 import { db } from "@/lib/firebase";
 import { collection, getDocs, query, orderBy, Timestamp, doc, updateDoc } from "firebase/firestore";
@@ -18,6 +19,7 @@ import {
 } from "@/components/ui/select"
 import { useAuth } from "@/context/AuthContext";
 import { logActivity } from "@/lib/activityLogger";
+import { AdminServiceRequestDetailsDialog } from "@/components/admin/ServiceRequestDetailsDialog"; // Added import
 
 interface ServiceRequest {
   id: string;
@@ -46,6 +48,8 @@ export default function AdminServiceRequestsPage() {
   const [isLoading, setIsLoading] = useState(true);
   const { toast } = useToast();
   const { user: adminUser } = useAuth();
+  const [selectedRequest, setSelectedRequest] = useState<ServiceRequestWithPriority | null>(null); // Added state
+  const [isDetailsDialogOpen, setIsDetailsDialogOpen] = useState(false); // Added state
 
   const fetchAndPrioritizeRequests = useCallback(async () => {
     setIsLoading(true);
@@ -111,6 +115,11 @@ export default function AdminServiceRequestsPage() {
     }
   };
 
+  const handleViewDetails = (request: ServiceRequestWithPriority) => {
+    setSelectedRequest(request);
+    setIsDetailsDialogOpen(true);
+  };
+
 
   const getStatusVariant = (status: ServiceRequest["status"]): "default" | "secondary" | "destructive" | "outline" => {
     switch (status) {
@@ -163,8 +172,8 @@ export default function AdminServiceRequestsPage() {
                     <TableHead className="min-w-[150px]">تاريخ التقديم</TableHead>
                     <TableHead className="min-w-[120px]">الحالة</TableHead>
                     <TableHead className="min-w-[150px]">الأولوية (AI)</TableHead>
-                    <TableHead className="min-w-[200px]">سبب الأولوية (AI)</TableHead>
                     <TableHead className="min-w-[180px]">تغيير الحالة</TableHead>
+                    <TableHead className="min-w-[80px]">إجراءات</TableHead> 
                   </TableRow>
                 </TableHeader>
                 <TableBody>
@@ -179,27 +188,26 @@ export default function AdminServiceRequestsPage() {
                             rel="noopener noreferrer" 
                             className="block text-xs text-primary hover:underline mt-1"
                           >
-                            عرض المرفق ({request.attachmentFilename || 'مرفق'})
+                            ({request.attachmentFilename || 'مرفق'})
                           </a>
                         )}
                       </TableCell>
-                      <TableCell className="align-top">{request.clientName} <span className="text-xs text-muted-foreground">({request.clientEmail})</span></TableCell>
+                      <TableCell className="align-top">{request.clientName}</TableCell>
                       <TableCell className="align-top">{formatDate(request.createdAt)}</TableCell>
                       <TableCell className="align-top"><Badge variant={getStatusVariant(request.status)}>{request.status}</Badge></TableCell>
                       <TableCell className="align-top">
-                        <div className="flex items-center gap-2">
+                        <div className="flex items-center gap-2" title={request.aiReasoning || request.aiError || ""}>
                           {getPriorityIcon(request.aiPriority)}
                           {request.aiPriority || request.aiError || "N/A"}
                         </div>
                       </TableCell>
-                       <TableCell className="text-xs align-top">{request.aiReasoning || request.aiError || "-"}</TableCell>
                        <TableCell className="align-top">
                         <Select 
                           value={request.status} 
                           onValueChange={(value) => handleStatusChange(request.id, value as ServiceRequest["status"])}
                           dir="rtl"
                         >
-                          <SelectTrigger className="h-9 w-full">
+                          <SelectTrigger className="h-9 w-full text-xs">
                             <SelectValue placeholder="تغيير الحالة" />
                           </SelectTrigger>
                           <SelectContent>
@@ -208,6 +216,11 @@ export default function AdminServiceRequestsPage() {
                             ))}
                           </SelectContent>
                         </Select>
+                      </TableCell>
+                      <TableCell className="align-top">
+                        <Button variant="ghost" size="icon" onClick={() => handleViewDetails(request)}>
+                          <Eye className="h-5 w-5" />
+                        </Button>
                       </TableCell>
                     </TableRow>
                   ))}
@@ -219,7 +232,14 @@ export default function AdminServiceRequestsPage() {
           )}
         </CardContent>
       </Card>
+
+      {selectedRequest && (
+        <AdminServiceRequestDetailsDialog
+          request={selectedRequest}
+          isOpen={isDetailsDialogOpen}
+          onOpenChange={setIsDetailsDialogOpen}
+        />
+      )}
     </div>
   );
 }
-
