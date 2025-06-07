@@ -201,20 +201,16 @@ export default function AdminSettingsPage() {
           <Form {...form}>
             <form onSubmit={handleSubmit(handleSaveSettings)} className="space-y-8">
               <Tabs defaultValue="general" className="w-full" dir="rtl">
-                <TabsList className="grid w-full grid-cols-2 md:grid-cols-4 mb-6">
+                <TabsList className="grid w-full grid-cols-1 sm:grid-cols-3 mb-6">
                   <TabsTrigger value="general" className="flex items-center gap-2">
                     <SettingsIcon className="h-5 w-5" /> عامة واتصال
                   </TabsTrigger>
                   <TabsTrigger value="appearance" className="flex items-center gap-2">
                     <Paintbrush className="h-5 w-5" /> تخصيص المظهر
                   </TabsTrigger>
-                  <TabsTrigger value="social" className="flex items-center gap-2">
-                    <LinkIcon className="h-5 w-5" /> التواصل الاجتماعي
-                  </TabsTrigger>
                   <TabsTrigger value="notifications" disabled className="flex items-center gap-2">
                     <Bell className="h-5 w-5" /> الإشعارات
                   </TabsTrigger>
-                  
                 </TabsList>
                 
                 <TabsContent value="general" className="space-y-6">
@@ -255,6 +251,25 @@ export default function AdminSettingsPage() {
                         />
                     </CardContent>
                   </Card>
+                   <Card>
+                    <CardHeader><CardTitle className="flex items-center gap-2"><LinkIcon className="h-5 w-5" />روابط التواصل الاجتماعي</CardTitle><CardDescription>أدخل روابط صفحات شركتك على منصات التواصل الاجتماعي. اترك الحقل فارغًا لعدم عرض الأيقونة في الفوتر.</CardDescription></CardHeader>
+                    <CardContent className="space-y-4">
+                      {socialMediaFields.map(item => (
+                        <FormField key={item.name} control={control} name={item.name as keyof SettingsFormValues} render={({ field }) => (
+                          <FormItem>
+                            <FormLabel className="flex items-center gap-2">
+                              <item.icon className="h-5 w-5 text-muted-foreground" />
+                              {item.label}
+                            </FormLabel>
+                            <FormControl>
+                              <Input placeholder={item.placeholder} {...field} value={field.value || ""} disabled={isSubmitting} className="dir-ltr text-left"/>
+                            </FormControl>
+                            <FormMessage />
+                          </FormItem>
+                        )} />
+                      ))}
+                    </CardContent>
+                  </Card>
                 </TabsContent>
 
                 <TabsContent value="appearance" className="space-y-6">
@@ -289,28 +304,6 @@ export default function AdminSettingsPage() {
                   </Card>
                 </TabsContent>
 
-                <TabsContent value="social" className="space-y-6">
-                  <Card>
-                    <CardHeader><CardTitle className="flex items-center gap-2"><LinkIcon className="h-5 w-5" />روابط التواصل الاجتماعي</CardTitle><CardDescription>أدخل روابط صفحات شركتك على منصات التواصل الاجتماعي. اترك الحقل فارغًا لعدم عرض الأيقونة في الفوتر.</CardDescription></CardHeader>
-                    <CardContent className="space-y-4">
-                      {socialMediaFields.map(item => (
-                        <FormField key={item.name} control={control} name={item.name as keyof SettingsFormValues} render={({ field }) => (
-                          <FormItem>
-                            <FormLabel className="flex items-center gap-2">
-                              <item.icon className="h-5 w-5 text-muted-foreground" />
-                              {item.label}
-                            </FormLabel>
-                            <FormControl>
-                              <Input placeholder={item.placeholder} {...field} value={field.value || ""} disabled={isSubmitting} className="dir-ltr text-left"/>
-                            </FormControl>
-                            <FormMessage />
-                          </FormItem>
-                        )} />
-                      ))}
-                    </CardContent>
-                  </Card>
-                </TabsContent>
-
                 <TabsContent value="notifications" className="mt-6 space-y-6">
                   <Card><CardHeader><CardTitle className="flex items-center gap-2"><Bell className="h-5 w-5" />إعدادات الإشعارات</CardTitle></CardHeader><CardContent><p className="text-muted-foreground">هذه الميزة غير متاحة بعد.</p></CardContent></Card>
                 </TabsContent>
@@ -330,3 +323,5 @@ export default function AdminSettingsPage() {
   );
 }
 
+
+    
