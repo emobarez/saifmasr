@@ -155,15 +155,15 @@ export default function AdminReportsPage() {
   };
 
   const handleDeleteReport = async (reportId: string, reportTitle: string) => {
-    if (!window.confirm(`هل أنت متأكد أنك تريد حذف التقرير "${reportTitle}"؟`)) return;
+    if (!window.confirm(\`هل أنت متأكد أنك تريد حذف التقرير "${reportTitle}"؟\`)) return;
     try {
       await deleteDoc(doc(db, "reports", reportId));
-      toast({ title: "تم الحذف", description: `تم حذف التقرير "${reportTitle}" بنجاح.` });
+      toast({ title: "تم الحذف", description: \`تم حذف التقرير "${reportTitle}" بنجاح.\` });
 
       if (adminUser) {
         await logActivity({
           actionType: "REPORT_DELETED",
-          description: `Admin ${adminUser.displayName || adminUser.email} deleted report: ${reportTitle}.`,
+          description: \`Admin ${adminUser.displayName || adminUser.email} deleted report: ${reportTitle}.\`,
           actor: { id: adminUser.uid, role: adminUser.role, name: adminUser.displayName },
           target: { id: reportId, type: "report", name: reportTitle },
         });
