@@ -2,12 +2,30 @@
 "use client";
 import { Facebook, Twitter, Linkedin, Instagram, ShieldHalf, Phone, Mail, MapPin } from "lucide-react";
 import Link from "next/link";
-import { useSiteSettings } from '@/hooks/useSiteSettings'; // Updated import
+import { useSiteSettings } from '@/hooks/useSiteSettings'; 
 
 export function Footer() {
   const currentYear = new Date().getFullYear();
-  const { portalName, companyPhone, companyAddress, publicEmail, isLoadingSiteSettings } = useSiteSettings(); // Updated hook usage
+  const { 
+    portalName, 
+    companyPhone, 
+    companyAddress, 
+    publicEmail, 
+    socialFacebookUrl,
+    socialTwitterUrl,
+    socialLinkedinUrl,
+    socialInstagramUrl,
+    isLoadingSiteSettings 
+  } = useSiteSettings(); 
+  
   const displayPortalName = isLoadingSiteSettings ? "..." : portalName;
+
+  const socialLinks = [
+    { href: socialFacebookUrl, label: "Facebook", icon: Facebook },
+    { href: socialTwitterUrl, label: "Twitter", icon: Twitter },
+    { href: socialLinkedinUrl, label: "LinkedIn", icon: Linkedin },
+    { href: socialInstagramUrl, label: "Instagram", icon: Instagram },
+  ];
 
   return (
     <footer className="border-t bg-card text-card-foreground">
@@ -41,23 +59,23 @@ export function Footer() {
               <ul className="space-y-2 text-sm text-muted-foreground">
                 {publicEmail && (
                   <li className="flex items-start gap-2">
-                    <Mail className="h-4 w-4 mt-1 text-primary/70" />
-                    <a href={`mailto:${publicEmail}`} className="hover:text-primary transition-colors">{publicEmail}</a>
+                    <Mail className="h-4 w-4 mt-1 text-primary/70 shrink-0" />
+                    <a href={`mailto:${publicEmail}`} className="hover:text-primary transition-colors break-all">{publicEmail}</a>
                   </li>
                 )}
                 {companyPhone && (
                   <li className="flex items-start gap-2">
-                    <Phone className="h-4 w-4 mt-1 text-primary/70" />
+                    <Phone className="h-4 w-4 mt-1 text-primary/70 shrink-0" />
                     <a href={`tel:${companyPhone.replace(/\s/g, '')}`} className="hover:text-primary transition-colors">{companyPhone}</a>
                   </li>
                 )}
                 {companyAddress && (
                   <li className="flex items-start gap-2">
-                    <MapPin className="h-4 w-4 mt-1 text-primary/70" />
+                    <MapPin className="h-4 w-4 mt-1 text-primary/70 shrink-0" />
                     <span>{companyAddress}</span>
                   </li>
                 )}
-                {(!publicEmail && !companyPhone && !companyAddress) && (
+                {(!publicEmail && !companyPhone && !companyAddress && !isLoadingSiteSettings) && (
                     <li>لا توجد معلومات اتصال متاحة حاليًا.</li>
                 )}
               </ul>
@@ -66,20 +84,26 @@ export function Footer() {
           
           <div>
             <h3 className="text-lg font-semibold mb-4 font-headline">تابعنا</h3>
-            <div className="flex space-x-4 space-x-reverse">
-              <Link href="#" aria-label="Facebook" className="text-muted-foreground hover:text-primary transition-colors">
-                <Facebook size={24} />
-              </Link>
-              <Link href="#" aria-label="Twitter" className="text-muted-foreground hover:text-primary transition-colors">
-                <Twitter size={24} />
-              </Link>
-              <Link href="#" aria-label="LinkedIn" className="text-muted-foreground hover:text-primary transition-colors">
-                <Linkedin size={24} />
-              </Link>
-              <Link href="#" aria-label="Instagram" className="text-muted-foreground hover:text-primary transition-colors">
-                <Instagram size={24} />
-              </Link>
-            </div>
+            {isLoadingSiteSettings ? (
+               <p className="text-sm text-muted-foreground">جارٍ تحميل الروابط...</p>
+            ) : (
+                <div className="flex space-x-4 space-x-reverse">
+                {socialLinks.map(social => {
+                    if (social.href) {
+                    const IconComponent = social.icon;
+                    return (
+                        <Link key={social.label} href={social.href} aria-label={social.label} target="_blank" rel="noopener noreferrer" className="text-muted-foreground hover:text-primary transition-colors">
+                        <IconComponent size={24} />
+                        </Link>
+                    );
+                    }
+                    return null;
+                })}
+                {!isLoadingSiteSettings && socialLinks.every(link => !link.href) && (
+                    <p className="text-sm text-muted-foreground">لا توجد روابط تواصل اجتماعي متاحة.</p>
+                )}
+                </div>
+            )}
           </div>
         </div>
 
@@ -92,3 +116,4 @@ export function Footer() {
     </footer>
   );
 }
+

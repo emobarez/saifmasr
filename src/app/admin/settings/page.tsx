@@ -4,7 +4,7 @@ import { Card, CardHeader, CardTitle, CardDescription, CardContent } from "@/com
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Switch } from "@/components/ui/switch";
-import { Save, Bell, ShieldCheck, Palette, Loader2, Settings as SettingsIcon, Phone, Mail, MapPin, Paintbrush } from "lucide-react";
+import { Save, Bell, ShieldCheck, Palette, Loader2, Settings as SettingsIcon, Phone, Mail, MapPin, Paintbrush, Link as LinkIcon, Facebook, Twitter, Linkedin, Instagram } from "lucide-react";
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
 import { useState, useEffect } from "react";
 import { useToast } from "@/hooks/use-toast";
@@ -24,6 +24,7 @@ const optionalHslString = z.string().optional().refine(
   (val) => !val || val.trim() === '' || hslFormatRegex.test(val),
   { message: "تنسيق HSL غير صالح. يجب أن يكون مثل '240 10% 15%'" }
 );
+const optionalUrl = z.string().url({ message: "الرابط غير صالح. تأكد من تضمين http:// أو https://" }).optional().or(z.literal(''));
 
 const settingsSchema = z.object({
   portalName: z.string().min(3, { message: "اسم البوابة يجب أن لا يقل عن 3 أحرف." }),
@@ -40,6 +41,10 @@ const settingsSchema = z.object({
   themeAccentForeground: optionalHslString,
   themeCard: optionalHslString,
   themeCardForeground: optionalHslString,
+  socialFacebookUrl: optionalUrl,
+  socialTwitterUrl: optionalUrl,
+  socialLinkedinUrl: optionalUrl,
+  socialInstagramUrl: optionalUrl,
 });
 
 type SettingsFormValues = z.infer<typeof settingsSchema>;
@@ -56,30 +61,6 @@ export default function AdminSettingsPage() {
   const siteSettingsHook = useSiteSettings();
   const { isLoadingSiteSettings: isFetchingSettings, ...initialSettings } = siteSettingsHook;
   
-  const form = useForm<SettingsFormValues>({
-    resolver: zodResolver(settingsSchema),
-    defaultValues: {
-      portalName: DEFAULT_SETTINGS.portalName,
-      adminEmail: DEFAULT_SETTINGS.adminEmail,
-      maintenanceMode: DEFAULT_SETTINGS.maintenanceMode,
-      companyPhone: DEFAULT_SETTINGS.companyPhone,
-      companyAddress: DEFAULT_SETTINGS.companyAddress,
-      publicEmail: DEFAULT_SETTINGS.publicEmail,
-      themeBackground: DEFAULT_SETTINGS.themeBackground,
-      themeForeground: DEFAULT_SETTINGS.themeForeground,
-      themePrimary: DEFAULT_SETTINGS.themePrimary,
-      themePrimaryForeground: DEFAULT_SETTINGS.themePrimaryForeground,
-      themeAccent: DEFAULT_SETTINGS.themeAccent,
-      themeAccentForeground: DEFAULT_SETTINGS.themeAccentForeground,
-      themeCard: DEFAULT_SETTINGS.themeCard,
-      themeCardForeground: DEFAULT_SETTINGS.themeCardForeground,
-    },
-  });
-  const { handleSubmit, control, reset, formState: {isSubmitting}, watch } = form;
-
-  const settingsDocRef = doc(db, "systemSettings", "general");
-  
-  // Default settings constant to avoid repetition and ensure alignment with useSiteSettings defaults
   const DEFAULT_SETTINGS: SiteSettings = {
     portalName: "سيف مصر الوطنية للأمن",
     adminEmail: "admin@saifmasr.com",
@@ -95,11 +76,22 @@ export default function AdminSettingsPage() {
     themeAccentForeground: "0 0% 98%",
     themeCard: "0 0% 100% / 0.85",
     themeCardForeground: "238 10% 20%",
+    socialFacebookUrl: "",
+    socialTwitterUrl: "",
+    socialLinkedinUrl: "",
+    socialInstagramUrl: "",
   };
 
+  const form = useForm<SettingsFormValues>({
+    resolver: zodResolver(settingsSchema),
+    defaultValues: DEFAULT_SETTINGS,
+  });
+  const { handleSubmit, control, reset, formState: {isSubmitting}, watch } = form;
 
+  const settingsDocRef = doc(db, "systemSettings", "general");
+  
   useEffect(() => {
-    if (!isFetchingSettings) {
+    if (!isFetchingSettings && initialSettings) {
       reset({
         portalName: initialSettings.portalName || DEFAULT_SETTINGS.portalName,
         adminEmail: initialSettings.adminEmail || DEFAULT_SETTINGS.adminEmail,
@@ -115,22 +107,22 @@ export default function AdminSettingsPage() {
         themeAccentForeground: initialSettings.themeAccentForeground || DEFAULT_SETTINGS.themeAccentForeground,
         themeCard: initialSettings.themeCard || DEFAULT_SETTINGS.themeCard,
         themeCardForeground: initialSettings.themeCardForeground || DEFAULT_SETTINGS.themeCardForeground,
+        socialFacebookUrl: initialSettings.socialFacebookUrl || DEFAULT_SETTINGS.socialFacebookUrl,
+        socialTwitterUrl: initialSettings.socialTwitterUrl || DEFAULT_SETTINGS.socialTwitterUrl,
+        socialLinkedinUrl: initialSettings.socialLinkedinUrl || DEFAULT_SETTINGS.socialLinkedinUrl,
+        socialInstagramUrl: initialSettings.socialInstagramUrl || DEFAULT_SETTINGS.socialInstagramUrl,
       });
     }
-  }, [isFetchingSettings, initialSettings, reset]);
+  }, [isFetchingSettings, initialSettings, reset, DEFAULT_SETTINGS]);
 
 
   const handleSaveSettings = async (data: SettingsFormValues) => {
     try {
-      // Prepare data for saving: use provided value or fallback to default if empty string
-      // This ensures that if an admin clears an input, it reverts to the CSS default defined by the hook/globals.css
-      // rather than saving an empty string which might break the theme.
       const dataToSave = {
         ...data,
         portalName: data.portalName.trim() || DEFAULT_SETTINGS.portalName,
         adminEmail: data.adminEmail.trim() || DEFAULT_SETTINGS.adminEmail,
-        // Booleans don't need fallback
-        companyPhone: data.companyPhone?.trim() || "", // Store empty string if cleared, hook will handle default
+        companyPhone: data.companyPhone?.trim() || "",
         companyAddress: data.companyAddress?.trim() || "",
         publicEmail: data.publicEmail?.trim() || "",
         themeBackground: data.themeBackground?.trim() || DEFAULT_SETTINGS.themeBackground,
@@ -141,6 +133,10 @@ export default function AdminSettingsPage() {
         themeAccentForeground: data.themeAccentForeground?.trim() || DEFAULT_SETTINGS.themeAccentForeground,
         themeCard: data.themeCard?.trim() || DEFAULT_SETTINGS.themeCard,
         themeCardForeground: data.themeCardForeground?.trim() || DEFAULT_SETTINGS.themeCardForeground,
+        socialFacebookUrl: data.socialFacebookUrl?.trim() || "",
+        socialTwitterUrl: data.socialTwitterUrl?.trim() || "",
+        socialLinkedinUrl: data.socialLinkedinUrl?.trim() || "",
+        socialInstagramUrl: data.socialInstagramUrl?.trim() || "",
       };
 
       await setDoc(settingsDocRef, dataToSave, { merge: true });
@@ -152,7 +148,7 @@ export default function AdminSettingsPage() {
         await logActivity({
           actionType: "SETTINGS_UPDATED",
           description: `Admin ${adminUser.displayName || adminUser.email} updated system settings.`,
-          actor: { id: adminUser.uid, role: adminUser.role, name: adminUser.displayName },
+          actor: { id: adminUser.uid, role: adminUser.role || undefined, name: adminUser.displayName },
           details: dataToSave, 
         });
       }
@@ -177,6 +173,13 @@ export default function AdminSettingsPage() {
     { name: "themeCardForeground", label: "لون نص البطاقات", placeholder: "مثال: 238 10% 20%" },
   ];
 
+  const socialMediaFields: Array<{name: keyof SettingsFormValues, label: string, placeholder: string, icon: React.ElementType}> = [
+    { name: "socialFacebookUrl", label: "رابط فيسبوك", placeholder: "https://facebook.com/yourpage", icon: Facebook },
+    { name: "socialTwitterUrl", label: "رابط تويتر (X)", placeholder: "https://x.com/yourprofile", icon: Twitter },
+    { name: "socialLinkedinUrl", label: "رابط لينكدإن", placeholder: "https://linkedin.com/company/yourcompany", icon: Linkedin },
+    { name: "socialInstagramUrl", label: "رابط انستغرام", placeholder: "https://instagram.com/yourprofile", icon: Instagram },
+  ];
+
 
   if (isFetchingSettings) {
     return (
@@ -192,7 +195,7 @@ export default function AdminSettingsPage() {
       <Card>
         <CardHeader>
           <CardTitle className="font-headline text-xl text-primary">إعدادات النظام</CardTitle>
-          <CardDescription>إدارة الإعدادات العامة ومعلومات الاتصال وتخصيص المظهر لـ سيف مصر الوطنية للأمن.</CardDescription>
+          <CardDescription>إدارة الإعدادات العامة ومعلومات الاتصال وتخصيص المظهر وروابط التواصل الاجتماعي لـ سيف مصر الوطنية للأمن.</CardDescription>
         </CardHeader>
         <CardContent>
           <Form {...form}>
@@ -205,12 +208,13 @@ export default function AdminSettingsPage() {
                   <TabsTrigger value="appearance" className="flex items-center gap-2">
                     <Paintbrush className="h-5 w-5" /> تخصيص المظهر
                   </TabsTrigger>
+                  <TabsTrigger value="social" className="flex items-center gap-2">
+                    <LinkIcon className="h-5 w-5" /> التواصل الاجتماعي
+                  </TabsTrigger>
                   <TabsTrigger value="notifications" disabled className="flex items-center gap-2">
                     <Bell className="h-5 w-5" /> الإشعارات
                   </TabsTrigger>
-                  <TabsTrigger value="security" disabled className="flex items-center gap-2">
-                    <ShieldCheck className="h-5 w-5" /> الأمان
-                  </TabsTrigger>
+                  
                 </TabsList>
                 
                 <TabsContent value="general" className="space-y-6">
@@ -258,9 +262,9 @@ export default function AdminSettingsPage() {
                     <CardHeader><CardTitle className="flex items-center gap-2"><Paintbrush className="h-5 w-5" />ألوان الواجهة (HSL)</CardTitle><CardDescription>اترك الحقل فارغًا لاستخدام القيمة الافتراضية. يجب أن تكون القيم بتنسيق HSL بدون الأقواس، مثال: <code className="dir-ltr text-xs p-1 bg-muted rounded">240 10% 15%</code>.</CardDescription></CardHeader>
                     <CardContent className="grid grid-cols-1 md:grid-cols-2 gap-x-6 gap-y-4">
                       {themeColorFields.map(item => {
-                        const fieldValue = watch(item.name); // Watch the field value for live preview
+                        const fieldValue = watch(item.name as keyof SettingsFormValues); 
                         return (
-                          <FormField key={item.name} control={control} name={item.name} render={({ field }) => (
+                          <FormField key={item.name} control={control} name={item.name as keyof SettingsFormValues} render={({ field }) => (
                               <FormItem>
                                 <FormLabel>{item.label}</FormLabel>
                                 <div className="flex items-center gap-3">
@@ -285,11 +289,30 @@ export default function AdminSettingsPage() {
                   </Card>
                 </TabsContent>
 
+                <TabsContent value="social" className="space-y-6">
+                  <Card>
+                    <CardHeader><CardTitle className="flex items-center gap-2"><LinkIcon className="h-5 w-5" />روابط التواصل الاجتماعي</CardTitle><CardDescription>أدخل روابط صفحات شركتك على منصات التواصل الاجتماعي. اترك الحقل فارغًا لعدم عرض الأيقونة في الفوتر.</CardDescription></CardHeader>
+                    <CardContent className="space-y-4">
+                      {socialMediaFields.map(item => (
+                        <FormField key={item.name} control={control} name={item.name as keyof SettingsFormValues} render={({ field }) => (
+                          <FormItem>
+                            <FormLabel className="flex items-center gap-2">
+                              <item.icon className="h-5 w-5 text-muted-foreground" />
+                              {item.label}
+                            </FormLabel>
+                            <FormControl>
+                              <Input placeholder={item.placeholder} {...field} value={field.value || ""} disabled={isSubmitting} className="dir-ltr text-left"/>
+                            </FormControl>
+                            <FormMessage />
+                          </FormItem>
+                        )} />
+                      ))}
+                    </CardContent>
+                  </Card>
+                </TabsContent>
+
                 <TabsContent value="notifications" className="mt-6 space-y-6">
                   <Card><CardHeader><CardTitle className="flex items-center gap-2"><Bell className="h-5 w-5" />إعدادات الإشعارات</CardTitle></CardHeader><CardContent><p className="text-muted-foreground">هذه الميزة غير متاحة بعد.</p></CardContent></Card>
-                </TabsContent>
-                <TabsContent value="security" className="mt-6 space-y-6">
-                   <Card><CardHeader><CardTitle className="flex items-center gap-2"><ShieldCheck className="h-5 w-5" />إعدادات الأمان</CardTitle></CardHeader><CardContent><p className="text-muted-foreground">هذه الميزة غير متاحة بعد.</p></CardContent></Card>
                 </TabsContent>
               </Tabs>
 
