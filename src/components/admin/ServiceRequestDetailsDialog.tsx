@@ -114,10 +114,12 @@ export function AdminServiceRequestDetailsDialog({ request, isOpen, onOpenChange
                             <span className="text-foreground">{request.aiPriority}</span>
                         </p>
                     </div>
-                    <div>
-                        <span className="font-medium text-muted-foreground">سبب الأولوية (AI):</span>
-                        <p className="text-foreground text-xs">{request.aiReasoning || "-"}</p>
-                    </div>
+                    {(request.aiReasoning || request.aiError) && (request.aiReasoning?.length || 0) > 0 && ( // Only show if there's reasoning
+                        <div>
+                            <span className="font-medium text-muted-foreground">سبب الأولوية (AI):</span>
+                            <p className="text-foreground text-xs">{request.aiReasoning}</p>
+                        </div>
+                    )}
                 </>
             )}
             {request.aiError && (
@@ -156,3 +158,4 @@ export function AdminServiceRequestDetailsDialog({ request, isOpen, onOpenChange
     </Dialog>
   );
 }
+

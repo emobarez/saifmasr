@@ -208,10 +208,11 @@ export default function AdminServiceRequestsPage() {
                     <TableRow>
                       <TableHead className="min-w-[150px]">عنوان الطلب</TableHead>
                       <TableHead className="min-w-[120px]">اسم العميل</TableHead>
+                      <TableHead className="min-w-[130px]">نوع الخدمة</TableHead>
                       <TableHead className="min-w-[150px]">تاريخ التقديم</TableHead>
-                      <TableHead className="min-w-[120px]">الحالة</TableHead>
-                      <TableHead className="min-w-[150px]">الأولوية (AI)</TableHead>
-                      <TableHead className="min-w-[180px]">تغيير الحالة</TableHead>
+                      <TableHead className="min-w-[100px]">الحالة</TableHead>
+                      <TableHead className="min-w-[130px]">الأولوية (AI)</TableHead>
+                      <TableHead className="min-w-[150px]">تغيير الحالة</TableHead>
                       <TableHead className="min-w-[80px]">إجراءات</TableHead> 
                     </TableRow>
                   </TableHeader>
@@ -232,6 +233,7 @@ export default function AdminServiceRequestsPage() {
                           )}
                         </TableCell>
                         <TableCell className="align-top">{request.clientName}</TableCell>
+                        <TableCell className="align-top">{getServiceTypeName(request.serviceType)}</TableCell>
                         <TableCell className="align-top">{formatDate(request.createdAt)}</TableCell>
                         <TableCell className="align-top"><Badge variant={getStatusVariant(request.status)}>{request.status}</Badge></TableCell>
                         <TableCell className="align-top">
