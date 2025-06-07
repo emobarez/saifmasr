@@ -331,7 +331,7 @@ export default function AdminServicesPage() {
           <Accordion type="single" collapsible className="w-full" defaultValue={generatedFAQs.length > 0 ? "faq-0" : undefined}>
             {generatedFAQs.map((faq, index) => (
               <AccordionItem value={`faq-${index}`} key={index}>
-                <AccordionTrigger className="text-sm text-start">{faq.question}</AccordionTrigger>
+                <AccordionTrigger className="text-sm text-start hover:no-underline">{faq.question}</AccordionTrigger>
                 <AccordionContent className="text-xs whitespace-pre-wrap p-2 bg-secondary/30 rounded-md">
                   {faq.answer}
                 </AccordionContent>
@@ -348,10 +348,11 @@ export default function AdminServicesPage() {
 
   const filteredServices = useMemo(() => {
     if (!searchTerm) return services;
+    const lowercasedFilter = searchTerm.toLowerCase();
     return services.filter(service =>
-      service.name.toLowerCase().includes(searchTerm.toLowerCase()) ||
-      service.category.toLowerCase().includes(searchTerm.toLowerCase()) ||
-      service.description.toLowerCase().includes(searchTerm.toLowerCase())
+      service.name.toLowerCase().includes(lowercasedFilter) ||
+      service.category.toLowerCase().includes(lowercasedFilter) ||
+      service.description.toLowerCase().includes(lowercasedFilter)
     );
   }, [services, searchTerm]);
 
