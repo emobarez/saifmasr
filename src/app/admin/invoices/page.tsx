@@ -215,7 +215,7 @@ export default function AdminInvoicesPage() {
   const handleDeleteInvoice = async (invoiceId: string, invoiceNumber: string) => { 
     if (!window.confirm(\`هل أنت متأكد أنك تريد حذف الفاتورة رقم ${invoiceNumber}؟ هذا الإجراء لا يمكن التراجع عنه.\`)) return;
     try {
-      const deletedInvoice = invoices.find(inv => inv.id === invoiceId); // Get details before deleting
+      const deletedInvoice = invoices.find(inv => inv.id === invoiceId); 
       await deleteDoc(doc(db, "invoices", invoiceId));
       toast({ title: "تم الحذف", description: \`تم حذف الفاتورة رقم ${invoiceNumber} بنجاح.\` });
 
@@ -262,10 +262,11 @@ export default function AdminInvoicesPage() {
 
   const filteredInvoices = useMemo(() => {
     if (!searchTerm) return invoices;
+    const lowercasedFilter = searchTerm.toLowerCase();
     return invoices.filter(invoice =>
-      invoice.invoiceNumber.toLowerCase().includes(searchTerm.toLowerCase()) ||
-      invoice.clientName.toLowerCase().includes(searchTerm.toLowerCase()) ||
-      invoice.status.toLowerCase().includes(searchTerm.toLowerCase())
+      invoice.invoiceNumber.toLowerCase().includes(lowercasedFilter) ||
+      invoice.clientName.toLowerCase().includes(lowercasedFilter) ||
+      invoice.status.toLowerCase().includes(lowercasedFilter)
     );
   }, [invoices, searchTerm]);
 
@@ -453,42 +454,44 @@ export default function AdminInvoicesPage() {
           {isLoadingInvoices ? (
             <div className="flex justify-center items-center py-8"><Loader2 className="h-8 w-8 animate-spin text-primary" /><p className="ms-2">جارٍ تحميل الفواتير...</p></div>
           ) : filteredInvoices.length > 0 ? (
-            <Table>
-              <TableHeader>
-                <TableRow>
-                  <TableHead>رقم الفاتورة</TableHead>
-                  <TableHead>اسم العميل</TableHead>
-                  <TableHead>تاريخ الإصدار</TableHead>
-                  <TableHead>تاريخ الاستحقاق</TableHead>
-                  <TableHead>المبلغ الإجمالي</TableHead>
-                  <TableHead>الحالة</TableHead>
-                  <TableHead>إجراءات</TableHead>
-                </TableRow>
-              </TableHeader>
-              <TableBody>
-                {filteredInvoices.map((invoice) => (
-                  <TableRow key={invoice.id}>
-                    <TableCell className="font-medium">{invoice.invoiceNumber}</TableCell>
-                    <TableCell>{invoice.clientName}</TableCell>
-                    <TableCell>{formatDateForDisplay(invoice.issueDate)}</TableCell>
-                    <TableCell>{formatDateForDisplay(invoice.dueDate)}</TableCell>
-                    <TableCell>{formatCurrency(invoice.totalAmount)}</TableCell>
-                    <TableCell><Badge variant={getStatusVariant(invoice.status)}>{invoice.status}</Badge></TableCell>
-                    <TableCell className="space-x-1 space-x-reverse">
-                      <Button variant="ghost" size="icon" aria-label="عرض الفاتورة" onClick={() => openViewDetailsDialog(invoice)}> 
-                        <FileText className="h-5 w-5" />
-                      </Button>
-                      <Button variant="ghost" size="icon" aria-label="تعديل الفاتورة" onClick={() => openEditDialog(invoice)}>
-                        <Edit className="h-5 w-5" />
-                      </Button>
-                      <Button variant="ghost" size="icon" aria-label="حذف الفاتورة" className="text-destructive hover:text-destructive" onClick={() => handleDeleteInvoice(invoice.id, invoice.invoiceNumber)}>
-                        <Trash2 className="h-5 w-5" />
-                      </Button>
-                    </TableCell>
+            <div className="overflow-x-auto">
+              <Table>
+                <TableHeader>
+                  <TableRow>
+                    <TableHead className="min-w-[120px]">رقم الفاتورة</TableHead>
+                    <TableHead className="min-w-[150px]">اسم العميل</TableHead>
+                    <TableHead className="min-w-[120px]">تاريخ الإصدار</TableHead>
+                    <TableHead className="min-w-[120px]">تاريخ الاستحقاق</TableHead>
+                    <TableHead className="min-w-[100px]">المبلغ</TableHead>
+                    <TableHead className="min-w-[100px]">الحالة</TableHead>
+                    <TableHead className="min-w-[120px]">إجراءات</TableHead>
                   </TableRow>
-                ))}
-              </TableBody>
-            </Table>
+                </TableHeader>
+                <TableBody>
+                  {filteredInvoices.map((invoice) => (
+                    <TableRow key={invoice.id}>
+                      <TableCell className="font-medium">{invoice.invoiceNumber}</TableCell>
+                      <TableCell>{invoice.clientName}</TableCell>
+                      <TableCell>{formatDateForDisplay(invoice.issueDate)}</TableCell>
+                      <TableCell>{formatDateForDisplay(invoice.dueDate)}</TableCell>
+                      <TableCell>{formatCurrency(invoice.totalAmount)}</TableCell>
+                      <TableCell><Badge variant={getStatusVariant(invoice.status)}>{invoice.status}</Badge></TableCell>
+                      <TableCell className="space-x-1 space-x-reverse">
+                        <Button variant="ghost" size="icon" aria-label="عرض الفاتورة" onClick={() => openViewDetailsDialog(invoice)}> 
+                          <FileText className="h-5 w-5" />
+                        </Button>
+                        <Button variant="ghost" size="icon" aria-label="تعديل الفاتورة" onClick={() => openEditDialog(invoice)}>
+                          <Edit className="h-5 w-5" />
+                        </Button>
+                        <Button variant="ghost" size="icon" aria-label="حذف الفاتورة" className="text-destructive hover:text-destructive" onClick={() => handleDeleteInvoice(invoice.id, invoice.invoiceNumber)}>
+                          <Trash2 className="h-5 w-5" />
+                        </Button>
+                      </TableCell>
+                    </TableRow>
+                  ))}
+                </TableBody>
+              </Table>
+            </div>
           ) : (
              <p className="text-muted-foreground text-center py-8">{searchTerm ? "لم يتم العثور على فواتير تطابق بحثك." : "لا توجد فواتير لعرضها حالياً."}</p>
           )}
@@ -530,4 +533,3 @@ export default function AdminInvoicesPage() {
     </div>
   );
 }
-
