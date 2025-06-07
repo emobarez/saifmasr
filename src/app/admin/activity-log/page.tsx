@@ -4,13 +4,14 @@ import { useState, useEffect } from "react";
 import { Card, CardHeader, CardTitle, CardDescription, CardContent } from "@/components/ui/card";
 import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from "@/components/ui/table";
 import { Badge } from "@/components/ui/badge";
-import { Loader2, History as HistoryIcon, Users, Briefcase, FileTextIcon, SettingsIcon } from "lucide-react";
+import { Loader2, History as HistoryIcon, Users, Briefcase, FileTextIcon, SettingsIcon, Receipt, ClipboardList } from "lucide-react";
 import { useToast } from "@/hooks/use-toast";
 import { db } from "@/lib/firebase";
 import { collection, getDocs, query, orderBy, Timestamp, limit } from "firebase/firestore";
 import type { ActivityLogEntry, ActivityActionType } from "@/lib/activityLogger"; // Ensure ActivityLogEntry is exported
 import { ScrollArea } from "@/components/ui/scroll-area";
 import { Tooltip, TooltipContent, TooltipProvider, TooltipTrigger } from "@/components/ui/tooltip";
+import { Button } from "@/components/ui/button";
 
 const ITEMS_PER_PAGE = 25; // Or implement pagination later
 
@@ -46,13 +47,14 @@ export default function AdminActivityLogPage() {
 
   const getTargetIcon = (targetType?: string | null): React.ReactNode => {
     switch(targetType?.toLowerCase()){
-      case "client": return <Users className="h-4 w-4 inline me-1" />;
-      case "service": return <Briefcase className="h-4 w-4 inline me-1" />;
-      case "report": return <FileTextIcon className="h-4 w-4 inline me-1" />;
-      case "employee": return <Users className="h-4 w-4 inline me-1" />;
-      case "invoice": return <Receipt className="h-4 w-4 inline me-1" />;
-      case "servicerequest": return <ClipboardList className="h-4 w-4 inline me-1" />;
-      case "settings": return <SettingsIcon className="h-4 w-4 inline me-1" />;
+      case "client": return <Users className="h-4 w-4 inline me-1 text-muted-foreground" />;
+      case "service": return <Briefcase className="h-4 w-4 inline me-1 text-muted-foreground" />;
+      case "report": return <FileTextIcon className="h-4 w-4 inline me-1 text-muted-foreground" />;
+      case "reportsection": return <FileTextIcon className="h-4 w-4 inline me-1 text-muted-foreground" />;
+      case "employee": return <Users className="h-4 w-4 inline me-1 text-muted-foreground" />;
+      case "invoice": return <Receipt className="h-4 w-4 inline me-1 text-muted-foreground" />;
+      case "servicerequest": return <ClipboardList className="h-4 w-4 inline me-1 text-muted-foreground" />;
+      case "settings": return <SettingsIcon className="h-4 w-4 inline me-1 text-muted-foreground" />;
       default: return null;
     }
   }
@@ -107,7 +109,7 @@ export default function AdminActivityLogPage() {
                     <TableHead className="min-w-[150px]">نوع الإجراء</TableHead>
                     <TableHead className="min-w-[250px]">الوصف</TableHead>
                     <TableHead className="min-w-[180px]">الهدف</TableHead>
-                    <TableHead className="min-w-[200px]">تفاصيل إضافية</TableHead>
+                    <TableHead className="min-w-[120px]">تفاصيل إضافية</TableHead>
                   </TableRow>
                 </TableHeader>
                 <TableBody>
@@ -123,8 +125,10 @@ export default function AdminActivityLogPage() {
                       </TableCell>
                       <TableCell className="leading-relaxed">{log.description}</TableCell>
                       <TableCell>
-                        {log.target?.type && getTargetIcon(log.target.type)}
-                        {log.target?.name || log.target?.id || "-"}
+                        <div className="flex items-center">
+                           {log.target?.type && getTargetIcon(log.target.type)}
+                           <span className="truncate">{log.target?.name || log.target?.id || "-"}</span>
+                        </div>
                       </TableCell>
                       <TableCell>
                         {log.details && Object.keys(log.details).length > 0 ? (
@@ -132,7 +136,7 @@ export default function AdminActivityLogPage() {
                             <TooltipTrigger asChild>
                                 <Button variant="ghost" size="sm" className="text-xs p-1 h-auto">عرض التفاصيل</Button>
                             </TooltipTrigger>
-                            <TooltipContent side="left" className="max-w-md bg-popover p-3 shadow-lg rounded-md text-popover-foreground">
+                            <TooltipContent side="left" className="max-w-xs bg-popover p-3 shadow-lg rounded-md text-popover-foreground">
                                 <pre className="text-xs whitespace-pre-wrap break-all max-h-60 overflow-y-auto">
                                 {JSON.stringify(log.details, null, 2)}
                                 </pre>
