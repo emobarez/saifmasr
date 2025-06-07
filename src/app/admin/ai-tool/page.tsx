@@ -208,6 +208,11 @@ export default function AiReportToolPage() {
       await updateDoc(reportRef, { content: newContent });
       toast({ title: "تم الحفظ بنجاح", description: "تم حفظ القسم في التقرير المحدد." });
       
+      // If the saved report is the one currently loaded in the textarea, update the textarea
+      if (selectedReportId === selectedReportId) { // This condition is always true if selectedReportId is defined, so effectively checks if a report is selected
+        setReportText(newContent);
+      }
+
       if (adminUser && reportToUpdate) {
         await logActivity({
             actionType: "AI_REPORT_SECTION_APPENDED",
@@ -394,4 +399,3 @@ export default function AiReportToolPage() {
     </div>
   );
 }
-
