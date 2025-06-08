@@ -12,31 +12,31 @@ const services = [
     icon: <Briefcase className="h-10 w-10 text-primary" />,
     title: "خدمات استشارية",
     description: "نقدم استشارات متخصصة لمساعدتك في تحقيق أهدافك الاستراتيجية.",
-    dataAiHint: "business consulting"
+    dataAiHint: "strategic consulting"
   },
   {
     icon: <ShieldCheck className="h-10 w-10 text-primary" />,
     title: "حلول أمنية",
     description: "نوفر حلولاً أمنية متكاملة لحماية أصولك وبياناتك.",
-    dataAiHint: "security solutions"
+    dataAiHint: "cyber security"
   },
   {
     icon: <FileText className="h-10 w-10 text-primary" />,
     title: "إدارة التقارير",
     description: "أدوات متقدمة لإنشاء وإدارة التقارير بكفاءة عالية.",
-    dataAiHint: "report management"
+    dataAiHint: "report analytics"
   },
   {
     icon: <Users className="h-10 w-10 text-primary" />,
     title: "إدارة العملاء",
     description: "نظام متكامل لإدارة علاقات العملاء وتتبع تفاعلاتهم.",
-    dataAiHint: "CRM interface"
+    dataAiHint: "client management"
   },
   {
     icon: <SearchCheck className="h-10 w-10 text-primary" />,
     title: "التدقيق والمراجعة",
     description: "خدمات تدقيق ومراجعة دقيقة لضمان الامتثال والشفافية.",
-    dataAiHint: "financial audit"
+    dataAiHint: "compliance audit"
   },
 ];
 
