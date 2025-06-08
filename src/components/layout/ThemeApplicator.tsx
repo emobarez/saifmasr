@@ -1,9 +1,11 @@
+
 "use client";
 
 import { useEffect } from 'react';
 import { useSiteSettings } from '@/hooks/useSiteSettings';
 
 // Define a mapping from SiteSettings theme keys to CSS variable names
+// This mapping is kept for potential future use but the direct style application is removed for now.
 const themeKeyToCssVar: { [key: string]: string } = {
   themeBackground: '--background',
   themeForeground: '--foreground',
@@ -20,22 +22,26 @@ export function ThemeApplicator() {
   const { isLoadingSiteSettings } = siteSettings;
 
   useEffect(() => {
-    if (isLoadingSiteSettings) return; // Don't apply if settings are still loading
+    if (isLoadingSiteSettings) return; 
 
-    // Iterate over the theme keys that are expected to be HSL strings
+    // The following block is commented out to prevent ThemeApplicator
+    // from setting inline styles, which would override the .dark class
+    // styles defined in globals.css. The ThemeSwitcher component
+    // is responsible for toggling the .dark class on the HTML element.
+    // If dynamic theming from Firestore settings is desired in conjunction
+    // with light/dark mode, this component and globals.css would need
+    // a more sophisticated integration.
+    /*
     Object.entries(themeKeyToCssVar).forEach(([settingKey, cssVarName]) => {
       const value = siteSettings[settingKey as keyof typeof siteSettings] as string | undefined;
       
-      // The useSiteSettings hook provides defaults, so value should always be a string.
-      // We apply it if it's a non-empty string.
       if (typeof value === 'string' && value.trim() !== '') {
         document.documentElement.style.setProperty(cssVarName, value.trim());
       }
-      // If value is empty or not set (which shouldn't happen due to hook defaults),
-      // the styles from globals.css will act as the ultimate fallback.
     });
+    */
 
-  }, [siteSettings, isLoadingSiteSettings]); // Depend on the whole siteSettings object
+  }, [siteSettings, isLoadingSiteSettings]);
 
-  return null; // This component does not render anything itself
+  return null; 
 }
