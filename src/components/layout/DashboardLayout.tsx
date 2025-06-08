@@ -31,11 +31,12 @@ import {
   Sparkles,
   Settings as SettingsIcon, 
   ShieldEllipsis,
-  ClipboardList
+  ClipboardList,
+  HelpCircle
 } from "lucide-react";
 import { useAuth } from "@/context/AuthContext";
 import { Avatar, AvatarFallback, AvatarImage } from "@/components/ui/avatar";
-import { useSiteSettings } from '@/hooks/useSiteSettings'; // Updated import
+import { useSiteSettings } from '@/hooks/useSiteSettings'; 
 import type { NavItemConfig } from '@/config/dashboardNavs';
 import { ThemeSwitcher } from "./ThemeSwitcher"; 
 
@@ -52,7 +53,8 @@ const iconMap: { [key: string]: ElementType } = {
   Settings: SettingsIcon, 
   ShieldEllipsis,
   ClipboardList,
-  ShieldHalf 
+  ShieldHalf,
+  HelpCircle 
 };
 
 interface DashboardLayoutProps {
@@ -65,7 +67,7 @@ export function DashboardLayout({ children, navItems }: DashboardLayoutProps) {
   const pathname = usePathname();
   const { user, signOut, loading: authLoading } = useAuth();
   const router = useRouter();
-  const { portalName, isLoadingSiteSettings } = useSiteSettings(); // Updated hook usage
+  const { portalName, isLoadingSiteSettings } = useSiteSettings(); 
 
   const getInitials = (name?: string | null) => {
     if (!name) return "SM";
@@ -156,7 +158,7 @@ export function DashboardLayout({ children, navItems }: DashboardLayoutProps) {
               {filteredNavItems.find(item => pathname === item.href || (item.href !== (user?.role === 'admin' ? "/admin/dashboard" : "/client/dashboard") && pathname.startsWith(item.href)))?.label || "لوحة التحكم"}
             </h1>
           </header>
-          <div className="flex-grow p-6 overflow-auto">
+          <div className="flex-grow p-4 sm:p-6 overflow-auto">
             {children}
           </div>
         </main>
