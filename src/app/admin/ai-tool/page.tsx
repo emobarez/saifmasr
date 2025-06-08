@@ -72,6 +72,7 @@ export default function AiReportToolPage() {
       setIsLoadingReportContent(true);
       setSummaryResult(null);
       setImprovementSuggestions(null);
+      const selectedReportDetails = reports.find(r => r.id === selectedReportId);
       try {
         const reportRef = doc(db, "reports", selectedReportId);
         const reportSnap = await getDoc(reportRef);
@@ -79,6 +80,15 @@ export default function AiReportToolPage() {
           const reportData = reportSnap.data();
           setReportText(reportData?.content || "");
           toast({ title: "تم التحميل", description: `تم تحميل محتوى التقرير: ${reportData?.title}` });
+          if (adminUser && selectedReportDetails) {
+             await logActivity({
+                actionType: "AI_REPORT_IMPROVEMENTS_SUGGESTED", // Using this as a general "loaded for AI"
+                description: `Admin ${adminUser.displayName || adminUser.email} loaded content of report "${selectedReportDetails.title}" into AI tool.`,
+                actor: { id: adminUser.uid, role: "admin", name: adminUser.displayName },
+                target: { type: "report", id: selectedReportId, name: selectedReportDetails.title },
+                details: { reportLength: reportData?.content?.length || 0 }
+            });
+          }
         } else {
           setReportText("");
           toast({ title: "خطأ", description: "التقرير المحدد غير موجود أو لا يحتوي على محتوى.", variant: "destructive" });
@@ -92,7 +102,7 @@ export default function AiReportToolPage() {
       }
     };
     loadReportContent();
-  }, [selectedReportId, toast]);
+  }, [selectedReportId, toast, adminUser, reports]);
 
 
   const handleGenerateSummary = async () => {
@@ -202,24 +212,23 @@ export default function AiReportToolPage() {
       }
       const currentContent = reportSnap.data()?.content || "";
       const newContent = currentContent 
-        ? `${currentContent}\n\n---\n\n${generatedSection.generatedSectionText}` 
-        : generatedSection.generatedSectionText;
+        ? `${currentContent}\n\n---\n\n## ${sectionTopic || 'قسم جديد'}\n\n${generatedSection.generatedSectionText}` 
+        : `## ${sectionTopic || 'قسم جديد'}\n\n${generatedSection.generatedSectionText}`;
       
       await updateDoc(reportRef, { content: newContent });
       toast({ title: "تم الحفظ بنجاح", description: "تم حفظ القسم في التقرير المحدد." });
       
-      // If the saved report is the one currently loaded in the textarea, update the textarea
-      if (selectedReportId === selectedReportId) { // This condition is always true if selectedReportId is defined, so effectively checks if a report is selected
+      if (selectedReportId === selectedReportId) { 
         setReportText(newContent);
       }
 
       if (adminUser && reportToUpdate) {
         await logActivity({
             actionType: "AI_REPORT_SECTION_APPENDED",
-            description: `Admin ${adminUser.displayName || adminUser.email} appended a generated section to report: ${reportToUpdate.title}.`,
+            description: `Admin ${adminUser.displayName || adminUser.email} appended a generated section titled "${sectionTopic || 'New Section'}" to report: ${reportToUpdate.title}.`,
             actor: { id: adminUser.uid, role: "admin", name: adminUser.displayName },
             target: { type: "report", id: selectedReportId, name: reportToUpdate.title },
-            details: { appendedSectionLength: generatedSection.generatedSectionText.length }
+            details: { appendedSectionTitle: sectionTopic || "New Section", appendedSectionLength: generatedSection.generatedSectionText.length }
         });
       }
     } catch (error) {
@@ -365,7 +374,7 @@ export default function AiReportToolPage() {
             />
           </div>
           <div className="flex flex-col sm:flex-row gap-4">
-            <Button onClick={handleGenerateSection} disabled={isLoadingReportContent || isLoadingSummary || isLoadingImprovements || isLoadingSection || isSavingSection} className="w-full sm:w-auto">
+            <Button onClick={handleGenerateSection} disabled={isLoadingReportContent || isLoadingSummary || isLoadingImprovements || isLoadingSection || isSavingSection || !sectionTopic.trim()} className="w-full sm:w-auto">
               {isLoadingSection ? <Loader2 className="me-2 h-5 w-5 animate-spin" /> : <FileText className="me-2 h-5 w-5" />}
               إنشاء قسم التقرير
             </Button>
@@ -399,3 +408,4 @@ export default function AiReportToolPage() {
     </div>
   );
 }
+
