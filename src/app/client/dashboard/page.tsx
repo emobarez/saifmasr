@@ -3,7 +3,7 @@
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
 import { Badge } from "@/components/ui/badge";
-import { ArrowLeftCircle, ListPlus, History, Receipt, UserCircle, Loader2, ShoppingBag } from "lucide-react";
+import { ArrowLeftCircle, ListPlus, History, Receipt, UserCircle, Loader2, ShoppingBag, FileText as InvoiceIcon } from "lucide-react";
 import Link from "next/link";
 import { useAuth } from "@/context/AuthContext";
 import { useState, useEffect } from "react";
@@ -23,7 +23,15 @@ interface RecentServiceRequest {
   requestTitle: string;
   status: "جديد" | "قيد المعالجة" | "مكتمل" | "ملغى";
   createdAt: Timestamp;
-  serviceType: string; // Added for potential display if needed
+  serviceType: string;
+}
+
+interface RecentInvoice {
+  id: string;
+  invoiceNumber: string;
+  issueDate: Timestamp;
+  totalAmount: number;
+  status: "مستحقة" | "مدفوعة" | "متأخرة" | "ملغاة";
 }
 
 export default function ClientDashboardPage() {
@@ -31,6 +39,8 @@ export default function ClientDashboardPage() {
   const { toast } = useToast();
   const [recentRequests, setRecentRequests] = useState<RecentServiceRequest[]>([]);
   const [isLoadingRecentRequests, setIsLoadingRecentRequests] = useState(true);
+  const [recentInvoices, setRecentInvoices] = useState<RecentInvoice[]>([]);
+  const [isLoadingRecentInvoices, setIsLoadingRecentInvoices] = useState(true);
 
   const formatDate = (timestamp: Timestamp | Date | undefined): string => {
     if (!timestamp) return "غير متوفر";
@@ -45,12 +55,19 @@ export default function ClientDashboardPage() {
     return new Intl.DateTimeFormat('ar-EG', { year: 'numeric', month: 'short', day: 'numeric' }).format(date);
   };
 
-  const getStatusVariant = (status: RecentServiceRequest["status"]): "default" | "secondary" | "destructive" | "outline" => {
+  const formatCurrency = (amount: number): string => {
+    return new Intl.NumberFormat('ar-EG', { style: 'currency', currency: 'EGP' }).format(amount);
+  };
+
+  const getStatusVariant = (status: RecentServiceRequest["status"] | RecentInvoice["status"]): "default" | "secondary" | "destructive" | "outline" => {
     switch (status) {
       case "جديد": return "default";
       case "قيد المعالجة": return "secondary";
       case "مكتمل": return "outline";
       case "ملغى": return "destructive";
+      case "مدفوعة": return "outline";
+      case "مستحقة": return "default";
+      case "متأخرة": return "secondary";
       default: return "default";
     }
   };
@@ -58,6 +75,7 @@ export default function ClientDashboardPage() {
   useEffect(() => {
     if (!user) {
       setIsLoadingRecentRequests(false);
+      setIsLoadingRecentInvoices(false);
       return;
     }
 
@@ -68,7 +86,7 @@ export default function ClientDashboardPage() {
           collection(db, "serviceRequests"),
           where("clientId", "==", user.uid),
           orderBy("createdAt", "desc"),
-          limit(3) // Fetch the last 3 requests
+          limit(3)
         );
         const querySnapshot = await getDocs(q);
         const fetchedRequests = querySnapshot.docs.map(doc => ({ id: doc.id, ...doc.data() } as RecentServiceRequest));
@@ -81,7 +99,28 @@ export default function ClientDashboardPage() {
       }
     };
 
+    const fetchRecentInvoices = async () => {
+      setIsLoadingRecentInvoices(true);
+      try {
+        const q = query(
+          collection(db, "invoices"),
+          where("clientId", "==", user.uid),
+          orderBy("issueDate", "desc"),
+          limit(3)
+        );
+        const querySnapshot = await getDocs(q);
+        const fetchedInvoices = querySnapshot.docs.map(doc => ({ id: doc.id, ...doc.data() } as RecentInvoice));
+        setRecentInvoices(fetchedInvoices);
+      } catch (error) {
+        console.error("Error fetching recent invoices:", error);
+        toast({ title: "خطأ", description: "لم نتمكن من تحميل فواتيرك الأخيرة.", variant: "destructive" });
+      } finally {
+        setIsLoadingRecentInvoices(false);
+      }
+    };
+
     fetchRecentRequests();
+    fetchRecentInvoices();
   }, [user, toast]);
 
   return (
@@ -120,44 +159,86 @@ export default function ClientDashboardPage() {
         </div>
       </section>
 
-      <Card className="shadow-md">
-        <CardHeader>
-          <CardTitle className="font-headline text-xl text-primary">آخر طلباتك</CardTitle>
-        </CardHeader>
-        <CardContent>
-          {isLoadingRecentRequests ? (
-            <div className="flex items-center justify-center py-4">
-              <Loader2 className="h-6 w-6 animate-spin text-primary" />
-              <p className="ms-2 text-muted-foreground">جارٍ تحميل الطلبات الأخيرة...</p>
-            </div>
-          ) : recentRequests.length > 0 ? (
-            <div className="space-y-4">
-              <ul className="space-y-3">
-                {recentRequests.map(request => (
-                  <li key={request.id} className="flex flex-col sm:flex-row justify-between items-start sm:items-center p-3 bg-secondary/50 rounded-md hover:bg-secondary/70 transition-colors">
-                    <div>
-                      <p className="font-semibold text-foreground">{request.requestTitle}</p>
-                      <p className="text-xs text-muted-foreground">{formatDate(request.createdAt)}</p>
-                    </div>
-                    <Badge variant={getStatusVariant(request.status)} className="mt-2 sm:mt-0">{request.status}</Badge>
-                  </li>
-                ))}
-              </ul>
-              <Button asChild variant="link" className="p-0 h-auto text-primary">
-                <Link href="/client/tracking">عرض جميع الطلبات <ArrowLeftCircle className="ms-1 h-4 w-4" /></Link>
-              </Button>
-            </div>
-          ) : (
-            <div className="text-center py-8 text-muted-foreground">
-              <ShoppingBag className="h-12 w-12 mx-auto mb-3 text-primary/30" />
-              <p className="mb-2">لا توجد طلبات حديثة لعرضها.</p>
-              <Button asChild variant="default" size="sm">
-                <Link href="/client/requests">ابدأ بتقديم طلب خدمة جديد</Link>
-              </Button>
-            </div>
-          )}
-        </CardContent>
-      </Card>
+      <div className="grid grid-cols-1 lg:grid-cols-2 gap-6">
+        <Card className="shadow-md">
+          <CardHeader>
+            <CardTitle className="font-headline text-xl text-primary">آخر طلباتك</CardTitle>
+          </CardHeader>
+          <CardContent>
+            {isLoadingRecentRequests ? (
+              <div className="flex items-center justify-center py-4">
+                <Loader2 className="h-6 w-6 animate-spin text-primary" />
+                <p className="ms-2 text-muted-foreground">جارٍ تحميل الطلبات الأخيرة...</p>
+              </div>
+            ) : recentRequests.length > 0 ? (
+              <div className="space-y-4">
+                <ul className="space-y-3">
+                  {recentRequests.map(request => (
+                    <li key={request.id} className="flex flex-col sm:flex-row justify-between items-start sm:items-center p-3 bg-secondary/50 rounded-md hover:bg-secondary/70 transition-colors">
+                      <div>
+                        <p className="font-semibold text-foreground">{request.requestTitle}</p>
+                        <p className="text-xs text-muted-foreground">{formatDate(request.createdAt)}</p>
+                      </div>
+                      <Badge variant={getStatusVariant(request.status)} className="mt-2 sm:mt-0">{request.status}</Badge>
+                    </li>
+                  ))}
+                </ul>
+                <Button asChild variant="link" className="p-0 h-auto text-primary">
+                  <Link href="/client/tracking">عرض جميع الطلبات <ArrowLeftCircle className="ms-1 h-4 w-4" /></Link>
+                </Button>
+              </div>
+            ) : (
+              <div className="text-center py-8 text-muted-foreground">
+                <ShoppingBag className="h-12 w-12 mx-auto mb-3 text-primary/30" />
+                <p className="mb-2">لا توجد طلبات حديثة لعرضها.</p>
+                <Button asChild variant="default" size="sm">
+                  <Link href="/client/requests">ابدأ بتقديم طلب خدمة جديد</Link>
+                </Button>
+              </div>
+            )}
+          </CardContent>
+        </Card>
+
+        <Card className="shadow-md">
+          <CardHeader>
+            <CardTitle className="font-headline text-xl text-primary">آخر الفواتير</CardTitle>
+          </CardHeader>
+          <CardContent>
+            {isLoadingRecentInvoices ? (
+              <div className="flex items-center justify-center py-4">
+                <Loader2 className="h-6 w-6 animate-spin text-primary" />
+                <p className="ms-2 text-muted-foreground">جارٍ تحميل الفواتير الأخيرة...</p>
+              </div>
+            ) : recentInvoices.length > 0 ? (
+              <div className="space-y-4">
+                <ul className="space-y-3">
+                  {recentInvoices.map(invoice => (
+                    <li key={invoice.id} className="flex flex-col sm:flex-row justify-between items-start sm:items-center p-3 bg-secondary/50 rounded-md hover:bg-secondary/70 transition-colors">
+                      <div>
+                        <p className="font-semibold text-foreground">فاتورة رقم: {invoice.invoiceNumber}</p>
+                        <p className="text-xs text-muted-foreground">تاريخ الإصدار: {formatDate(invoice.issueDate)} - {formatCurrency(invoice.totalAmount)}</p>
+                      </div>
+                      <Badge variant={getStatusVariant(invoice.status)} className="mt-2 sm:mt-0">{invoice.status}</Badge>
+                    </li>
+                  ))}
+                </ul>
+                <Button asChild variant="link" className="p-0 h-auto text-primary">
+                  <Link href="/client/invoices">عرض جميع الفواتير <ArrowLeftCircle className="ms-1 h-4 w-4" /></Link>
+                </Button>
+              </div>
+            ) : (
+              <div className="text-center py-8 text-muted-foreground">
+                <InvoiceIcon className="h-12 w-12 mx-auto mb-3 text-primary/30" />
+                <p className="mb-2">لا توجد فواتير حديثة لعرضها.</p>
+                 <Button asChild variant="link" className="p-0 h-auto text-primary">
+                  <Link href="/client/invoices">عرض صفحة الفواتير</Link>
+                </Button>
+              </div>
+            )}
+          </CardContent>
+        </Card>
+      </div>
     </div>
   );
 }
+
