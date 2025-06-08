@@ -138,6 +138,7 @@ export default function AdminEmployeesPage() {
           description: `Admin ${adminUser.displayName || adminUser.email} added new employee: ${data.name}.`,
           actor: { id: adminUser.uid, role: adminUser.role, name: adminUser.displayName },
           target: { id: docRef.id, type: "employee", name: data.name },
+          details: { employeeId: data.employeeId, jobTitle: data.jobTitle, department: data.department, phone: data.phone, email: data.email }
         });
       }
 
@@ -170,6 +171,7 @@ export default function AdminEmployeesPage() {
           description: `Admin ${adminUser.displayName || adminUser.email} updated employee: ${data.name}.`,
           actor: { id: adminUser.uid, role: adminUser.role, name: adminUser.displayName },
           target: { id: editingEmployee.id, type: "employee", name: data.name },
+          details: { employeeId: data.employeeId, jobTitle: data.jobTitle, department: data.department, phone: data.phone, email: data.email }
         });
       }
 
