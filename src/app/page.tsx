@@ -127,7 +127,7 @@ export default function LandingPage() {
                   width={800}
                   height={600}
                   className="rounded-lg shadow-xl"
-                  data-ai-hint="team meeting"
+                  data-ai-hint="about us"
                 />
               </div>
             </div>
