@@ -87,7 +87,7 @@ export default function PublicServicesPage() {
                       fill
                       style={{objectFit: "cover"}}
                       className="bg-muted"
-                      data-ai-hint={`${service.category} service`}
+                      data-ai-hint={`${service.category.toLowerCase().split(' ').join('')} service`}
                     />
                   </div>
                   <CardHeader className="pb-3">
@@ -153,4 +153,3 @@ export default function PublicServicesPage() {
     </div>
   );
 }
-
