@@ -302,7 +302,7 @@ export default function AdminReportsPage() {
                 </TableHeader>
                 <TableBody>
                   {filteredReports.map((report) => (
-                    <TableRow key={report.id}>
+                    <TableRow key={report.id} className="text-xs sm:text-sm">
                       <TableCell className="font-medium">{report.title}</TableCell>
                       <TableCell><Badge variant={getStatusVariant(report.status)}>{report.status}</Badge></TableCell>
                       <TableCell>{formatDate(report.createdAt)}</TableCell>
@@ -364,5 +364,6 @@ export default function AdminReportsPage() {
     </div>
   );
 }
+    
 
     

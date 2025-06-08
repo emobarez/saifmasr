@@ -281,7 +281,7 @@ export default function AdminClientsPage() {
                 </TableHeader>
                 <TableBody>
                   {filteredClients.map((client) => (
-                    <TableRow key={client.id}>
+                    <TableRow key={client.id} className="text-xs sm:text-sm">
                       <TableCell className="font-medium truncate max-w-[100px]">{client.id}</TableCell>
                       <TableCell>{client.name}</TableCell>
                       <TableCell>{client.email}</TableCell>
@@ -362,5 +362,7 @@ export default function AdminClientsPage() {
     </div>
   );
 }
+
+    
 
     

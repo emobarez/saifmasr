@@ -265,7 +265,7 @@ export default function AdminServicesPage() {
         }
       } else {
         setGeneratedFAQs([]); 
-        toast({ title: "لم يتم إنشاء أسئلة", description: "لم يتمكن الذكاء الاصطناعي من إنشاء أسئلة شائعة. يمكنك المحاولة مرة أخرى.", variant: "default" });
+        toast({ title: "لم يتم إنشاء أسئلة", description: "لم يتمكن الذكاء الاصطناعي من إنشاء أسئلة شائعة. يمكنك المحاولة مرة أخرى أو إضافتها يدوياً لاحقاً.", variant: "default" });
       }
     } catch (error) {
       console.error("Error generating FAQs:", error);
@@ -420,7 +420,7 @@ export default function AdminServicesPage() {
                 </TableHeader>
                 <TableBody>
                   {filteredServices.map((service) => (
-                    <TableRow key={service.id}>
+                    <TableRow key={service.id} className="text-xs sm:text-sm">
                       <TableCell className="font-medium">{service.name}</TableCell>
                       <TableCell>{service.category}</TableCell>
                       <TableCell>{service.price}</TableCell>
@@ -474,4 +474,6 @@ export default function AdminServicesPage() {
     </div>
   );
 }
+    
+
     

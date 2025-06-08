@@ -218,8 +218,8 @@ export default function AdminServiceRequestsPage() {
                   </TableHeader>
                   <TableBody>
                     {filteredRequests.map((request) => (
-                      <TableRow key={request.id}>
-                        <TableCell className="font-medium align-top">
+                      <TableRow key={request.id} className="text-xs sm:text-sm align-top">
+                        <TableCell className="font-medium">
                           {request.requestTitle}
                           {request.attachmentURL && (
                              <a 
@@ -232,11 +232,11 @@ export default function AdminServiceRequestsPage() {
                             </a>
                           )}
                         </TableCell>
-                        <TableCell className="align-top">{request.clientName}</TableCell>
-                        <TableCell className="align-top">{getServiceTypeName(request.serviceType)}</TableCell>
-                        <TableCell className="align-top">{formatDate(request.createdAt)}</TableCell>
-                        <TableCell className="align-top"><Badge variant={getStatusVariant(request.status)}>{request.status}</Badge></TableCell>
-                        <TableCell className="align-top">
+                        <TableCell>{request.clientName}</TableCell>
+                        <TableCell>{getServiceTypeName(request.serviceType)}</TableCell>
+                        <TableCell>{formatDate(request.createdAt)}</TableCell>
+                        <TableCell><Badge variant={getStatusVariant(request.status)}>{request.status}</Badge></TableCell>
+                        <TableCell>
                           <Tooltip>
                             <TooltipTrigger asChild>
                               <div className="flex items-center gap-2 cursor-default">
@@ -255,7 +255,7 @@ export default function AdminServiceRequestsPage() {
                             )}
                           </Tooltip>
                         </TableCell>
-                         <TableCell className="align-top">
+                         <TableCell>
                           <Select 
                             value={request.status} 
                             onValueChange={(value) => handleStatusChange(request.id, value as ServiceRequest["status"])}
@@ -271,7 +271,7 @@ export default function AdminServiceRequestsPage() {
                             </SelectContent>
                           </Select>
                         </TableCell>
-                        <TableCell className="align-top">
+                        <TableCell>
                           <Button variant="ghost" size="icon" onClick={() => handleViewDetails(request)}>
                             <Eye className="h-5 w-5" />
                           </Button>
@@ -301,3 +301,5 @@ export default function AdminServiceRequestsPage() {
   );
 }
 
+
+    

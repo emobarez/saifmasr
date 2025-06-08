@@ -389,7 +389,7 @@ export default function AdminEmployeesPage() {
                 </TableHeader>
                 <TableBody>
                   {filteredEmployees.map((employee) => (
-                    <TableRow key={employee.id}>
+                    <TableRow key={employee.id} className="text-xs sm:text-sm">
                       <TableCell>
                         <Avatar className="h-10 w-10">
                           <AvatarImage src={employee.profileImageUrl || undefined} alt={employee.name} />
@@ -448,6 +448,8 @@ export default function AdminEmployeesPage() {
     </div>
   );
 }
+    
+
     
 
     
