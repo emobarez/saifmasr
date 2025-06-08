@@ -1,4 +1,3 @@
-
 "use client";
 import { ShieldAlert, Tool } from "lucide-react";
 import { useSiteSettings } from "@/hooks/useSiteSettings"; // Updated import
