@@ -73,7 +73,7 @@ export function ReportDetailsDialog({ report, isOpen, onOpenChange }: ReportDeta
         <Separator className="mb-3" />
         <div className="flex-grow overflow-hidden">
           <h4 className="font-medium mb-2 text-md text-muted-foreground">محتوى التقرير:</h4>
-          <ScrollArea className="h-[calc(90vh-280px)] md:h-[calc(90vh-250px)] rounded-md border p-3 bg-secondary/30">
+          <ScrollArea className="h-full rounded-md border p-3 bg-secondary/30">
             <div className="whitespace-pre-wrap text-sm text-foreground/90 p-2">
                 {report.content || "لا يوجد محتوى لهذا التقرير."}
             </div>
