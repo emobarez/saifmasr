@@ -5,7 +5,7 @@ import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Textarea } from "@/components/ui/textarea";
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
-import { Progress } from "@/components/ui/progress"; // Import Progress component
+import { Progress } from "@/components/ui/progress"; 
 import { PlusCircle, Loader2, Paperclip } from "lucide-react";
 import { useForm } from "react-hook-form";
 import { zodResolver } from "@hookform/resolvers/zod";
@@ -17,13 +17,34 @@ import { collection, addDoc, serverTimestamp } from "firebase/firestore";
 import { ref, uploadBytesResumable, getDownloadURL } from "firebase/storage"; 
 import { useAuth } from "@/context/AuthContext";
 import { logActivity } from "@/lib/activityLogger";
-import { useState } from "react"; // Import useState
+import { useState } from "react"; 
+
+const MAX_FILE_SIZE = 5 * 1024 * 1024; // 5MB
+const ALLOWED_FILE_TYPES = [
+  "image/jpeg",
+  "image/png",
+  "image/gif",
+  "application/pdf",
+  "application/msword",
+  "application/vnd.openxmlformats-officedocument.wordprocessingml.document",
+  "text/plain",
+];
 
 const serviceRequestSchema = z.object({
   serviceType: z.string({ required_error: "يرجى اختيار نوع الخدمة" }).min(1, "يرجى اختيار نوع الخدمة"),
   requestTitle: z.string().min(5, { message: "عنوان الطلب يجب أن لا يقل عن 5 أحرف" }).max(100, { message: "عنوان الطلب يجب أن لا يتجاوز 100 حرف" }),
   requestDetails: z.string().min(10, { message: "تفاصيل الطلب يجب أن لا تقل عن 10 أحرف" }).max(1000, { message: "تفاصيل الطلب يجب أن لا تتجاوز 1000 حرف" }),
-  attachments: z.any().optional(), 
+  attachments: z
+    .custom<FileList>()
+    .optional()
+    .refine(
+      (files) => (!files || files.length === 0 || files?.[0]?.size <= MAX_FILE_SIZE),
+      `حجم الملف يجب أن لا يتجاوز ${MAX_FILE_SIZE / 1024 / 1024} ميجا بايت.`
+    )
+    .refine(
+      (files) => (!files || files.length === 0 || ALLOWED_FILE_TYPES.includes(files?.[0]?.type)),
+      "نوع الملف غير مدعوم. الأنواع المسموح بها: صور، PDF، مستندات Word، ملفات نصية."
+    ),
 });
 
 type ServiceRequestFormValues = z.infer<typeof serviceRequestSchema>;
@@ -44,7 +65,7 @@ export default function ClientServiceRequestsPage() {
     },
   });
   
-  const {formState: {isSubmitting}, reset, control} = form; // Added control
+  const {formState: {isSubmitting}, reset, control} = form;
 
   const onSubmit = async (data: ServiceRequestFormValues) => {
     if (!user) {
@@ -66,8 +87,8 @@ export default function ClientServiceRequestsPage() {
       if (file) {
         setIsUploading(true);
         setUploadProgress(0);
-        toast({ title: "جارٍ رفع المرفق...", description: `اسم الملف: ${file.name}` });
-        const uniqueFilename = `${Date.now()}-${file.name.replace(/\s+/g, '_')}`; // Sanitize filename
+        toast({ title: "جارٍ رفع المرفق...", description: `اسم الملف: ${file.name}`, duration: 3000 });
+        const uniqueFilename = `${Date.now()}-${file.name.replace(/\s+/g, '_')}`;
         const storageRef = ref(storage, `service-request-attachments/${user.uid}/${uniqueFilename}`);
         
         const uploadTask = uploadBytesResumable(storageRef, file);
@@ -87,13 +108,12 @@ export default function ClientServiceRequestsPage() {
             async () => {
               attachmentURL = await getDownloadURL(uploadTask.snapshot.ref);
               originalFilename = file.name;
-              setUploadProgress(100); // Mark as complete
-              // setIsUploading(false); // Keep isUploading true until Firestore write is done or reset it slightly later
+              setUploadProgress(100); 
               resolve();
             }
           );
         });
-        toast({ title: "تم رفع المرفق بنجاح", description: "يتم الآن إرسال طلبك." });
+        // Do not turn off isUploading here, wait for Firestore write.
       }
 
       const { attachments, ...requestDataToSave } = data;
@@ -115,23 +135,26 @@ export default function ClientServiceRequestsPage() {
         description: "سنقوم بمراجعة طلبك والتواصل معك قريباً.",
       });
       
-      if (user) { // Ensure user is not null for logging
-          await logActivity({
-            actionType: "SERVICE_REQUEST_SUBMITTED",
-            description: `Client ${user.displayName || user.email} submitted service request: ${data.requestTitle}.`,
-            actor: { id: user.uid, role: "client", name: user.displayName },
-            target: { id: docRefId, type: "serviceRequest", name: data.requestTitle },
-            details: { serviceType: data.serviceType, hasAttachment: !!attachmentURL },
-          });
+      if (user && docRefId) { 
+          try {
+            await logActivity({
+                actionType: "SERVICE_REQUEST_SUBMITTED",
+                description: `Client ${user.displayName || user.email} submitted service request: ${data.requestTitle}.`,
+                actor: { id: user.uid, role: "client", name: user.displayName },
+                target: { id: docRefId, type: "serviceRequest", name: data.requestTitle },
+                details: { serviceType: data.serviceType, hasAttachment: !!attachmentURL },
+            });
+          } catch (logError) {
+            console.error("Error logging activity after request submission:", logError);
+            // Non-critical error, user request was successful
+          }
       }
-
       reset(); 
-      setUploadProgress(null); // Reset progress after successful submission
     } catch (error: any) {
       console.error("Error submitting service request:", error);
       let errorMessage = "حدث خطأ أثناء محاولة إرسال طلبك. يرجى المحاولة مرة أخرى.";
       if (error.code && error.code.startsWith('storage/')) {
-        errorMessage = "حدث خطأ أثناء رفع المرفق. يرجى المحاولة مرة أخرى أو إرسال الطلب بدون مرفق.";
+        errorMessage = "حدث خطأ أثناء رفع المرفق. يرجى التحقق من حجم الملف ونوعه أو إرسال الطلب بدون مرفق.";
       }
       toast({
         title: "خطأ في إرسال الطلب",
@@ -139,10 +162,8 @@ export default function ClientServiceRequestsPage() {
         variant: "destructive",
       });
     } finally {
-        setIsUploading(false); // Ensure isUploading is false in all cases
-        if (!docRefId) { // If submission failed before Firestore write, and we were uploading
-          setUploadProgress(null); // Clear progress if submit fails entirely
-        }
+        setIsUploading(false); 
+        setUploadProgress(null); 
     }
   };
 
@@ -218,14 +239,13 @@ export default function ClientServiceRequestsPage() {
                     <FormControl>
                       <Input 
                         type="file" 
-                        onChange={(e) => onChange(e.target.files)} 
+                        onChange={(e) => onChange(e.target.files)} // Pass FileList
                         {...restField}
                         disabled={isSubmitting || isUploading}
-                        className="pt-2" 
                       />
                     </FormControl>
                     <FormDescription>
-                      يمكنك إرفاق ملفات ذات صلة بطلبك (مثل مستندات، صور، إلخ). الحد الأقصى للحجم: 5 ميجا.
+                      الأنواع المسموح بها: صور، PDF، مستندات Word، ملفات نصية. الحد الأقصى للحجم: 5 ميجا.
                     </FormDescription>
                     <FormMessage />
                   </FormItem>
@@ -238,7 +258,7 @@ export default function ClientServiceRequestsPage() {
                   <p className="text-sm text-muted-foreground text-center">جارٍ رفع الملف: {Math.round(uploadProgress)}%</p>
                 </div>
               )}
-               {isUploading && uploadProgress === 100 && (
+               {isUploading && uploadProgress === 100 && ( // Still uploading overall, but file part is done
                 <p className="text-sm text-green-600 dark:text-green-500 mt-2 text-center">اكتمل رفع الملف، جارٍ إرسال الطلب...</p>
               )}
 
@@ -255,3 +275,4 @@ export default function ClientServiceRequestsPage() {
   );
 }
 
+    
