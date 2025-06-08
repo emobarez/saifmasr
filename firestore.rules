@@ -4,84 +4,73 @@ rules_version = '2';
 service cloud.firestore {
   match /databases/{database}/documents {
 
-    // Helper function to check if a user is authenticated
-    function isAuthenticated() {
-      return request.auth != null;
-    }
-
-    // Helper function to check if the user is the owner of a document
-    // Assumes documents have a 'uid' or 'clientId' field matching the user's auth UID
-    function isOwner(resourceId) {
-      return isAuthenticated() && request.auth.uid == resourceId;
-    }
-
-    // For this basic setup, we'll assume an admin has a specific UID or email.
-    // IN PRODUCTION: Use custom claims or a 'roles' collection for robust admin checks.
+    // Helper function to check for admin role 
+    // IMPORTANT: For production, use a more secure method like Firebase Auth custom claims 
+    // or a roles collection in Firestore.
     function isAdmin() {
-      return isAuthenticated() && (
-        request.auth.email == "admin@saifmasr.com" ||
-        request.auth.email == "admin@example.com" // Add other admin emails if needed
-        // Or, for a specific admin UID:
-        // request.auth.uid == "YOUR_ADMIN_USER_ID_HERE"
-      );
+      // Example: Check for specific admin email(s)
+      return request.auth.token.email == "admin@saifmasr.com" || request.auth.token.email == "admin@example.com";
     }
 
-    // Users collection (if you decide to store user profiles/roles here)
-    // match /users/{userId} {
-    //   allow read: if isAuthenticated();
-    //   allow write: if isOwner(userId) || isAdmin(); // Users can write their own profile, admins can write any
-    // }
-
-    // Clients Collection
-    match /clients/{clientId} {
-      allow read: if isAuthenticated(); // All authenticated users can read client info (e.g., for admins to list)
-      allow create: if isAdmin();      // Only admins can create clients
-      allow update, delete: if isAdmin(); // Only admins can update/delete clients
-      // Clients might need to read their own specific details if stored here not under /users/{userId}
-      // allow read: if isOwner(clientId) || isAdmin();
-    }
-
-    // Services Collection
-    match /services/{serviceId} {
-      allow read: if true; // Publicly readable by anyone (for landing page, services page)
-      allow create, update, delete: if isAdmin(); // Only admins can manage services
-    }
-
-    // Service Requests Collection
-    match /serviceRequests/{requestId} {
-      allow read: if isOwner(resource.data.clientId) || isAdmin(); // Owner or admin can read
-      allow create: if isAuthenticated(); // Any authenticated client can create
-      allow update: if isAdmin(); // Only admins can update (e.g., status)
-      // allow delete: if isAdmin(); // Decide if admins can delete requests
-    }
-
-    // Reports Collection
-    match /reports/{reportId} {
-      allow read, write: if isAdmin(); // Only admins can manage reports
-    }
-
-    // Employees Collection
-    match /employees/{employeeId} {
-      allow read, write: if isAdmin(); // Only admins can manage employees
-    }
-
-    // Invoices Collection
-    match /invoices/{invoiceId} {
-      allow read: if isOwner(resource.data.clientId) || isAdmin(); // Owner or admin can read
-      allow create, update, delete: if isAdmin(); // Only admins can manage invoices
-    }
-
-    // Activity Logs Collection
-    match /activityLogs/{logId} {
-      allow read: if isAdmin(); // Only admins can read activity logs
-      allow create: if isAuthenticated(); // Any authenticated user action can create a log (e.g., system, admin, client)
-      // No update/delete for logs generally
-    }
-
-    // System Settings Collection
+    // System settings: Publicly readable, admin writable
     match /systemSettings/{settingId} {
-      allow read: if true; // Settings like portalName, maintenanceMode can be public
-      allow write: if isAdmin(); // Only admins can change system settings
+      allow read: if true;
+      allow write: if isAdmin();
+    }
+
+    // Services: Publicly readable, admin writable
+    match /services/{serviceId} {
+      allow read: if true;
+      allow create, update, delete: if isAdmin();
+    }
+
+    // Clients: Admin managed. 
+    // Client-specific data is typically in other collections linked by clientId.
+    match /clients/{clientId} {
+      allow read, write: if isAdmin();
+    }
+
+    // Employees: Admin managed
+    match /employees/{employeeId} {
+      allow read, write: if isAdmin();
+    }
+    
+    // Service Requests:
+    // Clients can create for themselves, and read/update/delete their own.
+    // Admins can manage all.
+    match /serviceRequests/{requestId} {
+      allow read: if isAdmin() || (request.auth.uid == resource.data.clientId);
+      allow create: if request.auth.uid == request.resource.data.clientId; // Ensure client creates for themselves
+      allow update: if isAdmin() || (request.auth.uid == resource.data.clientId); 
+      allow delete: if isAdmin() || (request.auth.uid == resource.data.clientId);
+    }
+
+    // Invoices:
+    // Clients can read their own invoices.
+    // Admins can manage all invoices (create, update, delete).
+    match /invoices/{invoiceId} {
+      allow read: if isAdmin() || (request.auth.uid == resource.data.clientId);
+      allow create, update, delete: if isAdmin();
+    }
+
+    // Reports: Admin managed
+    match /reports/{reportId} {
+      allow read, write: if isAdmin();
+    }
+
+    // Activity Logs: 
+    // Admins can read. Writes should ideally be from trusted server environments (e.g. Cloud Functions via Admin SDK)
+    // or controlled admin actions. For simplicity here, admin write is allowed but secure carefully.
+    match /activityLogs/{logId} {
+      allow read: if isAdmin();
+      // Allow admin write, but for client-triggered logs, use a backend function.
+      allow write: if isAdmin(); 
+    }
+
+    // Default deny for any other collection/path not explicitly matched above.
+    // This is important for security.
+    match /{document=**} {
+      allow read, write: if false;
     }
   }
 }
