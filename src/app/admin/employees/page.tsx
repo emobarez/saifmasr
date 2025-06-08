@@ -251,12 +251,12 @@ export default function AdminEmployeesPage() {
   }, [employees, searchTerm]);
 
 
-  const renderEmployeeFormFields = (formInstance: typeof addEmployeeForm | typeof editEmployeeForm, currentImageUrl?: string) => (
+  const renderEmployeeFormFields = (formInstance: typeof addEmployeeForm | typeof editEmployeeForm, isEditing = false, currentImageUrl?: string) => (
     <>
-      {currentImageUrl && (
+      {isEditing && currentImageUrl && (
         <div className="mb-4 flex justify-center">
           <Avatar className="h-24 w-24">
-            <AvatarImage src={currentImageUrl} alt="الصورة الحالية" />
+            <AvatarImage src={currentImageUrl} alt="الصورة الحالية للموظف" />
             <AvatarFallback><UserSquare2 className="h-12 w-12 text-muted-foreground" /></AvatarFallback>
           </Avatar>
         </div>
@@ -434,7 +434,7 @@ export default function AdminEmployeesPage() {
           {editingEmployee && (
             <Form {...editEmployeeForm}>
               <form onSubmit={editEmployeeForm.handleSubmit(handleEditEmployeeSubmit)} className="space-y-4 py-4 max-h-[70vh] overflow-y-auto px-2">
-                {renderEmployeeFormFields(editEmployeeForm, editingEmployee.profileImageUrl)}
+                {renderEmployeeFormFields(editEmployeeForm, true, editingEmployee.profileImageUrl)}
                 <DialogFooter className="pt-4 sticky bottom-0 bg-card pb-4">
                   <Button type="button" variant="outline" onClick={() => setIsEditEmployeeDialogOpen(false)} disabled={editEmployeeForm.formState.isSubmitting}>إلغاء</Button>
                   <Button type="submit" disabled={editEmployeeForm.formState.isSubmitting}>
@@ -457,3 +457,4 @@ export default function AdminEmployeesPage() {
     
 
     
+
