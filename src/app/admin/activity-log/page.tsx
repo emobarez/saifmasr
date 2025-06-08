@@ -7,17 +7,20 @@ import { Badge } from "@/components/ui/badge";
 import { Loader2, History as HistoryIcon, Users, Briefcase, FileTextIcon, SettingsIcon, Receipt, ClipboardList } from "lucide-react";
 import { useToast } from "@/hooks/use-toast";
 import { db } from "@/lib/firebase";
-import { collection, getDocs, query, orderBy, Timestamp, limit } from "firebase/firestore";
-import type { ActivityLogEntry, ActivityActionType } from "@/lib/activityLogger"; // Ensure ActivityLogEntry is exported
+import { collection, getDocs, query, orderBy, Timestamp, limit, startAfter, DocumentData, QueryDocumentSnapshot } from "firebase/firestore";
+import type { ActivityLogEntry, ActivityActionType } from "@/lib/activityLogger"; 
 import { ScrollArea } from "@/components/ui/scroll-area";
 import { Tooltip, TooltipContent, TooltipProvider, TooltipTrigger } from "@/components/ui/tooltip";
 import { Button } from "@/components/ui/button";
 
-const ITEMS_PER_PAGE = 25; // Or implement pagination later
+const ITEMS_PER_PAGE = 25;
 
 export default function AdminActivityLogPage() {
   const [logs, setLogs] = useState<ActivityLogEntry[]>([]);
   const [isLoading, setIsLoading] = useState(true);
+  const [isLoadingMore, setIsLoadingMore] = useState(false);
+  const [lastVisibleDoc, setLastVisibleDoc] = useState<QueryDocumentSnapshot<DocumentData> | null>(null);
+  const [hasMoreLogs, setHasMoreLogs] = useState(true);
   const { toast } = useToast();
 
   const formatDate = (timestamp: Timestamp | Date | undefined): string => {
@@ -59,28 +62,67 @@ export default function AdminActivityLogPage() {
     }
   }
 
-
-  useEffect(() => {
-    const fetchLogs = async () => {
+  const fetchLogs = async (loadMore = false) => {
+    if (loadMore) {
+      setIsLoadingMore(true);
+    } else {
       setIsLoading(true);
-      try {
-        const q = query(
+      setLogs([]); // Clear logs for initial fetch
+      setLastVisibleDoc(null);
+      setHasMoreLogs(true);
+    }
+
+    try {
+      let q;
+      if (loadMore && lastVisibleDoc) {
+        q = query(
           collection(db, "activityLogs"), 
           orderBy("timestamp", "desc"),
-          limit(ITEMS_PER_PAGE * 2) // Fetch more for initial view, can implement proper pagination later
+          startAfter(lastVisibleDoc),
+          limit(ITEMS_PER_PAGE)
         );
-        const querySnapshot = await getDocs(q);
-        const fetchedLogs = querySnapshot.docs.map(doc => ({ id: doc.id, ...doc.data() } as ActivityLogEntry));
+      } else {
+        q = query(
+          collection(db, "activityLogs"), 
+          orderBy("timestamp", "desc"),
+          limit(ITEMS_PER_PAGE)
+        );
+      }
+      
+      const querySnapshot = await getDocs(q);
+      const fetchedLogs = querySnapshot.docs.map(doc => ({ id: doc.id, ...doc.data() } as ActivityLogEntry));
+      
+      if (loadMore) {
+        setLogs(prevLogs => [...prevLogs, ...fetchedLogs]);
+      } else {
         setLogs(fetchedLogs);
-      } catch (error) {
-        console.error("Error fetching activity logs:", error);
-        toast({ title: "خطأ", description: "لم نتمكن من تحميل سجل الأنشطة.", variant: "destructive" });
-      } finally {
+      }
+
+      const lastDoc = querySnapshot.docs[querySnapshot.docs.length - 1];
+      setLastVisibleDoc(lastDoc);
+      setHasMoreLogs(fetchedLogs.length === ITEMS_PER_PAGE);
+
+    } catch (error) {
+      console.error("Error fetching activity logs:", error);
+      toast({ title: "خطأ", description: "لم نتمكن من تحميل سجل الأنشطة.", variant: "destructive" });
+    } finally {
+      if (loadMore) {
+        setIsLoadingMore(false);
+      } else {
         setIsLoading(false);
       }
-    };
+    }
+  };
+
+  useEffect(() => {
     fetchLogs();
   }, [toast]);
+
+  const handleLoadMore = () => {
+    if (hasMoreLogs && !isLoadingMore) {
+      fetchLogs(true);
+    }
+  };
 
   return (
     <div className="space-y-6">
@@ -93,65 +135,74 @@ export default function AdminActivityLogPage() {
           <CardDescription>عرض لآخر الأنشطة والأحداث التي تمت في النظام.</CardDescription>
         </CardHeader>
         <CardContent>
-          {isLoading ? (
+          {isLoading && logs.length === 0 ? (
             <div className="flex justify-center items-center py-12">
               <Loader2 className="h-10 w-10 animate-spin text-primary" />
               <p className="ms-3 text-lg text-muted-foreground">جارٍ تحميل سجل الأنشطة...</p>
             </div>
           ) : logs.length > 0 ? (
-            <ScrollArea className="h-[65vh] w-full rounded-md border">
-              <TooltipProvider>
-              <Table>
-                <TableHeader className="sticky top-0 bg-card z-10">
-                  <TableRow>
-                    <TableHead className="min-w-[160px]">الوقت والتاريخ</TableHead>
-                    <TableHead className="min-w-[150px]">الفاعل</TableHead>
-                    <TableHead className="min-w-[150px]">نوع الإجراء</TableHead>
-                    <TableHead className="min-w-[250px]">الوصف</TableHead>
-                    <TableHead className="min-w-[180px]">الهدف</TableHead>
-                    <TableHead className="min-w-[120px]">تفاصيل إضافية</TableHead>
-                  </TableRow>
-                </TableHeader>
-                <TableBody>
-                  {logs.map((log) => (
-                    <TableRow key={log.id} className="text-xs hover:bg-muted/30">
-                      <TableCell>{formatDate(log.timestamp)}</TableCell>
-                      <TableCell>
-                        {log.actor?.name || log.actor?.email || log.actor?.id || "نظام"}
-                        {log.actor?.role && <Badge variant="outline" className="ms-2 text-xs">{log.actor.role}</Badge>}
-                      </TableCell>
-                      <TableCell>
-                        <span className={`font-medium ${getActionTypeColor(log.actionType)}`}>{log.actionType}</span>
-                      </TableCell>
-                      <TableCell className="leading-relaxed">{log.description}</TableCell>
-                      <TableCell>
-                        <div className="flex items-center">
-                           {log.target?.type && getTargetIcon(log.target.type)}
-                           <span className="truncate">{log.target?.name || log.target?.id || "-"}</span>
-                        </div>
-                      </TableCell>
-                      <TableCell>
-                        {log.details && Object.keys(log.details).length > 0 ? (
-                           <Tooltip>
-                            <TooltipTrigger asChild>
-                                <Button variant="ghost" size="sm" className="text-xs p-1 h-auto">عرض التفاصيل</Button>
-                            </TooltipTrigger>
-                            <TooltipContent side="left" className="max-w-xs bg-popover p-3 shadow-lg rounded-md text-popover-foreground">
-                                <pre className="text-xs whitespace-pre-wrap break-all max-h-60 overflow-y-auto">
-                                {JSON.stringify(log.details, null, 2)}
-                                </pre>
-                            </TooltipContent>
-                          </Tooltip>
-                        ) : (
-                          "-"
-                        )}
-                      </TableCell>
+            <>
+              <ScrollArea className="h-[calc(100vh-280px)] md:h-[calc(100vh-260px)] w-full rounded-md border">
+                <TooltipProvider>
+                <Table>
+                  <TableHeader className="sticky top-0 bg-card z-10">
+                    <TableRow>
+                      <TableHead className="min-w-[160px]">الوقت والتاريخ</TableHead>
+                      <TableHead className="min-w-[150px]">الفاعل</TableHead>
+                      <TableHead className="min-w-[150px]">نوع الإجراء</TableHead>
+                      <TableHead className="min-w-[250px]">الوصف</TableHead>
+                      <TableHead className="min-w-[180px]">الهدف</TableHead>
+                      <TableHead className="min-w-[120px]">تفاصيل إضافية</TableHead>
                     </TableRow>
-                  ))}
-                </TableBody>
-              </Table>
-              </TooltipProvider>
-            </ScrollArea>
+                  </TableHeader>
+                  <TableBody>
+                    {logs.map((log) => (
+                      <TableRow key={log.id} className="text-xs hover:bg-muted/30">
+                        <TableCell>{formatDate(log.timestamp)}</TableCell>
+                        <TableCell>
+                          {log.actor?.name || log.actor?.email || log.actor?.id || "نظام"}
+                          {log.actor?.role && <Badge variant="outline" className="ms-2 text-xs">{log.actor.role}</Badge>}
+                        </TableCell>
+                        <TableCell>
+                          <span className={`font-medium ${getActionTypeColor(log.actionType)}`}>{log.actionType}</span>
+                        </TableCell>
+                        <TableCell className="leading-relaxed">{log.description}</TableCell>
+                        <TableCell>
+                          <div className="flex items-center">
+                             {log.target?.type && getTargetIcon(log.target.type)}
+                             <span className="truncate">{log.target?.name || log.target?.id || "-"}</span>
+                          </div>
+                        </TableCell>
+                        <TableCell>
+                          {log.details && Object.keys(log.details).length > 0 ? (
+                             <Tooltip>
+                              <TooltipTrigger asChild>
+                                  <Button variant="ghost" size="sm" className="text-xs p-1 h-auto">عرض التفاصيل</Button>
+                              </TooltipTrigger>
+                              <TooltipContent side="left" className="max-w-xs bg-popover p-3 shadow-lg rounded-md text-popover-foreground">
+                                  <pre className="text-xs whitespace-pre-wrap break-all max-h-60 overflow-y-auto">
+                                  {JSON.stringify(log.details, null, 2)}
+                                  </pre>
+                              </TooltipContent>
+                            </Tooltip>
+                          ) : (
+                            "-"
+                          )}
+                        </TableCell>
+                      </TableRow>
+                    ))}
+                  </TableBody>
+                </Table>
+                </TooltipProvider>
+              </ScrollArea>
+              {hasMoreLogs && (
+                <div className="flex justify-center mt-6">
+                  <Button onClick={handleLoadMore} disabled={isLoadingMore}>
+                    {isLoadingMore ? <Loader2 className="me-2 h-5 w-5 animate-spin" /> : "تحميل المزيد"}
+                  </Button>
+                </div>
+              )}
+            </>
           ) : (
             <p className="text-muted-foreground text-center py-10">لا توجد سجلات أنشطة لعرضها حالياً.</p>
           )}
@@ -160,3 +211,4 @@ export default function AdminActivityLogPage() {
     </div>
   );
 }
+
