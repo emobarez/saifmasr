@@ -4,7 +4,7 @@ import { useState, useEffect, useCallback, useMemo } from "react";
 import { Card, CardHeader, CardTitle, CardDescription, CardContent } from "@/components/ui/card";
 import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from "@/components/ui/table";
 import { Badge } from "@/components/ui/badge";
-import { Loader2, AlertTriangle, Info, ThumbsUp, MinusCircle, Eye, Search, ClipboardList } from "lucide-react";
+import { Loader2, AlertTriangle, Info, ThumbsUp, MinusCircle, Eye, Search, ClipboardList, Filter } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { useToast } from "@/hooks/use-toast";
@@ -43,7 +43,10 @@ interface ServiceRequestWithPriority extends ServiceRequest {
   aiError?: string;
 }
 
-const statusOptions: ServiceRequest["status"][] = ["جديد", "قيد المعالجة", "مكتمل", "ملغى"];
+type ServiceRequestStatus = "جديد" | "قيد المعالجة" | "مكتمل" | "ملغى";
+const statusOptions: ServiceRequestStatus[] = ["جديد", "قيد المعالجة", "مكتمل", "ملغى"];
+const filterStatusOptions: ("all" | ServiceRequestStatus)[] = ["all", ...statusOptions];
+
 
 const getServiceTypeName = (typeKey: string): string => {
   const types: {[key: string]: string} = {
@@ -65,6 +68,7 @@ export default function AdminServiceRequestsPage() {
   const [selectedRequest, setSelectedRequest] = useState<ServiceRequestWithPriority | null>(null);
   const [isDetailsDialogOpen, setIsDetailsDialogOpen] = useState(false);
   const [searchTerm, setSearchTerm] = useState("");
+  const [statusFilter, setStatusFilter] = useState<"all" | ServiceRequestStatus>("all");
 
   const fetchAndPrioritizeRequests = useCallback(async () => {
     setIsLoading(true);
@@ -167,16 +171,25 @@ export default function AdminServiceRequestsPage() {
   };
 
   const filteredRequests = useMemo(() => {
-    if (!searchTerm) return requests;
-    const lowercasedFilter = searchTerm.toLowerCase();
-    return requests.filter(req => 
-      req.requestTitle.toLowerCase().includes(lowercasedFilter) ||
-      req.clientName.toLowerCase().includes(lowercasedFilter) ||
-      req.clientEmail.toLowerCase().includes(lowercasedFilter) ||
-      getServiceTypeName(req.serviceType).toLowerCase().includes(lowercasedFilter) ||
-      req.status.toLowerCase().includes(lowercasedFilter)
-    );
-  }, [requests, searchTerm]);
+    let tempRequests = requests;
+
+    if (searchTerm) {
+        const lowercasedFilter = searchTerm.toLowerCase();
+        tempRequests = tempRequests.filter(req => 
+            req.requestTitle.toLowerCase().includes(lowercasedFilter) ||
+            req.clientName.toLowerCase().includes(lowercasedFilter) ||
+            req.clientEmail.toLowerCase().includes(lowercasedFilter) ||
+            getServiceTypeName(req.serviceType).toLowerCase().includes(lowercasedFilter) ||
+            req.status.toLowerCase().includes(lowercasedFilter)
+        );
+    }
+
+    if (statusFilter !== "all") {
+        tempRequests = tempRequests.filter(req => req.status === statusFilter);
+    }
+
+    return tempRequests;
+  }, [requests, searchTerm, statusFilter]);
 
   return (
     <div className="space-y-6">
@@ -189,15 +202,36 @@ export default function AdminServiceRequestsPage() {
           <CardDescription>عرض وإدارة طلبات الخدمة المقدمة من العملاء مع اقتراحات الأولوية من الذكاء الاصطناعي.</CardDescription>
         </CardHeader>
         <CardContent>
-           <div className="mb-4 relative max-w-md">
-            <Input 
-              placeholder="ابحث عن طلب (بالعنوان، العميل، نوع الخدمة، الحالة)..." 
-              className="ps-10"
-              value={searchTerm}
-              onChange={(e) => setSearchTerm(e.target.value)}
-            />
-            <Search className="absolute start-3 top-1/2 -translate-y-1/2 h-5 w-5 text-muted-foreground" />
-          </div>
+           <div className="flex flex-col sm:flex-row gap-4 mb-4">
+            <div className="relative flex-grow sm:max-w-md">
+              <Input 
+                placeholder="ابحث عن طلب (بالعنوان، العميل، نوع الخدمة، الحالة)..." 
+                className="ps-10"
+                value={searchTerm}
+                onChange={(e) => setSearchTerm(e.target.value)}
+              />
+              <Search className="absolute start-3 top-1/2 -translate-y-1/2 h-5 w-5 text-muted-foreground" />
+            </div>
+            <div className="flex items-center gap-2">
+                <Filter className="h-5 w-5 text-muted-foreground"/>
+                <Select 
+                    value={statusFilter} 
+                    onValueChange={(value) => setStatusFilter(value as "all" | ServiceRequestStatus)}
+                    dir="rtl"
+                >
+                    <SelectTrigger className="w-full sm:w-[180px]">
+                    <SelectValue placeholder="تصفية بالحالة" />
+                    </SelectTrigger>
+                    <SelectContent>
+                    {filterStatusOptions.map(option => (
+                        <SelectItem key={option} value={option}>
+                        {option === "all" ? "الكل" : option}
+                        </SelectItem>
+                    ))}
+                    </SelectContent>
+                </Select>
+            </div>
+           </div>
           {isLoading ? (
             <div className="flex justify-center items-center py-8"><Loader2 className="h-8 w-8 animate-spin text-primary" /><p className="ms-2">جارٍ تحميل طلبات الخدمة...</p></div>
           ) : filteredRequests.length > 0 ? (
@@ -284,7 +318,7 @@ export default function AdminServiceRequestsPage() {
             </div>
           ) : (
              <p className="text-muted-foreground text-center py-8">
-               {searchTerm ? "لم يتم العثور على طلبات تطابق بحثك." : "لا توجد طلبات خدمة لعرضها حالياً."}
+               {searchTerm || statusFilter !== "all" ? "لم يتم العثور على طلبات تطابق معايير البحث والتصفية الحالية." : "لا توجد طلبات خدمة لعرضها حالياً."}
             </p>
           )}
         </CardContent>
