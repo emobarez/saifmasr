@@ -124,6 +124,9 @@ export default function AdminEmployeesPage() {
     try {
       const docRef = await addDoc(collection(db, "employees"), {
         ...data,
+        nationalId: data.nationalId || null,
+        address: data.address || null,
+        profileImageUrl: data.profileImageUrl || null,
         joinDate: Timestamp.fromDate(data.joinDate),
         createdAt: serverTimestamp(),
       });
@@ -153,6 +156,9 @@ export default function AdminEmployeesPage() {
       const employeeRef = doc(db, "employees", editingEmployee.id);
       await updateDoc(employeeRef, {
         ...data,
+        nationalId: data.nationalId || null,
+        address: data.address || null,
+        profileImageUrl: data.profileImageUrl || null,
         joinDate: Timestamp.fromDate(data.joinDate),
         // We don't update createdAt on edit
       });
@@ -212,7 +218,7 @@ export default function AdminEmployeesPage() {
   const getStatusVariant = (status: Employee["status"]): "default" | "secondary" | "destructive" => {
     if (status === "نشط") return "default";
     if (status === "غير نشط") return "secondary";
-    if (status === "في إجازة") return "secondary";
+    if (status === "في إجازة") return "secondary"; // Keep same color as "غير نشط" or choose another
     return "default";
   };
 
@@ -447,5 +453,3 @@ export default function AdminEmployeesPage() {
     
 
     
-
-
