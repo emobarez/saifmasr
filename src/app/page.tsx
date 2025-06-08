@@ -54,11 +54,11 @@ export default function LandingPage() {
             <p className="text-lg md:text-xl text-foreground/80 mb-10 max-w-2xl mx-auto">
               حلولك المتكاملة لإدارة الخدمات، تتبع الطلبات، والحصول على تقارير دقيقة ومدعومة بالذكاء الاصطناعي.
             </p>
-            <div className="space-x-4 space-x-reverse">
-              <Button asChild size="lg" className="font-semibold">
+            <div className="flex flex-col sm:flex-row items-center justify-center gap-4 mt-10">
+              <Button asChild size="lg" className="font-semibold w-full sm:w-auto">
                 <Link href="/auth/register">ابدأ الآن <ArrowLeftCircle className="ms-2 h-5 w-5" /></Link>
               </Button>
-              <Button asChild variant="outline" size="lg" className="font-semibold">
+              <Button asChild variant="outline" size="lg" className="font-semibold w-full sm:w-auto">
                 <Link href="/#services"><Search className="me-2 h-5 w-5" />اكتشف خدماتنا</Link>
               </Button>
             </div>
