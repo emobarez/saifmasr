@@ -38,12 +38,18 @@ interface Service {
   faqs?: FAQItem[];
 }
 
+const faqItemSchema = z.object({
+  question: z.string().min(1, { message: "السؤال لا يمكن أن يكون فارغًا" }),
+  answer: z.string().min(1, { message: "الإجابة لا يمكن أن تكون فارغة" }),
+});
+
 const serviceSchema = z.object({
   name: z.string().min(3, { message: "اسم الخدمة يجب أن لا يقل عن 3 أحرف" }),
   category: z.string().min(2, { message: "فئة الخدمة مطلوبة" }),
   price: z.string().min(1, { message: "سعر الخدمة مطلوب" }),
   description: z.string().min(10, { message: "وصف الخدمة يجب أن لا يقل عن 10 أحرف" }).max(500, {message: "وصف الخدمة يجب أن لا يتجاوز 500 حرف"}),
   status: z.enum(["متاحة", "قيد التطوير", "متوقفة مؤقتاً"], { required_error: "يرجى اختيار حالة الخدمة" }),
+  faqs: z.array(faqItemSchema).optional(),
 });
 
 type ServiceFormValues = z.infer<typeof serviceSchema>;
@@ -78,7 +84,7 @@ export default function AdminServicesPage() {
 
   useEffect(() => {
     fetchServices();
-  }, [toast]);
+  }, []);
   
   const resetDialogStates = () => {
     setGeneratedFAQs(null);
@@ -88,7 +94,7 @@ export default function AdminServicesPage() {
 
   const addServiceForm = useForm<ServiceFormValues>({
     resolver: zodResolver(serviceSchema),
-    defaultValues: { name: "", category: "", price: "", description: "", status: "متاحة" },
+    defaultValues: { name: "", category: "", price: "", description: "", status: "متاحة", faqs: [] },
   });
 
   const editServiceForm = useForm<ServiceFormValues>({
@@ -97,12 +103,14 @@ export default function AdminServicesPage() {
 
   const handleAddServiceSubmit = async (data: ServiceFormValues) => {
     try {
-      const serviceDataToSave: any = {
+      const serviceDataToSave: Omit<Service, 'id' | 'createdAt'> & { createdAt: Timestamp, faqs?: FAQItem[] } = {
         ...data,
-        createdAt: serverTimestamp(),
+        createdAt: serverTimestamp() as Timestamp,
       };
       if (generatedFAQs && generatedFAQs.length > 0) {
         serviceDataToSave.faqs = generatedFAQs;
+      } else {
+        serviceDataToSave.faqs = []; // Ensure faqs field is at least an empty array if not provided
       }
 
       const docRef = await addDoc(collection(db, "services"), serviceDataToSave);
@@ -114,7 +122,7 @@ export default function AdminServicesPage() {
           description: `Admin ${adminUser.displayName || adminUser.email} added new service: ${data.name}.`,
           actor: { id: adminUser.uid, role: adminUser.role, name: adminUser.displayName },
           target: { id: docRef.id, type: "service", name: data.name },
-          details: { category: data.category, price: data.price, status: data.status, faqsCount: generatedFAQs?.length || 0 }
+          details: { category: data.category, price: data.price, status: data.status, faqsCount: serviceDataToSave.faqs?.length || 0 }
         });
       }
 
@@ -131,15 +139,16 @@ export default function AdminServicesPage() {
   const handleEditServiceSubmit = async (data: ServiceFormValues) => {
     if (!editingService) return;
     try {
-      const serviceDataToUpdate: any = {
-        ...data,
+      const serviceDataToUpdate: Partial<Service> = {
+        ...data, // includes name, category, price, description, status from form
       };
-      if (generatedFAQs && generatedFAQs.length > 0) {
+
+      if (generatedFAQs !== null) { // If FAQs were interacted with (generated, cleared, or modified)
         serviceDataToUpdate.faqs = generatedFAQs;
-      } else if (generatedFAQs === null && editingService.faqs) { // If FAQs were not touched (null), keep existing ones
+      } else if (editingService.faqs) { // If FAQs were not touched, keep existing ones
         serviceDataToUpdate.faqs = editingService.faqs;
-      } else if (Array.isArray(generatedFAQs) && generatedFAQs.length === 0) { // If explicitly cleared to empty array
-        serviceDataToUpdate.faqs = [];
+      } else { // If not touched and no existing FAQs, set to empty array
+         serviceDataToUpdate.faqs = [];
       }
 
 
@@ -176,6 +185,7 @@ export default function AdminServicesPage() {
         price: service.price,
         description: service.description,
         status: service.status,
+        faqs: service.faqs || [], // Ensure faqs is at least an empty array for the form
     });
     // Load existing FAQs into the generatedFAQs state for display and potential modification
     setGeneratedFAQs(service.faqs && service.faqs.length > 0 ? [...service.faqs] : null); 
@@ -183,7 +193,7 @@ export default function AdminServicesPage() {
   };
   
   const openAddDialog = () => {
-    addServiceForm.reset({ name: "", category: "", price: "", description: "", status: "متاحة" });
+    addServiceForm.reset({ name: "", category: "", price: "", description: "", status: "متاحة", faqs: [] });
     resetDialogStates();
     setIsAddServiceDialogOpen(true);
   }
@@ -267,6 +277,7 @@ export default function AdminServicesPage() {
       const result = await generateServiceFAQs(input);
       if (result.faqs && result.faqs.length > 0) {
         setGeneratedFAQs(result.faqs);
+        formInstance.setValue("faqs", result.faqs, { shouldValidate: true }); // Update form value as well
         toast({ title: "تم إنشاء الأسئلة الشائعة", description: `تم إنشاء ${result.faqs.length} أسئلة.` });
         if (adminUser) {
           await logActivity({
@@ -279,6 +290,7 @@ export default function AdminServicesPage() {
         }
       } else {
         setGeneratedFAQs([]); 
+        formInstance.setValue("faqs", [], { shouldValidate: true });
         toast({ title: "لم يتم إنشاء أسئلة", description: "لم يتمكن الذكاء الاصطناعي من إنشاء أسئلة شائعة. يمكنك المحاولة مرة أخرى أو إضافتها يدوياً لاحقاً.", variant: "default" });
       }
     } catch (error) {
@@ -357,6 +369,7 @@ export default function AdminServicesPage() {
        {(generatedFAQs && generatedFAQs.length === 0 && !isGeneratingFAQs) && (
           <p className="pt-4 text-sm text-muted-foreground">لم يتم إنشاء أسئلة شائعة. يمكنك المحاولة مرة أخرى أو إضافتها يدوياً لاحقاً.</p>
        )}
+        <FormField control={formInstance.control} name="faqs" render={({ field }) => (<FormItem className="hidden"><FormMessage /></FormItem>)} />
     </>
   );
 
