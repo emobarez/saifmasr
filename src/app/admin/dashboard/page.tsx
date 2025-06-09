@@ -34,7 +34,7 @@ interface QuickStats {
   totalEmployees: number;
   totalInvoices: number;
   serviceRequestStatusCounts: ServiceRequestStatusCounts;
-  totalServiceRequests: number; // Keep this for overall sum if needed elsewhere, or derive from chart data
+  totalServiceRequests: number; 
 }
 
 export default function AdminDashboardPage() {
@@ -219,7 +219,7 @@ export default function AdminDashboardPage() {
           <CardContent>
             {isLoadingStats ? (
               <div className="flex justify-center items-center h-64"><Loader2 className="h-8 w-8 animate-spin text-primary" /><p className="ms-2">جارٍ تحميل بيانات الرسم البياني...</p></div>
-            ) : serviceRequestChartData.length > 0 ? (
+            ) : serviceRequestChartData.length > 0 && serviceRequestChartData.some(d => d.count > 0) ? (
               <div className="h-64 w-full">
                 <ResponsiveContainer width="100%" height="100%">
                   <BarChart data={serviceRequestChartData} margin={{ top: 5, right: 0, left: 0, bottom: 5 }}>
@@ -241,13 +241,13 @@ export default function AdminDashboardPage() {
                 </ResponsiveContainer>
               </div>
             ) : (
-              <p className="text-muted-foreground text-center py-10">لا توجد بيانات طلبات خدمة لعرضها في الرسم البياني.</p>
+              <p className="text-muted-foreground text-center py-10 h-64 flex items-center justify-center">لا توجد بيانات طلبات خدمة لعرضها في الرسم البياني حاليًا.</p>
             )}
           </CardContent>
         </Card>
       </div>
       
-      <Card className="shadow-md"> {/* Activities card remains separate */}
+      <Card className="shadow-md"> 
           <CardHeader>
             <div className="flex items-center gap-2">
               <Activity className="h-6 w-6 text-primary" />
