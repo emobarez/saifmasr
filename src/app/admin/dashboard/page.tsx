@@ -2,7 +2,7 @@
 "use client";
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
-import { ArrowLeftCircle, Users, BriefcaseBusiness, FilePieChart, Sparkles, Loader2, ClipboardList, Activity, TrendingUp, Receipt, CalendarClock } from "lucide-react";
+import { ArrowLeftCircle, Users, BriefcaseBusiness, FilePieChart, Sparkles, Loader2, ClipboardList, Activity, TrendingUp, Receipt, CalendarClock, BarChart2 } from "lucide-react";
 import Link from "next/link";
 import { useAuth } from "@/context/AuthContext";
 import { useState, useEffect } from "react";
@@ -10,6 +10,7 @@ import { db } from "@/lib/firebase";
 import { collection, getDocs, query, orderBy, limit, Timestamp, where, getCountFromServer } from "firebase/firestore";
 import { useToast } from "@/hooks/use-toast";
 import type { ActivityLogEntry } from "@/lib/activityLogger"; 
+import { BarChart, Bar, XAxis, YAxis, CartesianGrid, Tooltip, Legend, ResponsiveContainer } from 'recharts';
 
 const adminQuickActions = [
   { title: "إدارة العملاء", description: "عرض وتعديل بيانات العملاء.", icon: <Users className="h-8 w-8 text-primary" />, href: "/admin/clients", dataAiHint: "client management" },
@@ -21,13 +22,19 @@ const adminQuickActions = [
   { title: "أداة الذكاء الاصطناعي", description: "استفد من الذكاء الاصطناعي لتحليل البيانات.", icon: <Sparkles className="h-8 w-8 text-primary" />, href: "/admin/ai-tool", dataAiHint: "ai analytics" },
 ];
 
+interface ServiceRequestStatusCounts {
+  'جديد': number;
+  'قيد المعالجة': number;
+  'مكتمل': number;
+  'ملغى': number;
+}
 interface QuickStats {
   totalClients: number;
   totalServices: number;
-  totalServiceRequests: number;
   totalEmployees: number;
   totalInvoices: number;
-  recentServiceRequestsCount: number;
+  serviceRequestStatusCounts: ServiceRequestStatusCounts;
+  totalServiceRequests: number; // Keep this for overall sum if needed elsewhere, or derive from chart data
 }
 
 export default function AdminDashboardPage() {
@@ -63,32 +70,40 @@ export default function AdminDashboardPage() {
       try {
         const clientsSnapshot = await getCountFromServer(collection(db, "clients"));
         const servicesSnapshot = await getCountFromServer(collection(db, "services"));
-        const serviceRequestsSnapshot = await getCountFromServer(collection(db, "serviceRequests"));
         const employeesSnapshot = await getCountFromServer(collection(db, "employees"));
         const invoicesSnapshot = await getCountFromServer(collection(db, "invoices"));
 
-        const sevenDaysAgo = new Date();
-        sevenDaysAgo.setDate(sevenDaysAgo.getDate() - 7);
-        const sevenDaysAgoTimestamp = Timestamp.fromDate(sevenDaysAgo);
+        const serviceRequestStatuses: Array<keyof ServiceRequestStatusCounts> = ['جديد', 'قيد المعالجة', 'مكتمل', 'ملغى'];
+        let statusCounts: Partial<ServiceRequestStatusCounts> = {};
+        let totalRequests = 0;
 
-        const recentServiceRequestsQuery = query(
-          collection(db, "serviceRequests"),
-          where("createdAt", ">=", sevenDaysAgoTimestamp)
-        );
-        const recentServiceRequestsCountSnapshot = await getCountFromServer(recentServiceRequestsQuery);
+        for (const status of serviceRequestStatuses) {
+          const q = query(collection(db, "serviceRequests"), where("status", "==", status));
+          const snapshot = await getCountFromServer(q);
+          statusCounts[status] = snapshot.data().count;
+          totalRequests += snapshot.data().count;
+        }
         
         setStats({
           totalClients: clientsSnapshot.data().count,
           totalServices: servicesSnapshot.data().count,
-          totalServiceRequests: serviceRequestsSnapshot.data().count,
           totalEmployees: employeesSnapshot.data().count,
           totalInvoices: invoicesSnapshot.data().count,
-          recentServiceRequestsCount: recentServiceRequestsCountSnapshot.data().count,
+          serviceRequestStatusCounts: statusCounts as ServiceRequestStatusCounts,
+          totalServiceRequests: totalRequests,
         });
+
       } catch (error) {
         console.error("Error fetching stats:", error);
         toast({ title: "خطأ", description: "لم نتمكن من تحميل الإحصائيات.", variant: "destructive" });
-        setStats({ totalClients: 0, totalServices: 0, totalServiceRequests: 0, totalEmployees: 0, totalInvoices: 0, recentServiceRequestsCount: 0 }); // Fallback
+        setStats({ 
+            totalClients: 0, 
+            totalServices: 0, 
+            totalEmployees: 0, 
+            totalInvoices: 0, 
+            serviceRequestStatusCounts: { 'جديد': 0, 'قيد المعالجة': 0, 'مكتمل': 0, 'ملغى': 0 },
+            totalServiceRequests: 0,
+        }); 
       } finally {
         setIsLoadingStats(false);
       }
@@ -112,6 +127,10 @@ export default function AdminDashboardPage() {
     fetchStats();
     fetchActivities();
   }, [toast]);
+
+  const serviceRequestChartData = stats?.serviceRequestStatusCounts ? 
+    Object.entries(stats.serviceRequestStatusCounts).map(([name, count]) => ({ name, count })) 
+    : [];
 
   return (
     <div className="space-y-8">
@@ -149,8 +168,8 @@ export default function AdminDashboardPage() {
         </div>
       </section>
 
-      <div className="grid grid-cols-1 lg:grid-cols-2 gap-6">
-        <Card className="shadow-md">
+      <div className="grid grid-cols-1 lg:grid-cols-3 gap-6">
+        <Card className="shadow-md lg:col-span-1">
           <CardHeader>
             <div className="flex items-center gap-2">
               <TrendingUp className="h-6 w-6 text-primary" />
@@ -171,14 +190,6 @@ export default function AdminDashboardPage() {
                    <span className="font-semibold text-lg text-foreground">{stats.totalServices}</span>
                 </div>
                 <div className="flex items-center justify-between">
-                   <div className="flex items-center gap-2 text-muted-foreground"><ClipboardList className="h-5 w-5" /><span>إجمالي طلبات الخدمة:</span></div>
-                   <span className="font-semibold text-lg text-foreground">{stats.totalServiceRequests}</span>
-                </div>
-                <div className="flex items-center justify-between">
-                   <div className="flex items-center gap-2 text-muted-foreground"><CalendarClock className="h-5 w-5" /><span>طلبات الخدمة (آخر 7 أيام):</span></div>
-                   <span className="font-semibold text-lg text-foreground">{stats.recentServiceRequestsCount}</span>
-                </div>
-                <div className="flex items-center justify-between">
                    <div className="flex items-center gap-2 text-muted-foreground"><Users className="h-5 w-5" /><span>إجمالي الموظفين:</span></div>
                    <span className="font-semibold text-lg text-foreground">{stats.totalEmployees}</span>
                 </div>
@@ -186,13 +197,57 @@ export default function AdminDashboardPage() {
                    <div className="flex items-center gap-2 text-muted-foreground"><Receipt className="h-5 w-5" /><span>إجمالي الفواتير:</span></div>
                    <span className="font-semibold text-lg text-foreground">{stats.totalInvoices}</span>
                 </div>
+                 <div className="flex items-center justify-between">
+                   <div className="flex items-center gap-2 text-muted-foreground"><ClipboardList className="h-5 w-5" /><span>إجمالي طلبات الخدمة:</span></div>
+                   <span className="font-semibold text-lg text-foreground">{stats.totalServiceRequests}</span>
+                </div>
               </>
             ) : (
               <p className="text-muted-foreground text-center py-4">لا توجد إحصائيات لعرضها.</p>
             )}
           </CardContent>
         </Card>
-        <Card className="shadow-md">
+
+        <Card className="shadow-md lg:col-span-2">
+          <CardHeader>
+            <div className="flex items-center gap-2">
+              <BarChart2 className="h-6 w-6 text-primary" />
+              <CardTitle className="font-headline text-xl text-primary">نظرة عامة على طلبات الخدمة</CardTitle>
+            </div>
+            <CardDescription>توزيع طلبات الخدمة حسب الحالة.</CardDescription>
+          </CardHeader>
+          <CardContent>
+            {isLoadingStats ? (
+              <div className="flex justify-center items-center h-64"><Loader2 className="h-8 w-8 animate-spin text-primary" /><p className="ms-2">جارٍ تحميل بيانات الرسم البياني...</p></div>
+            ) : serviceRequestChartData.length > 0 ? (
+              <div className="h-64 w-full">
+                <ResponsiveContainer width="100%" height="100%">
+                  <BarChart data={serviceRequestChartData} margin={{ top: 5, right: 0, left: 0, bottom: 5 }}>
+                    <CartesianGrid strokeDasharray="3 3" stroke="hsl(var(--border))" />
+                    <XAxis dataKey="name" tick={{ fill: 'hsl(var(--muted-foreground))', fontSize: 12 }} />
+                    <YAxis allowDecimals={false} tick={{ fill: 'hsl(var(--muted-foreground))', fontSize: 12 }} />
+                    <Tooltip
+                      contentStyle={{ 
+                        backgroundColor: 'hsl(var(--card))', 
+                        borderColor: 'hsl(var(--border))', 
+                        borderRadius: 'var(--radius)',
+                        color: 'hsl(var(--card-foreground))' 
+                      }}
+                      cursor={{ fill: 'hsl(var(--secondary))' }}
+                    />
+                    <Legend wrapperStyle={{ fontSize: '12px', paddingTop: '10px' }} />
+                    <Bar dataKey="count" name="عدد الطلبات" fill="hsl(var(--primary))" radius={[4, 4, 0, 0]} />
+                  </BarChart>
+                </ResponsiveContainer>
+              </div>
+            ) : (
+              <p className="text-muted-foreground text-center py-10">لا توجد بيانات طلبات خدمة لعرضها في الرسم البياني.</p>
+            )}
+          </CardContent>
+        </Card>
+      </div>
+      
+      <Card className="shadow-md"> {/* Activities card remains separate */}
           <CardHeader>
             <div className="flex items-center gap-2">
               <Activity className="h-6 w-6 text-primary" />
@@ -223,7 +278,6 @@ export default function AdminDashboardPage() {
             </div>
           </CardContent>
         </Card>
-      </div>
     </div>
   );
 }
