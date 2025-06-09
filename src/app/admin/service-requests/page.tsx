@@ -306,7 +306,7 @@ export default function AdminServiceRequestsPage() {
                           </Select>
                         </TableCell>
                         <TableCell>
-                          <Button variant="ghost" size="icon" onClick={() => handleViewDetails(request)}>
+                          <Button variant="ghost" size="icon" onClick={() => handleViewDetails(request)} aria-label="عرض التفاصيل">
                             <Eye className="h-5 w-5" />
                           </Button>
                         </TableCell>
@@ -334,6 +334,5 @@ export default function AdminServiceRequestsPage() {
     </div>
   );
 }
-
 
     
