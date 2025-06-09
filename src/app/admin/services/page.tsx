@@ -97,11 +97,15 @@ export default function AdminServicesPage() {
 
   const handleAddServiceSubmit = async (data: ServiceFormValues) => {
     try {
-      const docRef = await addDoc(collection(db, "services"), {
+      const serviceDataToSave: any = {
         ...data,
         createdAt: serverTimestamp(),
-        ...(generatedFAQs && generatedFAQs.length > 0 && { faqs: generatedFAQs }),
-      });
+      };
+      if (generatedFAQs && generatedFAQs.length > 0) {
+        serviceDataToSave.faqs = generatedFAQs;
+      }
+
+      const docRef = await addDoc(collection(db, "services"), serviceDataToSave);
       toast({ title: "تم بنجاح", description: `تمت إضافة الخدمة ${data.name} بنجاح.` });
       
       if (adminUser) {
@@ -127,11 +131,20 @@ export default function AdminServicesPage() {
   const handleEditServiceSubmit = async (data: ServiceFormValues) => {
     if (!editingService) return;
     try {
+      const serviceDataToUpdate: any = {
+        ...data,
+      };
+      if (generatedFAQs && generatedFAQs.length > 0) {
+        serviceDataToUpdate.faqs = generatedFAQs;
+      } else if (generatedFAQs === null && editingService.faqs) { // If FAQs were not touched (null), keep existing ones
+        serviceDataToUpdate.faqs = editingService.faqs;
+      } else if (Array.isArray(generatedFAQs) && generatedFAQs.length === 0) { // If explicitly cleared to empty array
+        serviceDataToUpdate.faqs = [];
+      }
+
+
       const serviceRef = doc(db, "services", editingService.id);
-      await updateDoc(serviceRef, {
-        ...data, 
-        faqs: generatedFAQs && generatedFAQs.length > 0 ? generatedFAQs : (editingService.faqs || [])
-      });
+      await updateDoc(serviceRef, serviceDataToUpdate);
       toast({ title: "تم التعديل بنجاح", description: `تم تعديل بيانات الخدمة ${data.name}.` });
 
       if (adminUser) {
@@ -140,7 +153,7 @@ export default function AdminServicesPage() {
           description: `Admin ${adminUser.displayName || adminUser.email} updated service: ${data.name}.`,
           actor: { id: adminUser.uid, role: adminUser.role, name: adminUser.displayName },
           target: { id: editingService.id, type: "service", name: data.name },
-          details: { category: data.category, price: data.price, status: data.status, faqsCount: generatedFAQs?.length || editingService.faqs?.length || 0 }
+          details: { category: data.category, price: data.price, status: data.status, faqsCount: serviceDataToUpdate.faqs?.length || 0 }
         });
       }
 
@@ -164,7 +177,8 @@ export default function AdminServicesPage() {
         description: service.description,
         status: service.status,
     });
-    setGeneratedFAQs(service.faqs && service.faqs.length > 0 ? service.faqs : null); 
+    // Load existing FAQs into the generatedFAQs state for display and potential modification
+    setGeneratedFAQs(service.faqs && service.faqs.length > 0 ? [...service.faqs] : null); 
     setIsEditServiceDialogOpen(true);
   };
   
