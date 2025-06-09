@@ -2,28 +2,26 @@ rules_version = '2';
 
 service firebase.storage {
   match /b/{bucket}/o {
-
     // Profile pictures:
-    // - Allow anyone to read (e.g., to display avatars).
-    // - Allow authenticated users to write only to their own profile picture path.
+    // - Allow public read
+    // - Allow authenticated users to write only to their own profile picture path
     match /profile-pictures/{userId}/{fileName} {
       allow read;
       allow write: if request.auth != null && request.auth.uid == userId;
     }
 
     // Service request attachments:
-    // - Allow authenticated users to write only to their own attachments path.
-    // - Allow authenticated users to read attachments.
-    //   (Consider making this more restrictive if needed, e.g., only owner or admin can read)
+    // - Allow authenticated users to write only to their own attachments path
+    // - Allow authenticated users to read (consider restricting further if needed, e.g., only admins or owner)
     match /service-request-attachments/{userId}/{fileName} {
-      allow read: if request.auth != null;
+      allow read: if request.auth != null; 
       allow write: if request.auth != null && request.auth.uid == userId;
     }
 
-    // Default deny all other paths for security.
-    // Remove this if you have other paths that need to be public or have different rules.
+    // Deny all other reads and writes by default for security
     match /{allPaths=**} {
-      allow read, write: if false;
+      allow read: if false; 
+      allow write: if false; 
     }
   }
 }
