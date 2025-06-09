@@ -153,7 +153,7 @@ export default function AdminActivityLogPage() {
 
   useEffect(() => {
     fetchLogs();
-  }, [toast]);
+  }, [toast]); // Removed fetchLogs from dependencies as it causes infinite loop
 
   const handleLoadMore = () => {
     if (hasMoreLogs && !isLoadingMore) {
