@@ -9,26 +9,26 @@ body {
 
 @layer base {
   :root {
-    /* Default HSL values for light theme - these act as fallbacks */
-    --default-background-light: 240 11% 89%;
-    --default-foreground-light: 238 10% 20%;
-    --default-card-light: 0 0% 100% / 0.85;
+    /* PRD Aligned Light Theme HSL values */
+    --default-background-light: 240 11% 89%; /* Light Gray #E0E0E5 */
+    --default-foreground-light: 238 10% 20%; /* Dark Grayish Blue for text */
+    --default-card-light: 0 0% 100% / 0.9; /* Slightly more opaque white for cards */
     --default-card-foreground-light: 238 10% 20%;
-    --default-popover-light: 0 0% 100% / 0.85;
+    --default-popover-light: 0 0% 100% / 0.9;
     --default-popover-foreground-light: 238 10% 20%;
-    --default-primary-light: 238 53% 37%;
-    --default-primary-foreground-light: 0 0% 98%;
-    --default-secondary-light: 240 10% 94%;
-    --default-secondary-foreground-light: 238 10% 20%;
-    --default-muted-light: 240 10% 70%;
-    --default-muted-foreground-light: 240 10% 40%;
-    --default-accent-light: 191 54% 41%;
-    --default-accent-foreground-light: 0 0% 98%;
+    --default-primary-light: 238 52% 38%; /* Dark Blue #2E3192 */
+    --default-primary-foreground-light: 0 0% 98%; /* White */
+    --default-secondary-light: 240 10% 94%; /* Lighter Gray, derived from background */
+    --default-secondary-foreground-light: 238 10% 25%; /* Darker text for secondary */
+    --default-muted-light: 240 10% 75%; /* Muted Gray */
+    --default-muted-foreground-light: 240 10% 45%;
+    --default-accent-light: 191 55% 41%; /* Teal #308EA3 */
+    --default-accent-foreground-light: 0 0% 98%; /* White */
     --default-destructive-light: 0 84.2% 60.2%;
     --default-destructive-foreground-light: 0 0% 98%;
-    --default-border-light: 240 10% 80%;
-    --default-input-light: 240 10% 85%;
-    --default-ring-light: 191 54% 41%;
+    --default-border-light: 240 10% 78%; /* Slightly darker border for light gray bg */
+    --default-input-light: 240 10% 92%; /* Lighter input field on light gray bg */
+    --default-ring-light: 191 55% 41%; /* Teal for ring */
 
     /* CSS variables using custom properties from ThemeApplicator, with fallbacks */
     --background: var(--custom-background-light, var(--default-background-light));
@@ -58,38 +58,38 @@ body {
     --chart-5: 27 87% 67%;
     --radius: 0.5rem;
 
-    /* Sidebar specific colors - kept separate for now, could be integrated later */
-    --sidebar-background: 238 30% 97% / 0.9; 
+    /* Sidebar specific colors - can be PRD aligned if needed */
+    --sidebar-background: 238 40% 96% / 0.9; /* Lighter blueish-gray for sidebar */
     --sidebar-foreground: 238 15% 30%; 
-    --sidebar-primary: 238 53% 37%; 
+    --sidebar-primary: 238 52% 38%; /* PRD Primary */
     --sidebar-primary-foreground: 0 0% 98%; 
-    --sidebar-accent: 191 50% 55%; 
+    --sidebar-accent: 191 55% 41%; /* PRD Accent */
     --sidebar-accent-foreground: 0 0% 98%; 
     --sidebar-border: 238 20% 88%; 
-    --sidebar-ring: 191 54% 41%; 
+    --sidebar-ring: 191 55% 41%; /* PRD Accent */
   }
 
   .dark {
-    /* Default HSL values for dark theme - these act as fallbacks */
-    --default-background-dark: 238 10% 15%;
-    --default-foreground-dark: 0 0% 95%;
-    --default-card-dark: 238 10% 20% / 0.85;
-    --default-card-foreground-dark: 0 0% 95%;
-    --default-popover-dark: 238 10% 20% / 0.85;
-    --default-popover-foreground-dark: 0 0% 95%;
-    --default-primary-dark: 238 60% 55%;
-    --default-primary-foreground-dark: 0 0% 98%;
-    --default-secondary-dark: 238 10% 25%;
-    --default-secondary-foreground-dark: 0 0% 95%;
-    --default-muted-dark: 238 10% 35%;
-    --default-muted-foreground-dark: 0 0% 65%;
-    --default-accent-dark: 191 60% 50%;
-    --default-accent-foreground-dark: 0 0% 98%;
+    /* PRD Aligned Dark Theme HSL values (derived) */
+    --default-background-dark: 238 10% 12%; /* Darker Gray */
+    --default-foreground-dark: 0 0% 90%; /* Light Gray for text */
+    --default-card-dark: 238 10% 18% / 0.9; /* Darker, slightly more opaque cards */
+    --default-card-foreground-dark: 0 0% 90%;
+    --default-popover-dark: 238 10% 18% / 0.9;
+    --default-popover-foreground-dark: 0 0% 90%;
+    --default-primary-dark: 238 55% 65%; /* Lighter, more vibrant Dark Blue */
+    --default-primary-foreground-dark: 0 0% 98%; /* White */
+    --default-secondary-dark: 238 10% 22%; /* Darker Gray for secondary */
+    --default-secondary-foreground-dark: 0 0% 85%; /* Lighter text for secondary */
+    --default-muted-dark: 238 10% 30%; /* Muted Dark Gray */
+    --default-muted-foreground-dark: 0 0% 60%;
+    --default-accent-dark: 191 58% 55%; /* Lighter, more vibrant Teal */
+    --default-accent-foreground-dark: 0 0% 98%; /* White */
     --default-destructive-dark: 0 70% 50%;
     --default-destructive-foreground-dark: 0 0% 98%;
-    --default-border-dark: 238 10% 30%;
-    --default-input-dark: 238 10% 30%;
-    --default-ring-dark: 191 60% 50%;
+    --default-border-dark: 238 10% 25%; /* Darker border */
+    --default-input-dark: 238 10% 25%; /* Darker input */
+    --default-ring-dark: 191 58% 55%; /* Lighter Teal for ring */
 
     /* CSS variables using custom properties from ThemeApplicator, with fallbacks for dark mode */
     --background: var(--custom-background-dark, var(--default-background-dark));
@@ -118,15 +118,15 @@ body {
     --chart-4: 280 65% 60%;
     --chart-5: 340 75% 55%;
 
-    /* Dark Sidebar specific colors - kept separate for now */
-    --sidebar-background: 238 12% 18% / 0.9; 
+    /* Dark Sidebar specific colors - can be PRD aligned if needed */
+    --sidebar-background: 238 12% 15% / 0.9; /* Darker sidebar background */
     --sidebar-foreground: 0 0% 85%; 
-    --sidebar-primary: 238 60% 55%; 
+    --sidebar-primary: 238 55% 65%; /* PRD Primary Dark */
     --sidebar-primary-foreground: 0 0% 98%;
-    --sidebar-accent: 191 55% 60%; 
+    --sidebar-accent: 191 58% 55%; /* PRD Accent Dark */
     --sidebar-accent-foreground: 0 0% 98%;
-    --sidebar-border: 238 10% 25%;
-    --sidebar-ring: 191 60% 50%;
+    --sidebar-border: 238 10% 22%;
+    --sidebar-ring: 191 58% 55%; /* PRD Accent Dark */
   }
 }
 

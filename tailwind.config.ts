@@ -11,8 +11,8 @@ export default {
   theme: {
     extend: {
       fontFamily: {
-        body: ['Tajawal', 'sans-serif'],
-        headline: ['Cairo', 'sans-serif'],
+        body: ['Inter', 'sans-serif'], // PRD: Inter for body
+        headline: ['Poppins', 'sans-serif'], // PRD: Poppins for headline
         code: ['monospace'],
       },
       colors: {
