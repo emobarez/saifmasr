@@ -77,6 +77,11 @@ export default function ServiceDetailPage() {
     fetchService();
   }, [serviceId, toast, router]);
 
+  const getServiceImageHint = (category: string) => {
+    if (!category) return "business detail";
+    return category.split(' ').slice(0, 2).join(' ').toLowerCase();
+  };
+
   if (isLoading) {
     return (
       <div className="flex flex-col min-h-screen">
@@ -126,7 +131,7 @@ export default function ServiceDetailPage() {
                 style={{objectFit:"cover"}}
                 className="bg-muted"
                 priority
-                data-ai-hint={`${service.category.toLowerCase().split(' ').join('')} detail`}
+                data-ai-hint={getServiceImageHint(service.category)}
               />
               <div className="absolute inset-0 bg-gradient-to-t from-black/70 via-black/30 to-transparent" />
               <div className="absolute bottom-0 left-0 p-6 md:p-8">
@@ -215,4 +220,3 @@ export default function ServiceDetailPage() {
     </div>
   );
 }
-

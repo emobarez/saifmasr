@@ -57,6 +57,11 @@ export default function PublicServicesPage() {
     fetchServices();
   }, [toast]);
 
+  const getServiceImageHint = (category: string) => {
+    if (!category) return "business service";
+    return category.split(' ').slice(0, 2).join(' ').toLowerCase();
+  };
+
   return (
     <div className="flex flex-col min-h-screen">
       <Header />
@@ -87,7 +92,7 @@ export default function PublicServicesPage() {
                       fill
                       style={{objectFit: "cover"}}
                       className="bg-muted"
-                      data-ai-hint={`${service.category.toLowerCase().split(' ').join('')} service`}
+                      data-ai-hint={getServiceImageHint(service.category)}
                     />
                   </div>
                   <CardHeader className="pb-3">
@@ -160,4 +165,3 @@ export default function PublicServicesPage() {
     </div>
   );
 }
-
