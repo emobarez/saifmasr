@@ -207,7 +207,7 @@ export default function AdminDashboardPage() {
                 {activities.map((activity) => (
                   <li key={activity.id} className="border-b border-border pb-2 last:border-b-0">
                     <p className="text-foreground leading-tight">{activity.description}</p>
-                    <p className="text-xs text-muted-foreground">{formatDate(activity.timestamp instanceof Timestamp ? activity.timestamp : (activity.timestamp as any)?.toDate?.())}</p>
+                    <p className="text-xs text-muted-foreground">{formatDate(activity.timestamp)}</p>
                   </li>
                 ))}
               </ul>
@@ -227,3 +227,4 @@ export default function AdminDashboardPage() {
     </div>
   );
 }
+
