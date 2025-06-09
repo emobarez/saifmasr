@@ -37,18 +37,21 @@ export default function ServiceDetailPage() {
   const serviceId = params.serviceId as string;
   const [service, setService] = useState<Service | null>(null);
   const [isLoading, setIsLoading] = useState(true);
+  const [notFoundReason, setNotFoundReason] = useState<'notFound' | 'notAvailable' | null>(null);
   const { toast } = useToast();
 
   useEffect(() => {
     if (!serviceId) {
       setIsLoading(false);
       toast({ title: "خطأ", description: "معرف الخدمة غير موجود.", variant: "destructive" });
-      router.push("/services"); // Redirect if no ID
+      router.push("/services"); 
       return;
     }
 
     const fetchService = async () => {
       setIsLoading(true);
+      setService(null); 
+      setNotFoundReason(null);
       try {
         const serviceRef = doc(db, "services", serviceId);
         const docSnap = await getDoc(serviceRef);
@@ -57,18 +60,22 @@ export default function ServiceDetailPage() {
           const serviceData = docSnap.data() as Service;
           if (serviceData.status === "متاحة") {
             setService({ id: docSnap.id, ...serviceData });
+            setNotFoundReason(null);
           } else {
-            setService(null); // Service exists but is not available
-            toast({ title: "خدمة غير متاحة", description: "هذه الخدمة غير متاحة حاليًا.", variant: "default" });
+            setService(null);
+            setNotFoundReason('notAvailable');
+            toast({ title: "خدمة غير متاحة", description: `خدمة "${serviceData.name || 'المحددة'}" غير متاحة للعرض حاليًا.`, variant: "default" });
           }
         } else {
           setService(null);
+          setNotFoundReason('notFound');
           toast({ title: "خطأ", description: "لم يتم العثور على الخدمة المطلوبة.", variant: "destructive" });
         }
       } catch (error) {
         console.error("Error fetching service:", error);
         toast({ title: "خطأ", description: "حدث خطأ أثناء تحميل تفاصيل الخدمة.", variant: "destructive" });
         setService(null);
+        setNotFoundReason('notFound'); 
       } finally {
         setIsLoading(false);
       }
@@ -77,7 +84,7 @@ export default function ServiceDetailPage() {
     fetchService();
   }, [serviceId, toast, router]);
 
-  const getServiceImageHint = (category: string) => {
+  const getServiceImageHint = (category: string | undefined) => {
     if (!category) return "business detail";
     return category.split(' ').slice(0, 2).join(' ').toLowerCase();
   };
@@ -95,15 +102,25 @@ export default function ServiceDetailPage() {
     );
   }
 
-  if (!service) {
+  if (!service && !isLoading) {
+    let title = "خدمة غير موجودة";
+    let description = "عفواً، الخدمة التي تبحث عنها إما أنها غير موجودة أو قد تم حذفها.";
+    let icon = <AlertTriangle className="h-16 w-16 text-destructive mx-auto mb-6" />;
+
+    if (notFoundReason === 'notAvailable') {
+        title = "خدمة غير متاحة حاليًا";
+        description = "عفواً، هذه الخدمة موجودة ولكنها غير متاحة للعرض في الوقت الحالي. قد تكون قيد التطوير أو متوقفة مؤقتًا.";
+        icon = <Info className="h-16 w-16 text-yellow-500 mx-auto mb-6" />;
+    }
+    
     return (
       <div className="flex flex-col min-h-screen">
         <Header />
         <main className="flex-grow container mx-auto px-6 py-12 md:py-20 text-center">
-          <AlertTriangle className="h-16 w-16 text-destructive mx-auto mb-6" />
-          <h1 className="text-3xl font-bold font-headline mb-4 text-destructive">خدمة غير موجودة أو غير متاحة</h1>
-          <p className="text-lg text-muted-foreground mb-8">
-            عفواً، الخدمة التي تبحث عنها إما أنها غير موجودة أو ليست متاحة للعرض في الوقت الحالي.
+          {icon}
+          <h1 className={`text-3xl font-bold font-headline mb-4 ${notFoundReason === 'notAvailable' ? 'text-yellow-600' : 'text-destructive'}`}>{title}</h1>
+          <p className="text-lg text-muted-foreground mb-8 max-w-md mx-auto">
+            {description}
           </p>
           <Button asChild variant="outline">
             <Link href="/services">
@@ -116,6 +133,9 @@ export default function ServiceDetailPage() {
       </div>
     );
   }
+  
+  // This part will only be reached if service is not null and !isLoading (implicitly, status is "متاحة")
+  if (!service) return null; // Should not happen if logic above is correct, but as a safeguard
 
   return (
     <div className="flex flex-col min-h-screen">
