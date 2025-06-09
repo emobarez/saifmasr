@@ -22,7 +22,10 @@ import {
   SparklesIcon,
   InfoIcon,
   ImageUpIcon, // For profile picture updates
-  CheckCircle2Icon // For submitted/completed actions
+  CheckCircle2Icon, // For submitted/completed actions
+  FilePlus2, // For AI generated report section
+  FileEditIcon, // For AI appended report section
+  MessageSquarePlus // For AI generated FAQs
 } from "lucide-react";
 import { useToast } from "@/hooks/use-toast";
 import { db } from "@/lib/firebase";
@@ -70,15 +73,19 @@ export default function AdminActivityLogPage() {
   const getActionTypeIcon = (actionType: ActivityActionType): React.ReactNode => {
     const lowerActionType = actionType.toLowerCase();
     if (lowerActionType.includes("created") || lowerActionType.includes("registered")) return <PlusCircleIcon className="h-4 w-4 inline me-1.5" />;
-    if (lowerActionType.includes("generated") && !lowerActionType.includes("faqs")) return <SparklesIcon className="h-4 w-4 inline me-1.5" />;
+    if (lowerActionType === "ai_report_summary_generated") return <SparklesIcon className="h-4 w-4 inline me-1.5" />;
+    if (lowerActionType === "ai_report_section_generated") return <FilePlus2 className="h-4 w-4 inline me-1.5" />;
+    if (lowerActionType === "ai_service_faqs_generated") return <MessageSquarePlus className="h-4 w-4 inline me-1.5" />;
+    if (lowerActionType.includes("generated")) return <SparklesIcon className="h-4 w-4 inline me-1.5" />; // General generated
     if (lowerActionType.includes("submitted")) return <CheckCircle2Icon className="h-4 w-4 inline me-1.5" />;
+    if (lowerActionType === "ai_report_section_appended") return <FileEditIcon className="h-4 w-4 inline me-1.5" />;
     if (lowerActionType.includes("updated") && !lowerActionType.includes("status") && !lowerActionType.includes("picture")) return <Edit3Icon className="h-4 w-4 inline me-1.5" />;
-    if (lowerActionType.includes("appended")) return <Edit3Icon className="h-4 w-4 inline me-1.5" />; // Could be FileEditIcon
+    if (lowerActionType.includes("appended")) return <Edit3Icon className="h-4 w-4 inline me-1.5" />; 
     if (lowerActionType.includes("deleted")) return <Trash2Icon className="h-4 w-4 inline me-1.5" />;
     if (lowerActionType.includes("login")) return <LogInIcon className="h-4 w-4 inline me-1.5" />;
     if (lowerActionType.includes("logout")) return <LogOutIcon className="h-4 w-4 inline me-1.5" />;
     if (lowerActionType.includes("suggested")) return <LightbulbIcon className="h-4 w-4 inline me-1.5" />;
-    if (lowerActionType.includes("ai_") || lowerActionType.includes("faqs_generated")) return <SparklesIcon className="h-4 w-4 inline me-1.5" />;
+    if (lowerActionType.includes("ai_") && !lowerActionType.includes("generated") && !lowerActionType.includes("appended")) return <SparklesIcon className="h-4 w-4 inline me-1.5" />; // other AI
     if (lowerActionType.includes("picture_updated")) return <ImageUpIcon className="h-4 w-4 inline me-1.5" />;
     if (lowerActionType.includes("status_updated") || lowerActionType.includes("settings_updated")) return <Edit3Icon className="h-4 w-4 inline me-1.5" />;
     return <InfoIcon className="h-4 w-4 inline me-1.5" />;
@@ -153,7 +160,7 @@ export default function AdminActivityLogPage() {
 
   useEffect(() => {
     fetchLogs();
-  }, [toast]); // Removed fetchLogs from dependencies as it causes infinite loop
+  }, []); 
 
   const handleLoadMore = () => {
     if (hasMoreLogs && !isLoadingMore) {
