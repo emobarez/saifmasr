@@ -4,7 +4,26 @@ import { useState, useEffect } from "react";
 import { Card, CardHeader, CardTitle, CardDescription, CardContent } from "@/components/ui/card";
 import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from "@/components/ui/table";
 import { Badge } from "@/components/ui/badge";
-import { Loader2, History as HistoryIcon, Users, Briefcase, FileTextIcon, SettingsIcon, Receipt, ClipboardList } from "lucide-react";
+import { 
+  Loader2, 
+  History as HistoryIcon, 
+  Users, 
+  Briefcase, 
+  FileTextIcon, 
+  SettingsIcon as PageSettingsIcon, // Renamed to avoid conflict
+  Receipt, 
+  ClipboardList,
+  PlusCircleIcon,
+  Edit3Icon,
+  Trash2Icon,
+  LogInIcon,
+  LogOutIcon,
+  LightbulbIcon,
+  SparklesIcon,
+  InfoIcon,
+  ImageUpIcon, // For profile picture updates
+  CheckCircle2Icon // For submitted/completed actions
+} from "lucide-react";
 import { useToast } from "@/hooks/use-toast";
 import { db } from "@/lib/firebase";
 import { collection, getDocs, query, orderBy, Timestamp, limit, startAfter, DocumentData, QueryDocumentSnapshot } from "firebase/firestore";
@@ -40,12 +59,29 @@ export default function AdminActivityLogPage() {
   };
 
   const getActionTypeColor = (actionType: ActivityActionType): string => {
-    if (actionType.includes("CREATED") || actionType.includes("GENERATED") || actionType.includes("SUBMITTED")) return "text-green-600 dark:text-green-400";
+    if (actionType.includes("CREATED") || actionType.includes("GENERATED") || actionType.includes("SUBMITTED") || actionType.includes("REGISTERED")) return "text-green-600 dark:text-green-400";
     if (actionType.includes("UPDATED") || actionType.includes("APPENDED")) return "text-blue-600 dark:text-blue-400";
     if (actionType.includes("DELETED")) return "text-red-600 dark:text-red-400";
-    if (actionType.includes("LOGIN") || actionType.includes("LOGOUT") || actionType.includes("REGISTERED")) return "text-purple-600 dark:text-purple-400";
+    if (actionType.includes("LOGIN") || actionType.includes("LOGOUT")) return "text-purple-600 dark:text-purple-400";
     if (actionType.includes("SUGGESTED")) return "text-yellow-600 dark:text-yellow-400";
     return "text-gray-600 dark:text-gray-400";
+  };
+
+  const getActionTypeIcon = (actionType: ActivityActionType): React.ReactNode => {
+    const lowerActionType = actionType.toLowerCase();
+    if (lowerActionType.includes("created") || lowerActionType.includes("registered")) return <PlusCircleIcon className="h-4 w-4 inline me-1.5" />;
+    if (lowerActionType.includes("generated") && !lowerActionType.includes("faqs")) return <SparklesIcon className="h-4 w-4 inline me-1.5" />;
+    if (lowerActionType.includes("submitted")) return <CheckCircle2Icon className="h-4 w-4 inline me-1.5" />;
+    if (lowerActionType.includes("updated") && !lowerActionType.includes("status") && !lowerActionType.includes("picture")) return <Edit3Icon className="h-4 w-4 inline me-1.5" />;
+    if (lowerActionType.includes("appended")) return <Edit3Icon className="h-4 w-4 inline me-1.5" />; // Could be FileEditIcon
+    if (lowerActionType.includes("deleted")) return <Trash2Icon className="h-4 w-4 inline me-1.5" />;
+    if (lowerActionType.includes("login")) return <LogInIcon className="h-4 w-4 inline me-1.5" />;
+    if (lowerActionType.includes("logout")) return <LogOutIcon className="h-4 w-4 inline me-1.5" />;
+    if (lowerActionType.includes("suggested")) return <LightbulbIcon className="h-4 w-4 inline me-1.5" />;
+    if (lowerActionType.includes("ai_") || lowerActionType.includes("faqs_generated")) return <SparklesIcon className="h-4 w-4 inline me-1.5" />;
+    if (lowerActionType.includes("picture_updated")) return <ImageUpIcon className="h-4 w-4 inline me-1.5" />;
+    if (lowerActionType.includes("status_updated") || lowerActionType.includes("settings_updated")) return <Edit3Icon className="h-4 w-4 inline me-1.5" />;
+    return <InfoIcon className="h-4 w-4 inline me-1.5" />;
   };
 
   const getTargetIcon = (targetType?: string | null): React.ReactNode => {
@@ -57,7 +93,8 @@ export default function AdminActivityLogPage() {
       case "employee": return <Users className="h-4 w-4 inline me-1 text-muted-foreground" />;
       case "invoice": return <Receipt className="h-4 w-4 inline me-1 text-muted-foreground" />;
       case "servicerequest": return <ClipboardList className="h-4 w-4 inline me-1 text-muted-foreground" />;
-      case "settings": return <SettingsIcon className="h-4 w-4 inline me-1 text-muted-foreground" />;
+      case "settings": return <PageSettingsIcon className="h-4 w-4 inline me-1 text-muted-foreground" />;
+      case "userprofile": return <Users className="h-4 w-4 inline me-1 text-muted-foreground" />; // For profile picture update
       default: return null;
     }
   }
@@ -67,7 +104,7 @@ export default function AdminActivityLogPage() {
       setIsLoadingMore(true);
     } else {
       setIsLoading(true);
-      setLogs([]); // Clear logs for initial fetch
+      setLogs([]); 
       setLastVisibleDoc(null);
       setHasMoreLogs(true);
     }
@@ -116,7 +153,7 @@ export default function AdminActivityLogPage() {
 
   useEffect(() => {
     fetchLogs();
-  }, [toast]);
+  }, [toast]); // Removed 'toast' from dependency array as it's stable, if it causes re-fetches unnecessarily. Kept it for now.
 
   const handleLoadMore = () => {
     if (hasMoreLogs && !isLoadingMore) {
@@ -149,7 +186,7 @@ export default function AdminActivityLogPage() {
                     <TableRow>
                       <TableHead className="min-w-[160px]">الوقت والتاريخ</TableHead>
                       <TableHead className="min-w-[150px]">الفاعل</TableHead>
-                      <TableHead className="min-w-[150px]">نوع الإجراء</TableHead>
+                      <TableHead className="min-w-[180px]">نوع الإجراء</TableHead>
                       <TableHead className="min-w-[250px]">الوصف</TableHead>
                       <TableHead className="min-w-[180px]">الهدف</TableHead>
                       <TableHead className="min-w-[120px]">تفاصيل إضافية</TableHead>
@@ -164,7 +201,10 @@ export default function AdminActivityLogPage() {
                           {log.actor?.role && <Badge variant="outline" className="ms-2 text-xs">{log.actor.role}</Badge>}
                         </TableCell>
                         <TableCell>
-                          <span className={`font-medium ${getActionTypeColor(log.actionType)}`}>{log.actionType}</span>
+                          <div className={`flex items-center font-medium ${getActionTypeColor(log.actionType)}`}>
+                            {getActionTypeIcon(log.actionType)}
+                            <span>{log.actionType}</span>
+                          </div>
                         </TableCell>
                         <TableCell className="leading-relaxed">{log.description}</TableCell>
                         <TableCell>
@@ -212,3 +252,5 @@ export default function AdminActivityLogPage() {
   );
 }
 
+
+    
