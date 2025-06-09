@@ -101,6 +101,80 @@ const settingsSchema = z.object({
 
 type SettingsFormValues = z.infer<typeof settingsSchema>;
 
+// Moved DEFAULT_SETTINGS_FORM outside the component
+const DEFAULT_SETTINGS_FORM: SettingsFormValues = {
+  portalName: "سيف مصر الوطنية للأمن",
+  adminEmail: "admin@saifmasr.com",
+  maintenanceMode: false,
+  companyPhone: "",
+  companyAddress: "",
+  publicEmail: "",
+
+  themeBackgroundLight: "240 11% 89%",
+  themeForegroundLight: "238 10% 20%",
+  themePrimaryLight: "238 52% 38%",
+  themePrimaryForegroundLight: "0 0% 98%",
+  themeAccentLight: "191 55% 41%",
+  themeAccentForegroundLight: "0 0% 98%",
+  themeCardLight: "0 0% 100% / 0.9",
+  themeCardForegroundLight: "238 10% 20%",
+  themePopoverLight: "0 0% 100% / 0.9",
+  themePopoverForegroundLight: "238 10% 20%",
+  themeSecondaryLight: "240 10% 94%",
+  themeSecondaryForegroundLight: "238 10% 25%",
+  themeMutedLight: "240 10% 75%",
+  themeMutedForegroundLight: "240 10% 45%",
+  themeBorderLight: "240 10% 78%",
+  themeInputLight: "240 10% 92%",
+  themeRingLight: "191 55% 41%",
+  themeDestructiveLight: "0 84.2% 60.2%",
+  themeDestructiveForegroundLight: "0 0% 98%",
+
+  themeBackgroundDark: "238 10% 12%",
+  themeForegroundDark: "0 0% 90%",
+  themePrimaryDark: "238 55% 65%",
+  themePrimaryForegroundDark: "0 0% 98%",
+  themeAccentDark: "191 58% 55%",
+  themeAccentForegroundDark: "0 0% 98%",
+  themeCardDark: "238 10% 18% / 0.9",
+  themeCardForegroundDark: "0 0% 90%",
+  themePopoverDark: "238 10% 18% / 0.9",
+  themePopoverForegroundDark: "0 0% 90%",
+  themeSecondaryDark: "238 10% 22%",
+  themeSecondaryForegroundDark: "0 0% 85%",
+  themeMutedDark: "238 10% 30%",
+  themeMutedForegroundDark: "0 0% 60%",
+  themeBorderDark: "238 10% 25%",
+  themeInputDark: "238 10% 25%",
+  themeRingDark: "191 58% 55%",
+  themeDestructiveDark: "0 70% 50%",
+  themeDestructiveForegroundDark: "0 0% 98%",
+  
+  socialFacebookUrl: "",
+  socialTwitterUrl: "",
+  socialLinkedinUrl: "",
+  socialInstagramUrl: "",
+
+  themeSidebarBackgroundLight: "238 40% 96% / 0.9",
+  themeSidebarForegroundLight: "238 15% 30%",
+  themeSidebarPrimaryLight: "238 52% 38%",
+  themeSidebarPrimaryForegroundLight: "0 0% 98%",
+  themeSidebarAccentLight: "191 55% 41%",
+  themeSidebarAccentForegroundLight: "0 0% 98%",
+  themeSidebarBorderLight: "238 20% 88%",
+  themeSidebarRingLight: "191 55% 41%",
+
+  themeSidebarBackgroundDark: "238 12% 15% / 0.9",
+  themeSidebarForegroundDark: "0 0% 85%",
+  themeSidebarPrimaryDark: "238 55% 65%",
+  themeSidebarPrimaryForegroundDark: "0 0% 98%",
+  themeSidebarAccentDark: "191 58% 55%",
+  themeSidebarAccentForegroundDark: "0 0% 98%",
+  themeSidebarBorderDark: "238 10% 22%",
+  themeSidebarRingDark: "191 58% 55%",
+};
+
+
 const isValidHslForPreview = (value: string | undefined): boolean => {
   if (!value) return false;
   return hslFormatRegex.test(value.trim());
@@ -112,78 +186,6 @@ export default function AdminSettingsPage() {
   const siteSettingsHook = useSiteSettings();
   const { isLoadingSiteSettings: isFetchingSettings, ...initialSettings } = siteSettingsHook;
   
-  const DEFAULT_SETTINGS_FORM: SettingsFormValues = {
-    portalName: "سيف مصر الوطنية للأمن",
-    adminEmail: "admin@saifmasr.com",
-    maintenanceMode: false,
-    companyPhone: "",
-    companyAddress: "",
-    publicEmail: "",
-
-    themeBackgroundLight: "240 11% 89%",
-    themeForegroundLight: "238 10% 20%",
-    themePrimaryLight: "238 52% 38%",
-    themePrimaryForegroundLight: "0 0% 98%",
-    themeAccentLight: "191 55% 41%",
-    themeAccentForegroundLight: "0 0% 98%",
-    themeCardLight: "0 0% 100% / 0.9",
-    themeCardForegroundLight: "238 10% 20%",
-    themePopoverLight: "0 0% 100% / 0.9",
-    themePopoverForegroundLight: "238 10% 20%",
-    themeSecondaryLight: "240 10% 94%",
-    themeSecondaryForegroundLight: "238 10% 25%",
-    themeMutedLight: "240 10% 75%",
-    themeMutedForegroundLight: "240 10% 45%",
-    themeBorderLight: "240 10% 78%",
-    themeInputLight: "240 10% 92%",
-    themeRingLight: "191 55% 41%",
-    themeDestructiveLight: "0 84.2% 60.2%",
-    themeDestructiveForegroundLight: "0 0% 98%",
-
-    themeBackgroundDark: "238 10% 12%",
-    themeForegroundDark: "0 0% 90%",
-    themePrimaryDark: "238 55% 65%",
-    themePrimaryForegroundDark: "0 0% 98%",
-    themeAccentDark: "191 58% 55%",
-    themeAccentForegroundDark: "0 0% 98%",
-    themeCardDark: "238 10% 18% / 0.9",
-    themeCardForegroundDark: "0 0% 90%",
-    themePopoverDark: "238 10% 18% / 0.9",
-    themePopoverForegroundDark: "0 0% 90%",
-    themeSecondaryDark: "238 10% 22%",
-    themeSecondaryForegroundDark: "0 0% 85%",
-    themeMutedDark: "238 10% 30%",
-    themeMutedForegroundDark: "0 0% 60%",
-    themeBorderDark: "238 10% 25%",
-    themeInputDark: "238 10% 25%",
-    themeRingDark: "191 58% 55%",
-    themeDestructiveDark: "0 70% 50%",
-    themeDestructiveForegroundDark: "0 0% 98%",
-    
-    socialFacebookUrl: "",
-    socialTwitterUrl: "",
-    socialLinkedinUrl: "",
-    socialInstagramUrl: "",
-
-    themeSidebarBackgroundLight: "238 40% 96% / 0.9",
-    themeSidebarForegroundLight: "238 15% 30%",
-    themeSidebarPrimaryLight: "238 52% 38%",
-    themeSidebarPrimaryForegroundLight: "0 0% 98%",
-    themeSidebarAccentLight: "191 55% 41%",
-    themeSidebarAccentForegroundLight: "0 0% 98%",
-    themeSidebarBorderLight: "238 20% 88%",
-    themeSidebarRingLight: "191 55% 41%",
-
-    themeSidebarBackgroundDark: "238 12% 15% / 0.9",
-    themeSidebarForegroundDark: "0 0% 85%",
-    themeSidebarPrimaryDark: "238 55% 65%",
-    themeSidebarPrimaryForegroundDark: "0 0% 98%",
-    themeSidebarAccentDark: "191 58% 55%",
-    themeSidebarAccentForegroundDark: "0 0% 98%",
-    themeSidebarBorderDark: "238 10% 22%",
-    themeSidebarRingDark: "191 58% 55%",
-  };
-
   const form = useForm<SettingsFormValues>({
     resolver: zodResolver(settingsSchema),
     defaultValues: DEFAULT_SETTINGS_FORM,
@@ -266,7 +268,8 @@ export default function AdminSettingsPage() {
         themeSidebarRingDark: initialSettings.themeSidebarRingDark || DEFAULT_SETTINGS_FORM.themeSidebarRingDark,
       });
     }
-  }, [isFetchingSettings, initialSettings, reset, DEFAULT_SETTINGS_FORM]);
+  // Removed DEFAULT_SETTINGS_FORM from dependencies as it's now stable
+  }, [isFetchingSettings, initialSettings, reset]);
 
 
   const handleSaveSettings = async (data: SettingsFormValues) => {
