@@ -1,23 +1,27 @@
-
 rules_version = '2';
 
 service firebase.storage {
   match /b/{bucket}/o {
-    // Files for service requests
-    // Path: service-request-attachments/{userId}/{filename}
-    match /service-request-attachments/{userId}/{allPaths=**} {
-      // Allow write (upload) only if the user is authenticated and their UID matches the {userId} in the path.
-      // This ensures users can only upload to their own "folder".
-      allow write: if request.auth != null && request.auth.uid == userId;
 
-      // Allow read if the user is authenticated.
-      // The actual access to the download URL should be controlled by your Firestore security rules
-      // (e.g., only the client who owns the request or an admin can see the request document containing the URL).
-      // Unpredictable URLs provide a layer of security by obscurity.
-      allow read: if request.auth != null;
+    // Profile pictures:
+    // - Allow anyone to read (e.g., to display avatars).
+    // - Allow authenticated users to write only to their own profile picture path.
+    match /profile-pictures/{userId}/{fileName} {
+      allow read;
+      allow write: if request.auth != null && request.auth.uid == userId;
     }
 
-    // Default deny for all other paths not explicitly matched
+    // Service request attachments:
+    // - Allow authenticated users to write only to their own attachments path.
+    // - Allow authenticated users to read attachments.
+    //   (Consider making this more restrictive if needed, e.g., only owner or admin can read)
+    match /service-request-attachments/{userId}/{fileName} {
+      allow read: if request.auth != null;
+      allow write: if request.auth != null && request.auth.uid == userId;
+    }
+
+    // Default deny all other paths for security.
+    // Remove this if you have other paths that need to be public or have different rules.
     match /{allPaths=**} {
       allow read, write: if false;
     }
