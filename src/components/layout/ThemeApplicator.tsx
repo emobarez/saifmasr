@@ -5,25 +5,36 @@ import { useEffect } from 'react';
 import { useSiteSettings } from '@/hooks/useSiteSettings';
 
 const themePropertiesMap = {
+  // Main theme properties
   Background: '--custom-background',
   Foreground: '--custom-foreground',
   Card: '--custom-card',
   CardForeground: '--custom-card-foreground',
-  Popover: '--custom-popover', // Assuming popover uses card colors or similar base
+  Popover: '--custom-popover',
   PopoverForeground: '--custom-popover-foreground',
   Primary: '--custom-primary',
   PrimaryForeground: '--custom-primary-foreground',
-  Secondary: '--custom-secondary', // Less commonly customized, might map to card or background shades
+  Secondary: '--custom-secondary',
   SecondaryForeground: '--custom-secondary-foreground',
-  Muted: '--custom-muted', // Might be derived or set if distinct
+  Muted: '--custom-muted',
   MutedForeground: '--custom-muted-foreground',
   Accent: '--custom-accent',
   AccentForeground: '--custom-accent-foreground',
-  Destructive: '--custom-destructive', // Typically less customized, uses defaults
+  Destructive: '--custom-destructive',
   DestructiveForeground: '--custom-destructive-foreground',
   Border: '--custom-border',
   Input: '--custom-input',
   Ring: '--custom-ring',
+
+  // Sidebar theme properties
+  SidebarBackground: '--custom-sidebar-background',
+  SidebarForeground: '--custom-sidebar-foreground',
+  SidebarPrimary: '--custom-sidebar-primary',
+  SidebarPrimaryForeground: '--custom-sidebar-primary-foreground',
+  SidebarAccent: '--custom-sidebar-accent',
+  SidebarAccentForeground: '--custom-sidebar-accent-foreground',
+  SidebarBorder: '--custom-sidebar-border',
+  SidebarRing: '--custom-sidebar-ring',
 };
 
 export function ThemeApplicator() {
@@ -59,3 +70,5 @@ export function ThemeApplicator() {
 
   return null; 
 }
+
+    

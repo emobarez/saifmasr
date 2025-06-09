@@ -4,7 +4,7 @@ import { Card, CardHeader, CardTitle, CardDescription, CardContent } from "@/com
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Switch } from "@/components/ui/switch";
-import { Save, Bell, ShieldCheck, Palette, Loader2, Settings as SettingsIcon, Phone, Mail, MapPin, Paintbrush, Link as LinkIcon, Facebook, Twitter, Linkedin, Instagram, Sun, Moon } from "lucide-react";
+import { Save, Bell, ShieldCheck, Palette, Loader2, Settings as SettingsIcon, Phone, Mail, MapPin, Paintbrush, Link as LinkIcon, Facebook, Twitter, Linkedin, Instagram, Sun, Moon, Sidebar } from "lucide-react";
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
 import { useState, useEffect } from "react";
 import { useToast } from "@/hooks/use-toast";
@@ -42,9 +42,17 @@ const settingsSchema = z.object({
   themeAccentForegroundLight: optionalHslString,
   themeCardLight: optionalHslString,
   themeCardForegroundLight: optionalHslString,
+  themePopoverLight: optionalHslString,
+  themePopoverForegroundLight: optionalHslString,
+  themeSecondaryLight: optionalHslString,
+  themeSecondaryForegroundLight: optionalHslString,
+  themeMutedLight: optionalHslString,
+  themeMutedForegroundLight: optionalHslString,
   themeBorderLight: optionalHslString,
   themeInputLight: optionalHslString,
   themeRingLight: optionalHslString,
+  themeDestructiveLight: optionalHslString,
+  themeDestructiveForegroundLight: optionalHslString,
 
   themeBackgroundDark: optionalHslString,
   themeForegroundDark: optionalHslString,
@@ -54,14 +62,41 @@ const settingsSchema = z.object({
   themeAccentForegroundDark: optionalHslString,
   themeCardDark: optionalHslString,
   themeCardForegroundDark: optionalHslString,
+  themePopoverDark: optionalHslString,
+  themePopoverForegroundDark: optionalHslString,
+  themeSecondaryDark: optionalHslString,
+  themeSecondaryForegroundDark: optionalHslString,
+  themeMutedDark: optionalHslString,
+  themeMutedForegroundDark: optionalHslString,
   themeBorderDark: optionalHslString,
   themeInputDark: optionalHslString,
   themeRingDark: optionalHslString,
+  themeDestructiveDark: optionalHslString,
+  themeDestructiveForegroundDark: optionalHslString,
 
   socialFacebookUrl: optionalUrl,
   socialTwitterUrl: optionalUrl,
   socialLinkedinUrl: optionalUrl,
   socialInstagramUrl: optionalUrl,
+
+  // Sidebar theme fields
+  themeSidebarBackgroundLight: optionalHslString,
+  themeSidebarForegroundLight: optionalHslString,
+  themeSidebarPrimaryLight: optionalHslString,
+  themeSidebarPrimaryForegroundLight: optionalHslString,
+  themeSidebarAccentLight: optionalHslString,
+  themeSidebarAccentForegroundLight: optionalHslString,
+  themeSidebarBorderLight: optionalHslString,
+  themeSidebarRingLight: optionalHslString,
+
+  themeSidebarBackgroundDark: optionalHslString,
+  themeSidebarForegroundDark: optionalHslString,
+  themeSidebarPrimaryDark: optionalHslString,
+  themeSidebarPrimaryForegroundDark: optionalHslString,
+  themeSidebarAccentDark: optionalHslString,
+  themeSidebarAccentForegroundDark: optionalHslString,
+  themeSidebarBorderDark: optionalHslString,
+  themeSidebarRingDark: optionalHslString,
 });
 
 type SettingsFormValues = z.infer<typeof settingsSchema>;
@@ -87,32 +122,66 @@ export default function AdminSettingsPage() {
 
     themeBackgroundLight: "240 11% 89%",
     themeForegroundLight: "238 10% 20%",
-    themePrimaryLight: "238 53% 37%",
+    themePrimaryLight: "238 52% 38%",
     themePrimaryForegroundLight: "0 0% 98%",
-    themeAccentLight: "191 54% 41%",
+    themeAccentLight: "191 55% 41%",
     themeAccentForegroundLight: "0 0% 98%",
-    themeCardLight: "0 0% 100% / 0.85",
+    themeCardLight: "0 0% 100% / 0.9",
     themeCardForegroundLight: "238 10% 20%",
-    themeBorderLight: "240 10% 80%",
-    themeInputLight: "240 10% 85%",
-    themeRingLight: "191 54% 41%",
+    themePopoverLight: "0 0% 100% / 0.9",
+    themePopoverForegroundLight: "238 10% 20%",
+    themeSecondaryLight: "240 10% 94%",
+    themeSecondaryForegroundLight: "238 10% 25%",
+    themeMutedLight: "240 10% 75%",
+    themeMutedForegroundLight: "240 10% 45%",
+    themeBorderLight: "240 10% 78%",
+    themeInputLight: "240 10% 92%",
+    themeRingLight: "191 55% 41%",
+    themeDestructiveLight: "0 84.2% 60.2%",
+    themeDestructiveForegroundLight: "0 0% 98%",
 
-    themeBackgroundDark: "238 10% 15%",
-    themeForegroundDark: "0 0% 95%",
-    themePrimaryDark: "238 60% 55%",
+    themeBackgroundDark: "238 10% 12%",
+    themeForegroundDark: "0 0% 90%",
+    themePrimaryDark: "238 55% 65%",
     themePrimaryForegroundDark: "0 0% 98%",
-    themeAccentDark: "191 60% 50%",
+    themeAccentDark: "191 58% 55%",
     themeAccentForegroundDark: "0 0% 98%",
-    themeCardDark: "238 10% 20% / 0.85",
-    themeCardForegroundDark: "0 0% 95%",
-    themeBorderDark: "238 10% 30%",
-    themeInputDark: "238 10% 30%",
-    themeRingDark: "191 60% 50%",
+    themeCardDark: "238 10% 18% / 0.9",
+    themeCardForegroundDark: "0 0% 90%",
+    themePopoverDark: "238 10% 18% / 0.9",
+    themePopoverForegroundDark: "0 0% 90%",
+    themeSecondaryDark: "238 10% 22%",
+    themeSecondaryForegroundDark: "0 0% 85%",
+    themeMutedDark: "238 10% 30%",
+    themeMutedForegroundDark: "0 0% 60%",
+    themeBorderDark: "238 10% 25%",
+    themeInputDark: "238 10% 25%",
+    themeRingDark: "191 58% 55%",
+    themeDestructiveDark: "0 70% 50%",
+    themeDestructiveForegroundDark: "0 0% 98%",
     
     socialFacebookUrl: "",
     socialTwitterUrl: "",
     socialLinkedinUrl: "",
     socialInstagramUrl: "",
+
+    themeSidebarBackgroundLight: "238 40% 96% / 0.9",
+    themeSidebarForegroundLight: "238 15% 30%",
+    themeSidebarPrimaryLight: "238 52% 38%",
+    themeSidebarPrimaryForegroundLight: "0 0% 98%",
+    themeSidebarAccentLight: "191 55% 41%",
+    themeSidebarAccentForegroundLight: "0 0% 98%",
+    themeSidebarBorderLight: "238 20% 88%",
+    themeSidebarRingLight: "191 55% 41%",
+
+    themeSidebarBackgroundDark: "238 12% 15% / 0.9",
+    themeSidebarForegroundDark: "0 0% 85%",
+    themeSidebarPrimaryDark: "238 55% 65%",
+    themeSidebarPrimaryForegroundDark: "0 0% 98%",
+    themeSidebarAccentDark: "191 58% 55%",
+    themeSidebarAccentForegroundDark: "0 0% 98%",
+    themeSidebarBorderDark: "238 10% 22%",
+    themeSidebarRingDark: "191 58% 55%",
   };
 
   const form = useForm<SettingsFormValues>({
@@ -128,7 +197,7 @@ export default function AdminSettingsPage() {
       reset({
         portalName: initialSettings.portalName || DEFAULT_SETTINGS_FORM.portalName,
         adminEmail: initialSettings.adminEmail || DEFAULT_SETTINGS_FORM.adminEmail,
-        maintenanceMode: initialSettings.maintenanceMode || DEFAULT_SETTINGS_FORM.maintenanceMode,
+        maintenanceMode: initialSettings.maintenanceMode === undefined ? DEFAULT_SETTINGS_FORM.maintenanceMode : initialSettings.maintenanceMode,
         companyPhone: initialSettings.companyPhone || DEFAULT_SETTINGS_FORM.companyPhone,
         companyAddress: initialSettings.companyAddress || DEFAULT_SETTINGS_FORM.companyAddress,
         publicEmail: initialSettings.publicEmail || DEFAULT_SETTINGS_FORM.publicEmail,
@@ -141,9 +210,17 @@ export default function AdminSettingsPage() {
         themeAccentForegroundLight: initialSettings.themeAccentForegroundLight || DEFAULT_SETTINGS_FORM.themeAccentForegroundLight,
         themeCardLight: initialSettings.themeCardLight || DEFAULT_SETTINGS_FORM.themeCardLight,
         themeCardForegroundLight: initialSettings.themeCardForegroundLight || DEFAULT_SETTINGS_FORM.themeCardForegroundLight,
+        themePopoverLight: initialSettings.themePopoverLight || DEFAULT_SETTINGS_FORM.themePopoverLight,
+        themePopoverForegroundLight: initialSettings.themePopoverForegroundLight || DEFAULT_SETTINGS_FORM.themePopoverForegroundLight,
+        themeSecondaryLight: initialSettings.themeSecondaryLight || DEFAULT_SETTINGS_FORM.themeSecondaryLight,
+        themeSecondaryForegroundLight: initialSettings.themeSecondaryForegroundLight || DEFAULT_SETTINGS_FORM.themeSecondaryForegroundLight,
+        themeMutedLight: initialSettings.themeMutedLight || DEFAULT_SETTINGS_FORM.themeMutedLight,
+        themeMutedForegroundLight: initialSettings.themeMutedForegroundLight || DEFAULT_SETTINGS_FORM.themeMutedForegroundLight,
         themeBorderLight: initialSettings.themeBorderLight || DEFAULT_SETTINGS_FORM.themeBorderLight,
         themeInputLight: initialSettings.themeInputLight || DEFAULT_SETTINGS_FORM.themeInputLight,
         themeRingLight: initialSettings.themeRingLight || DEFAULT_SETTINGS_FORM.themeRingLight,
+        themeDestructiveLight: initialSettings.themeDestructiveLight || DEFAULT_SETTINGS_FORM.themeDestructiveLight,
+        themeDestructiveForegroundLight: initialSettings.themeDestructiveForegroundLight || DEFAULT_SETTINGS_FORM.themeDestructiveForegroundLight,
 
         themeBackgroundDark: initialSettings.themeBackgroundDark || DEFAULT_SETTINGS_FORM.themeBackgroundDark,
         themeForegroundDark: initialSettings.themeForegroundDark || DEFAULT_SETTINGS_FORM.themeForegroundDark,
@@ -153,14 +230,40 @@ export default function AdminSettingsPage() {
         themeAccentForegroundDark: initialSettings.themeAccentForegroundDark || DEFAULT_SETTINGS_FORM.themeAccentForegroundDark,
         themeCardDark: initialSettings.themeCardDark || DEFAULT_SETTINGS_FORM.themeCardDark,
         themeCardForegroundDark: initialSettings.themeCardForegroundDark || DEFAULT_SETTINGS_FORM.themeCardForegroundDark,
+        themePopoverDark: initialSettings.themePopoverDark || DEFAULT_SETTINGS_FORM.themePopoverDark,
+        themePopoverForegroundDark: initialSettings.themePopoverForegroundDark || DEFAULT_SETTINGS_FORM.themePopoverForegroundDark,
+        themeSecondaryDark: initialSettings.themeSecondaryDark || DEFAULT_SETTINGS_FORM.themeSecondaryDark,
+        themeSecondaryForegroundDark: initialSettings.themeSecondaryForegroundDark || DEFAULT_SETTINGS_FORM.themeSecondaryForegroundDark,
+        themeMutedDark: initialSettings.themeMutedDark || DEFAULT_SETTINGS_FORM.themeMutedDark,
+        themeMutedForegroundDark: initialSettings.themeMutedForegroundDark || DEFAULT_SETTINGS_FORM.themeMutedForegroundDark,
         themeBorderDark: initialSettings.themeBorderDark || DEFAULT_SETTINGS_FORM.themeBorderDark,
         themeInputDark: initialSettings.themeInputDark || DEFAULT_SETTINGS_FORM.themeInputDark,
         themeRingDark: initialSettings.themeRingDark || DEFAULT_SETTINGS_FORM.themeRingDark,
+        themeDestructiveDark: initialSettings.themeDestructiveDark || DEFAULT_SETTINGS_FORM.themeDestructiveDark,
+        themeDestructiveForegroundDark: initialSettings.themeDestructiveForegroundDark || DEFAULT_SETTINGS_FORM.themeDestructiveForegroundDark,
 
         socialFacebookUrl: initialSettings.socialFacebookUrl || DEFAULT_SETTINGS_FORM.socialFacebookUrl,
         socialTwitterUrl: initialSettings.socialTwitterUrl || DEFAULT_SETTINGS_FORM.socialTwitterUrl,
         socialLinkedinUrl: initialSettings.socialLinkedinUrl || DEFAULT_SETTINGS_FORM.socialLinkedinUrl,
         socialInstagramUrl: initialSettings.socialInstagramUrl || DEFAULT_SETTINGS_FORM.socialInstagramUrl,
+
+        themeSidebarBackgroundLight: initialSettings.themeSidebarBackgroundLight || DEFAULT_SETTINGS_FORM.themeSidebarBackgroundLight,
+        themeSidebarForegroundLight: initialSettings.themeSidebarForegroundLight || DEFAULT_SETTINGS_FORM.themeSidebarForegroundLight,
+        themeSidebarPrimaryLight: initialSettings.themeSidebarPrimaryLight || DEFAULT_SETTINGS_FORM.themeSidebarPrimaryLight,
+        themeSidebarPrimaryForegroundLight: initialSettings.themeSidebarPrimaryForegroundLight || DEFAULT_SETTINGS_FORM.themeSidebarPrimaryForegroundLight,
+        themeSidebarAccentLight: initialSettings.themeSidebarAccentLight || DEFAULT_SETTINGS_FORM.themeSidebarAccentLight,
+        themeSidebarAccentForegroundLight: initialSettings.themeSidebarAccentForegroundLight || DEFAULT_SETTINGS_FORM.themeSidebarAccentForegroundLight,
+        themeSidebarBorderLight: initialSettings.themeSidebarBorderLight || DEFAULT_SETTINGS_FORM.themeSidebarBorderLight,
+        themeSidebarRingLight: initialSettings.themeSidebarRingLight || DEFAULT_SETTINGS_FORM.themeSidebarRingLight,
+
+        themeSidebarBackgroundDark: initialSettings.themeSidebarBackgroundDark || DEFAULT_SETTINGS_FORM.themeSidebarBackgroundDark,
+        themeSidebarForegroundDark: initialSettings.themeSidebarForegroundDark || DEFAULT_SETTINGS_FORM.themeSidebarForegroundDark,
+        themeSidebarPrimaryDark: initialSettings.themeSidebarPrimaryDark || DEFAULT_SETTINGS_FORM.themeSidebarPrimaryDark,
+        themeSidebarPrimaryForegroundDark: initialSettings.themeSidebarPrimaryForegroundDark || DEFAULT_SETTINGS_FORM.themeSidebarPrimaryForegroundDark,
+        themeSidebarAccentDark: initialSettings.themeSidebarAccentDark || DEFAULT_SETTINGS_FORM.themeSidebarAccentDark,
+        themeSidebarAccentForegroundDark: initialSettings.themeSidebarAccentForegroundDark || DEFAULT_SETTINGS_FORM.themeSidebarAccentForegroundDark,
+        themeSidebarBorderDark: initialSettings.themeSidebarBorderDark || DEFAULT_SETTINGS_FORM.themeSidebarBorderDark,
+        themeSidebarRingDark: initialSettings.themeSidebarRingDark || DEFAULT_SETTINGS_FORM.themeSidebarRingDark,
       });
     }
   }, [isFetchingSettings, initialSettings, reset, DEFAULT_SETTINGS_FORM]);
@@ -168,14 +271,16 @@ export default function AdminSettingsPage() {
 
   const handleSaveSettings = async (data: SettingsFormValues) => {
     try {
-      const dataToSave = {
-        ...data,
+      const dataToSave: SiteSettings = {
+        ...DEFAULT_SETTINGS_FORM, // Start with all defaults to ensure all fields are present
+        ...data, // Override with form data
         portalName: data.portalName.trim() || DEFAULT_SETTINGS_FORM.portalName,
         adminEmail: data.adminEmail.trim() || DEFAULT_SETTINGS_FORM.adminEmail,
-        companyPhone: data.companyPhone?.trim() || "",
-        companyAddress: data.companyAddress?.trim() || "",
-        publicEmail: data.publicEmail?.trim() || "",
-
+        maintenanceMode: data.maintenanceMode === undefined ? DEFAULT_SETTINGS_FORM.maintenanceMode : data.maintenanceMode,
+        companyPhone: data.companyPhone?.trim() || DEFAULT_SETTINGS_FORM.companyPhone,
+        companyAddress: data.companyAddress?.trim() || DEFAULT_SETTINGS_FORM.companyAddress,
+        publicEmail: data.publicEmail?.trim() || DEFAULT_SETTINGS_FORM.publicEmail,
+        
         themeBackgroundLight: data.themeBackgroundLight?.trim() || DEFAULT_SETTINGS_FORM.themeBackgroundLight,
         themeForegroundLight: data.themeForegroundLight?.trim() || DEFAULT_SETTINGS_FORM.themeForegroundLight,
         themePrimaryLight: data.themePrimaryLight?.trim() || DEFAULT_SETTINGS_FORM.themePrimaryLight,
@@ -184,9 +289,17 @@ export default function AdminSettingsPage() {
         themeAccentForegroundLight: data.themeAccentForegroundLight?.trim() || DEFAULT_SETTINGS_FORM.themeAccentForegroundLight,
         themeCardLight: data.themeCardLight?.trim() || DEFAULT_SETTINGS_FORM.themeCardLight,
         themeCardForegroundLight: data.themeCardForegroundLight?.trim() || DEFAULT_SETTINGS_FORM.themeCardForegroundLight,
+        themePopoverLight: data.themePopoverLight?.trim() || DEFAULT_SETTINGS_FORM.themePopoverLight,
+        themePopoverForegroundLight: data.themePopoverForegroundLight?.trim() || DEFAULT_SETTINGS_FORM.themePopoverForegroundLight,
+        themeSecondaryLight: data.themeSecondaryLight?.trim() || DEFAULT_SETTINGS_FORM.themeSecondaryLight,
+        themeSecondaryForegroundLight: data.themeSecondaryForegroundLight?.trim() || DEFAULT_SETTINGS_FORM.themeSecondaryForegroundLight,
+        themeMutedLight: data.themeMutedLight?.trim() || DEFAULT_SETTINGS_FORM.themeMutedLight,
+        themeMutedForegroundLight: data.themeMutedForegroundLight?.trim() || DEFAULT_SETTINGS_FORM.themeMutedForegroundLight,
         themeBorderLight: data.themeBorderLight?.trim() || DEFAULT_SETTINGS_FORM.themeBorderLight,
         themeInputLight: data.themeInputLight?.trim() || DEFAULT_SETTINGS_FORM.themeInputLight,
         themeRingLight: data.themeRingLight?.trim() || DEFAULT_SETTINGS_FORM.themeRingLight,
+        themeDestructiveLight: data.themeDestructiveLight?.trim() || DEFAULT_SETTINGS_FORM.themeDestructiveLight,
+        themeDestructiveForegroundLight: data.themeDestructiveForegroundLight?.trim() || DEFAULT_SETTINGS_FORM.themeDestructiveForegroundLight,
 
         themeBackgroundDark: data.themeBackgroundDark?.trim() || DEFAULT_SETTINGS_FORM.themeBackgroundDark,
         themeForegroundDark: data.themeForegroundDark?.trim() || DEFAULT_SETTINGS_FORM.themeForegroundDark,
@@ -196,14 +309,40 @@ export default function AdminSettingsPage() {
         themeAccentForegroundDark: data.themeAccentForegroundDark?.trim() || DEFAULT_SETTINGS_FORM.themeAccentForegroundDark,
         themeCardDark: data.themeCardDark?.trim() || DEFAULT_SETTINGS_FORM.themeCardDark,
         themeCardForegroundDark: data.themeCardForegroundDark?.trim() || DEFAULT_SETTINGS_FORM.themeCardForegroundDark,
+        themePopoverDark: data.themePopoverDark?.trim() || DEFAULT_SETTINGS_FORM.themePopoverDark,
+        themePopoverForegroundDark: data.themePopoverForegroundDark?.trim() || DEFAULT_SETTINGS_FORM.themePopoverForegroundDark,
+        themeSecondaryDark: data.themeSecondaryDark?.trim() || DEFAULT_SETTINGS_FORM.themeSecondaryDark,
+        themeSecondaryForegroundDark: data.themeSecondaryForegroundDark?.trim() || DEFAULT_SETTINGS_FORM.themeSecondaryForegroundDark,
+        themeMutedDark: data.themeMutedDark?.trim() || DEFAULT_SETTINGS_FORM.themeMutedDark,
+        themeMutedForegroundDark: data.themeMutedForegroundDark?.trim() || DEFAULT_SETTINGS_FORM.themeMutedForegroundDark,
         themeBorderDark: data.themeBorderDark?.trim() || DEFAULT_SETTINGS_FORM.themeBorderDark,
         themeInputDark: data.themeInputDark?.trim() || DEFAULT_SETTINGS_FORM.themeInputDark,
         themeRingDark: data.themeRingDark?.trim() || DEFAULT_SETTINGS_FORM.themeRingDark,
+        themeDestructiveDark: data.themeDestructiveDark?.trim() || DEFAULT_SETTINGS_FORM.themeDestructiveDark,
+        themeDestructiveForegroundDark: data.themeDestructiveForegroundDark?.trim() || DEFAULT_SETTINGS_FORM.themeDestructiveForegroundDark,
         
-        socialFacebookUrl: data.socialFacebookUrl?.trim() || "",
-        socialTwitterUrl: data.socialTwitterUrl?.trim() || "",
-        socialLinkedinUrl: data.socialLinkedinUrl?.trim() || "",
-        socialInstagramUrl: data.socialInstagramUrl?.trim() || "",
+        socialFacebookUrl: data.socialFacebookUrl?.trim() || DEFAULT_SETTINGS_FORM.socialFacebookUrl,
+        socialTwitterUrl: data.socialTwitterUrl?.trim() || DEFAULT_SETTINGS_FORM.socialTwitterUrl,
+        socialLinkedinUrl: data.socialLinkedinUrl?.trim() || DEFAULT_SETTINGS_FORM.socialLinkedinUrl,
+        socialInstagramUrl: data.socialInstagramUrl?.trim() || DEFAULT_SETTINGS_FORM.socialInstagramUrl,
+
+        themeSidebarBackgroundLight: data.themeSidebarBackgroundLight?.trim() || DEFAULT_SETTINGS_FORM.themeSidebarBackgroundLight,
+        themeSidebarForegroundLight: data.themeSidebarForegroundLight?.trim() || DEFAULT_SETTINGS_FORM.themeSidebarForegroundLight,
+        themeSidebarPrimaryLight: data.themeSidebarPrimaryLight?.trim() || DEFAULT_SETTINGS_FORM.themeSidebarPrimaryLight,
+        themeSidebarPrimaryForegroundLight: data.themeSidebarPrimaryForegroundLight?.trim() || DEFAULT_SETTINGS_FORM.themeSidebarPrimaryForegroundLight,
+        themeSidebarAccentLight: data.themeSidebarAccentLight?.trim() || DEFAULT_SETTINGS_FORM.themeSidebarAccentLight,
+        themeSidebarAccentForegroundLight: data.themeSidebarAccentForegroundLight?.trim() || DEFAULT_SETTINGS_FORM.themeSidebarAccentForegroundLight,
+        themeSidebarBorderLight: data.themeSidebarBorderLight?.trim() || DEFAULT_SETTINGS_FORM.themeSidebarBorderLight,
+        themeSidebarRingLight: data.themeSidebarRingLight?.trim() || DEFAULT_SETTINGS_FORM.themeSidebarRingLight,
+
+        themeSidebarBackgroundDark: data.themeSidebarBackgroundDark?.trim() || DEFAULT_SETTINGS_FORM.themeSidebarBackgroundDark,
+        themeSidebarForegroundDark: data.themeSidebarForegroundDark?.trim() || DEFAULT_SETTINGS_FORM.themeSidebarForegroundDark,
+        themeSidebarPrimaryDark: data.themeSidebarPrimaryDark?.trim() || DEFAULT_SETTINGS_FORM.themeSidebarPrimaryDark,
+        themeSidebarPrimaryForegroundDark: data.themeSidebarPrimaryForegroundDark?.trim() || DEFAULT_SETTINGS_FORM.themeSidebarPrimaryForegroundDark,
+        themeSidebarAccentDark: data.themeSidebarAccentDark?.trim() || DEFAULT_SETTINGS_FORM.themeSidebarAccentDark,
+        themeSidebarAccentForegroundDark: data.themeSidebarAccentForegroundDark?.trim() || DEFAULT_SETTINGS_FORM.themeSidebarAccentForegroundDark,
+        themeSidebarBorderDark: data.themeSidebarBorderDark?.trim() || DEFAULT_SETTINGS_FORM.themeSidebarBorderDark,
+        themeSidebarRingDark: data.themeSidebarRingDark?.trim() || DEFAULT_SETTINGS_FORM.themeSidebarRingDark,
       };
 
       await setDoc(settingsDocRef, dataToSave, { merge: true });
@@ -229,18 +368,37 @@ export default function AdminSettingsPage() {
     }
   };
 
-  const themeColorFields: Array<{nameBase: string, label: string, placeholder: string}> = [
+  const mainThemeColorFields: Array<{nameBase: string, label: string, placeholder: string}> = [
     { nameBase: "themeBackground", label: "لون الخلفية", placeholder: "مثال: 240 10% 15%" },
     { nameBase: "themeForeground", label: "لون النص", placeholder: "مثال: 0 0% 98%" },
     { nameBase: "themePrimary", label: "اللون الأساسي", placeholder: "مثال: 238 60% 55%" },
     { nameBase: "themePrimaryForeground", label: "لون النص على الأساسي", placeholder: "مثال: 0 0% 98%" },
-    { nameBase: "themeAccent", label: "اللون الثانوي", placeholder: "مثال: 191 60% 50%" },
+    { nameBase: "themeAccent", label: "اللون الثانوي/المميز", placeholder: "مثال: 191 60% 50%" },
     { nameBase: "themeAccentForeground", label: "لون النص على الثانوي", placeholder: "مثال: 0 0% 98%" },
     { nameBase: "themeCard", label: "لون خلفية البطاقات", placeholder: "مثال: 238 10% 20% / 0.85" },
     { nameBase: "themeCardForeground", label: "لون نص البطاقات", placeholder: "مثال: 0 0% 95%" },
+    { nameBase: "themePopover", label: "لون خلفية العناصر المنبثقة", placeholder: "مثال: 238 10% 20% / 0.85" },
+    { nameBase: "themePopoverForeground", label: "لون نص العناصر المنبثقة", placeholder: "مثال: 0 0% 95%" },
+    { nameBase: "themeSecondary", label: "اللون الفرعي (للخلفيات الثانوية)", placeholder: "مثال: 240 10% 94%" },
+    { nameBase: "themeSecondaryForeground", label: "لون النص على الفرعي", placeholder: "مثال: 238 10% 25%" },
+    { nameBase: "themeMuted", label: "اللون الخافت (للخلفيات المحايدة)", placeholder: "مثال: 240 10% 75%" },
+    { nameBase: "themeMutedForeground", label: "لون النص الخافت", placeholder: "مثال: 240 10% 45%" },
     { nameBase: "themeBorder", label: "لون الحدود", placeholder: "مثال: 238 10% 30%" },
     { nameBase: "themeInput", label: "لون حقول الإدخال", placeholder: "مثال: 238 10% 30%" },
     { nameBase: "themeRing", label: "لون حلقة التركيز (Ring)", placeholder: "مثال: 191 60% 50%" },
+    { nameBase: "themeDestructive", label: "لون التنبيهات (خطأ/حذف)", placeholder: "0 84.2% 60.2%" },
+    { nameBase: "themeDestructiveForeground", label: "لون نص التنبيهات", placeholder: "0 0% 98%" },
+  ];
+
+  const sidebarThemeColorFields: Array<{nameBase: string, label: string, placeholder: string}> = [
+    { nameBase: "themeSidebarBackground", label: "خلفية الشريط الجانبي", placeholder: "مثال: 238 40% 96% / 0.9" },
+    { nameBase: "themeSidebarForeground", label: "نص الشريط الجانبي", placeholder: "مثال: 238 15% 30%" },
+    { nameBase: "themeSidebarPrimary", label: "أساسي الشريط الجانبي (للنشط)", placeholder: "مثال: 238 52% 38%" },
+    { nameBase: "themeSidebarPrimaryForeground", label: "نص أساسي الشريط الجانبي", placeholder: "مثال: 0 0% 98%" },
+    { nameBase: "themeSidebarAccent", label: "مميز الشريط الجانبي (للتمرير)", placeholder: "مثال: 191 55% 41%" },
+    { nameBase: "themeSidebarAccentForeground", label: "نص مميز الشريط الجانبي", placeholder: "مثال: 0 0% 98%" },
+    { nameBase: "themeSidebarBorder", label: "حدود الشريط الجانبي", placeholder: "مثال: 238 20% 88%" },
+    { nameBase: "themeSidebarRing", label: "حلقة تركيز الشريط الجانبي", placeholder: "مثال: 191 55% 41%" },
   ];
 
   const socialMediaFields: Array<{name: keyof SettingsFormValues, label: string, placeholder: string, icon: React.ElementType}> = [
@@ -249,6 +407,59 @@ export default function AdminSettingsPage() {
     { name: "socialLinkedinUrl", label: "رابط لينكدإن", placeholder: "https://linkedin.com/company/yourcompany", icon: Linkedin },
     { name: "socialInstagramUrl", label: "رابط انستغرام", placeholder: "https://instagram.com/yourprofile", icon: Instagram },
   ];
+
+  const renderColorFields = (fields: Array<{nameBase: string, label: string, placeholder: string}>) => {
+    return fields.map(item => {
+      const lightFieldName = `${item.nameBase}Light` as keyof SettingsFormValues;
+      const darkFieldName = `${item.nameBase}Dark` as keyof SettingsFormValues;
+      const lightFieldValue = watch(lightFieldName);
+      const darkFieldValue = watch(darkFieldName);
+
+      return (
+        <div key={item.nameBase} className="grid grid-cols-1 md:grid-cols-2 gap-x-6 gap-y-4 border-b pb-4 last:border-b-0 last:pb-0">
+          <h4 className="col-span-1 md:col-span-2 text-md font-medium text-muted-foreground mb-1">{item.label}</h4>
+          <FormField control={control} name={lightFieldName} render={({ field }) => (
+              <FormItem>
+                <FormLabel className="flex items-center gap-1"><Sun className="h-4 w-4" /> الوضع الفاتح</FormLabel>
+                <div className="flex items-center gap-2">
+                  <FormControl>
+                    <Input placeholder={item.placeholder} {...field} value={field.value || ""} disabled={isSubmitting} className="dir-ltr text-left" />
+                  </FormControl>
+                  {isValidHslForPreview(lightFieldValue) && (
+                    <div
+                      className="h-8 w-8 rounded-md border-2 border-border shadow-sm shrink-0"
+                      style={{ backgroundColor: `hsl(${lightFieldValue})` }}
+                      title={`Preview for ${lightFieldValue}`}
+                    />
+                  )}
+                </div>
+                <FormMessage />
+              </FormItem>
+            )}
+          />
+          <FormField control={control} name={darkFieldName} render={({ field }) => (
+              <FormItem>
+                <FormLabel className="flex items-center gap-1"><Moon className="h-4 w-4" /> الوضع الداكن</FormLabel>
+                <div className="flex items-center gap-2">
+                <FormControl>
+                  <Input placeholder={item.placeholder} {...field} value={field.value || ""} disabled={isSubmitting} className="dir-ltr text-left" />
+                </FormControl>
+                {isValidHslForPreview(darkFieldValue) && (
+                    <div
+                      className="h-8 w-8 rounded-md border-2 border-border shadow-sm shrink-0"
+                      style={{ backgroundColor: `hsl(${darkFieldValue})` }}
+                      title={`Preview for ${darkFieldValue}`}
+                    />
+                  )}
+                </div>
+                <FormMessage />
+              </FormItem>
+            )}
+          />
+        </div>
+      );
+    });
+  };
 
 
   if (isFetchingSettings) {
@@ -345,63 +556,26 @@ export default function AdminSettingsPage() {
                 <TabsContent value="appearance" className="space-y-6">
                   <Card>
                     <CardHeader>
-                        <CardTitle className="flex items-center gap-2"><Paintbrush className="h-5 w-5" />ألوان الواجهة (HSL)</CardTitle>
+                        <CardTitle className="flex items-center gap-2"><Paintbrush className="h-5 w-5" />ألوان الواجهة الرئيسية (HSL)</CardTitle>
                         <CardDescription>
-                            اترك الحقل فارغًا لاستخدام القيمة الافتراضية من <code className="text-xs p-1 bg-muted rounded">globals.css</code>. 
+                            اترك الحقل فارغًا لاستخدام القيمة الافتراضية. 
                             يجب أن تكون القيم بتنسيق HSL بدون الأقواس، مثال: <code className="dir-ltr text-xs p-1 bg-muted rounded">240 10% 15%</code>.
                         </CardDescription>
                     </CardHeader>
                     <CardContent className="space-y-6">
-                      {themeColorFields.map(item => {
-                        const lightFieldName = `${item.nameBase}Light` as keyof SettingsFormValues;
-                        const darkFieldName = `${item.nameBase}Dark` as keyof SettingsFormValues;
-                        const lightFieldValue = watch(lightFieldName);
-                        const darkFieldValue = watch(darkFieldName);
-
-                        return (
-                          <div key={item.nameBase} className="grid grid-cols-1 md:grid-cols-2 gap-x-6 gap-y-4 border-b pb-4 last:border-b-0 last:pb-0">
-                            <h4 className="col-span-1 md:col-span-2 text-md font-medium text-muted-foreground mb-1">{item.label}</h4>
-                            <FormField control={control} name={lightFieldName} render={({ field }) => (
-                                <FormItem>
-                                  <FormLabel className="flex items-center gap-1"><Sun className="h-4 w-4" /> الوضع الفاتح</FormLabel>
-                                  <div className="flex items-center gap-2">
-                                    <FormControl>
-                                      <Input placeholder={item.placeholder} {...field} value={field.value || ""} disabled={isSubmitting} className="dir-ltr text-left" />
-                                    </FormControl>
-                                    {isValidHslForPreview(lightFieldValue) && (
-                                      <div
-                                        className="h-8 w-8 rounded-md border-2 border-border shadow-sm shrink-0"
-                                        style={{ backgroundColor: `hsl(${lightFieldValue})` }}
-                                        title={`Preview for ${lightFieldValue}`}
-                                      />
-                                    )}
-                                  </div>
-                                  <FormMessage />
-                                </FormItem>
-                              )}
-                            />
-                            <FormField control={control} name={darkFieldName} render={({ field }) => (
-                                <FormItem>
-                                  <FormLabel className="flex items-center gap-1"><Moon className="h-4 w-4" /> الوضع الداكن</FormLabel>
-                                  <div className="flex items-center gap-2">
-                                  <FormControl>
-                                    <Input placeholder={item.placeholder} {...field} value={field.value || ""} disabled={isSubmitting} className="dir-ltr text-left" />
-                                  </FormControl>
-                                  {isValidHslForPreview(darkFieldValue) && (
-                                      <div
-                                        className="h-8 w-8 rounded-md border-2 border-border shadow-sm shrink-0"
-                                        style={{ backgroundColor: `hsl(${darkFieldValue})` }}
-                                        title={`Preview for ${darkFieldValue}`}
-                                      />
-                                    )}
-                                  </div>
-                                  <FormMessage />
-                                </FormItem>
-                              )}
-                            />
-                          </div>
-                        );
-                      })}
+                      {renderColorFields(mainThemeColorFields)}
+                    </CardContent>
+                  </Card>
+                  
+                  <Card>
+                    <CardHeader>
+                        <CardTitle className="flex items-center gap-2"><Sidebar className="h-5 w-5" />ألوان الشريط الجانبي (HSL)</CardTitle>
+                        <CardDescription>
+                            خصص ألوان الشريط الجانبي والقائمة المتنقلة. اترك فارغًا للقيم الافتراضية.
+                        </CardDescription>
+                    </CardHeader>
+                    <CardContent className="space-y-6">
+                      {renderColorFields(sidebarThemeColorFields)}
                     </CardContent>
                   </Card>
                 </TabsContent>
@@ -425,3 +599,4 @@ export default function AdminSettingsPage() {
   );
 }
 
+    

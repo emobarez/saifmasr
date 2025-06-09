@@ -35,7 +35,6 @@ export interface SiteSettings {
   themeDestructiveLight?: string;
   themeDestructiveForegroundLight?: string;
 
-
   themeBackgroundDark?: string;
   themeForegroundDark?: string;
   themePrimaryDark?: string;
@@ -60,6 +59,25 @@ export interface SiteSettings {
   socialTwitterUrl?: string;
   socialLinkedinUrl?: string;
   socialInstagramUrl?: string;
+
+  // Sidebar specific theme properties
+  themeSidebarBackgroundLight?: string;
+  themeSidebarForegroundLight?: string;
+  themeSidebarPrimaryLight?: string;
+  themeSidebarPrimaryForegroundLight?: string;
+  themeSidebarAccentLight?: string;
+  themeSidebarAccentForegroundLight?: string;
+  themeSidebarBorderLight?: string;
+  themeSidebarRingLight?: string;
+
+  themeSidebarBackgroundDark?: string;
+  themeSidebarForegroundDark?: string;
+  themeSidebarPrimaryDark?: string;
+  themeSidebarPrimaryForegroundDark?: string;
+  themeSidebarAccentDark?: string;
+  themeSidebarAccentForegroundDark?: string;
+  themeSidebarBorderDark?: string;
+  themeSidebarRingDark?: string;
 }
 
 // PRD Aligned Default Settings
@@ -72,12 +90,12 @@ const DEFAULT_SETTINGS: SiteSettings = {
   publicEmail: "",
 
   // Light Theme Defaults (PRD Aligned)
-  themeBackgroundLight: "240 11% 89%", // Light Gray #E0E0E5
-  themeForegroundLight: "238 10% 20%", // Dark Grayish Blue
-  themePrimaryLight: "238 52% 38%", // Dark Blue #2E3192
-  themePrimaryForegroundLight: "0 0% 98%", // White
-  themeAccentLight: "191 55% 41%", // Teal #308EA3
-  themeAccentForegroundLight: "0 0% 98%", // White
+  themeBackgroundLight: "240 11% 89%", 
+  themeForegroundLight: "238 10% 20%", 
+  themePrimaryLight: "238 52% 38%", 
+  themePrimaryForegroundLight: "0 0% 98%", 
+  themeAccentLight: "191 55% 41%", 
+  themeAccentForegroundLight: "0 0% 98%", 
   themeCardLight: "0 0% 100% / 0.9",
   themeCardForegroundLight: "238 10% 20%",
   themePopoverLight: "0 0% 100% / 0.9",
@@ -88,17 +106,17 @@ const DEFAULT_SETTINGS: SiteSettings = {
   themeMutedForegroundLight: "240 10% 45%",
   themeBorderLight: "240 10% 78%",
   themeInputLight: "240 10% 92%",
-  themeRingLight: "191 55% 41%", // Teal
+  themeRingLight: "191 55% 41%", 
   themeDestructiveLight: "0 84.2% 60.2%",
   themeDestructiveForegroundLight: "0 0% 98%",
 
   // Dark Theme Defaults (Derived from PRD Light)
-  themeBackgroundDark: "238 10% 12%", // Darker Gray
-  themeForegroundDark: "0 0% 90%", // Light Gray
-  themePrimaryDark: "238 55% 65%", // Lighter Dark Blue
-  themePrimaryForegroundDark: "0 0% 98%", // White
-  themeAccentDark: "191 58% 55%", // Lighter Teal
-  themeAccentForegroundDark: "0 0% 98%", // White
+  themeBackgroundDark: "238 10% 12%", 
+  themeForegroundDark: "0 0% 90%", 
+  themePrimaryDark: "238 55% 65%", 
+  themePrimaryForegroundDark: "0 0% 98%", 
+  themeAccentDark: "191 58% 55%", 
+  themeAccentForegroundDark: "0 0% 98%", 
   themeCardDark: "238 10% 18% / 0.9",
   themeCardForegroundDark: "0 0% 90%",
   themePopoverDark: "238 10% 18% / 0.9",
@@ -109,7 +127,7 @@ const DEFAULT_SETTINGS: SiteSettings = {
   themeMutedForegroundDark: "0 0% 60%",
   themeBorderDark: "238 10% 25%",
   themeInputDark: "238 10% 25%",
-  themeRingDark: "191 58% 55%", // Lighter Teal
+  themeRingDark: "191 58% 55%", 
   themeDestructiveDark: "0 70% 50%",
   themeDestructiveForegroundDark: "0 0% 98%",
   
@@ -117,6 +135,26 @@ const DEFAULT_SETTINGS: SiteSettings = {
   socialTwitterUrl: "",
   socialLinkedinUrl: "",
   socialInstagramUrl: "",
+
+  // Sidebar Light Theme Defaults
+  themeSidebarBackgroundLight: "238 40% 96% / 0.9",
+  themeSidebarForegroundLight: "238 15% 30%",
+  themeSidebarPrimaryLight: "238 52% 38%",
+  themeSidebarPrimaryForegroundLight: "0 0% 98%",
+  themeSidebarAccentLight: "191 55% 41%",
+  themeSidebarAccentForegroundLight: "0 0% 98%",
+  themeSidebarBorderLight: "238 20% 88%",
+  themeSidebarRingLight: "191 55% 41%",
+
+  // Sidebar Dark Theme Defaults
+  themeSidebarBackgroundDark: "238 12% 15% / 0.9",
+  themeSidebarForegroundDark: "0 0% 85%",
+  themeSidebarPrimaryDark: "238 55% 65%",
+  themeSidebarPrimaryForegroundDark: "0 0% 98%",
+  themeSidebarAccentDark: "191 58% 55%",
+  themeSidebarAccentForegroundDark: "0 0% 98%",
+  themeSidebarBorderDark: "238 10% 22%",
+  themeSidebarRingDark: "191 58% 55%",
 };
 
 export function useSiteSettings() {
@@ -130,7 +168,7 @@ export function useSiteSettings() {
     const unsubscribe = onSnapshot(settingsDocRef, 
       (docSnap) => {
         if (docSnap.exists()) {
-          const data = docSnap.data() as Partial<SiteSettings>; // Cast to allow partial data
+          const data = docSnap.data() as Partial<SiteSettings>; 
           setSiteSettings({
             portalName: data?.portalName?.trim() || DEFAULT_SETTINGS.portalName,
             maintenanceMode: data?.maintenanceMode === undefined ? DEFAULT_SETTINGS.maintenanceMode : data.maintenanceMode,
@@ -139,7 +177,6 @@ export function useSiteSettings() {
             companyAddress: data?.companyAddress || DEFAULT_SETTINGS.companyAddress,
             publicEmail: data?.publicEmail || DEFAULT_SETTINGS.publicEmail,
 
-            // Light Theme
             themeBackgroundLight: data?.themeBackgroundLight?.trim() || DEFAULT_SETTINGS.themeBackgroundLight,
             themeForegroundLight: data?.themeForegroundLight?.trim() || DEFAULT_SETTINGS.themeForegroundLight,
             themePrimaryLight: data?.themePrimaryLight?.trim() || DEFAULT_SETTINGS.themePrimaryLight,
@@ -160,7 +197,6 @@ export function useSiteSettings() {
             themeDestructiveLight: data?.themeDestructiveLight?.trim() || DEFAULT_SETTINGS.themeDestructiveLight,
             themeDestructiveForegroundLight: data?.themeDestructiveForegroundLight?.trim() || DEFAULT_SETTINGS.themeDestructiveForegroundLight,
 
-            // Dark Theme
             themeBackgroundDark: data?.themeBackgroundDark?.trim() || DEFAULT_SETTINGS.themeBackgroundDark,
             themeForegroundDark: data?.themeForegroundDark?.trim() || DEFAULT_SETTINGS.themeForegroundDark,
             themePrimaryDark: data?.themePrimaryDark?.trim() || DEFAULT_SETTINGS.themePrimaryDark,
@@ -185,6 +221,24 @@ export function useSiteSettings() {
             socialTwitterUrl: data?.socialTwitterUrl || DEFAULT_SETTINGS.socialTwitterUrl,
             socialLinkedinUrl: data?.socialLinkedinUrl || DEFAULT_SETTINGS.socialLinkedinUrl,
             socialInstagramUrl: data?.socialInstagramUrl || DEFAULT_SETTINGS.socialInstagramUrl,
+
+            themeSidebarBackgroundLight: data?.themeSidebarBackgroundLight?.trim() || DEFAULT_SETTINGS.themeSidebarBackgroundLight,
+            themeSidebarForegroundLight: data?.themeSidebarForegroundLight?.trim() || DEFAULT_SETTINGS.themeSidebarForegroundLight,
+            themeSidebarPrimaryLight: data?.themeSidebarPrimaryLight?.trim() || DEFAULT_SETTINGS.themeSidebarPrimaryLight,
+            themeSidebarPrimaryForegroundLight: data?.themeSidebarPrimaryForegroundLight?.trim() || DEFAULT_SETTINGS.themeSidebarPrimaryForegroundLight,
+            themeSidebarAccentLight: data?.themeSidebarAccentLight?.trim() || DEFAULT_SETTINGS.themeSidebarAccentLight,
+            themeSidebarAccentForegroundLight: data?.themeSidebarAccentForegroundLight?.trim() || DEFAULT_SETTINGS.themeSidebarAccentForegroundLight,
+            themeSidebarBorderLight: data?.themeSidebarBorderLight?.trim() || DEFAULT_SETTINGS.themeSidebarBorderLight,
+            themeSidebarRingLight: data?.themeSidebarRingLight?.trim() || DEFAULT_SETTINGS.themeSidebarRingLight,
+
+            themeSidebarBackgroundDark: data?.themeSidebarBackgroundDark?.trim() || DEFAULT_SETTINGS.themeSidebarBackgroundDark,
+            themeSidebarForegroundDark: data?.themeSidebarForegroundDark?.trim() || DEFAULT_SETTINGS.themeSidebarForegroundDark,
+            themeSidebarPrimaryDark: data?.themeSidebarPrimaryDark?.trim() || DEFAULT_SETTINGS.themeSidebarPrimaryDark,
+            themeSidebarPrimaryForegroundDark: data?.themeSidebarPrimaryForegroundDark?.trim() || DEFAULT_SETTINGS.themeSidebarPrimaryForegroundDark,
+            themeSidebarAccentDark: data?.themeSidebarAccentDark?.trim() || DEFAULT_SETTINGS.themeSidebarAccentDark,
+            themeSidebarAccentForegroundDark: data?.themeSidebarAccentForegroundDark?.trim() || DEFAULT_SETTINGS.themeSidebarAccentForegroundDark,
+            themeSidebarBorderDark: data?.themeSidebarBorderDark?.trim() || DEFAULT_SETTINGS.themeSidebarBorderDark,
+            themeSidebarRingDark: data?.themeSidebarRingDark?.trim() || DEFAULT_SETTINGS.themeSidebarRingDark,
           });
         } else {
           setSiteSettings(DEFAULT_SETTINGS); 
@@ -203,3 +257,5 @@ export function useSiteSettings() {
 
   return { ...siteSettings, isLoadingSiteSettings };
 }
+
+    
