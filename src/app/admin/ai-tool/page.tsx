@@ -69,7 +69,7 @@ export default function AiReportToolPage() {
         setImprovementSuggestions(null);
         return;
       }
-      setIsLoadingReportContent(true);
+      setIsLoadingReportContent(true); // Moved here
       setSummaryResult(null);
       setImprovementSuggestions(null);
       const selectedReportDetails = reports.find(r => r.id === selectedReportId);
@@ -83,7 +83,7 @@ export default function AiReportToolPage() {
           toast({ title: "تم التحميل", description: `تم تحميل محتوى التقرير: ${reportData?.title}` });
           if (adminUser && selectedReportDetails) {
              await logActivity({
-                actionType: "AI_REPORT_IMPROVEMENTS_SUGGESTED", // Using this as a general "loaded for AI"
+                actionType: "AI_REPORT_IMPROVEMENTS_SUGGESTED", 
                 description: `Admin ${adminUser.displayName || adminUser.email} loaded content of report "${selectedReportDetails.title}" into AI tool.`,
                 actor: { id: adminUser.uid, role: "admin", name: adminUser.displayName },
                 target: { type: "report", id: selectedReportId, name: selectedReportDetails.title },
@@ -186,7 +186,7 @@ export default function AiReportToolPage() {
             actionType: "AI_REPORT_SECTION_GENERATED",
             description: `Admin ${adminUser.displayName || adminUser.email} generated a new report section. Topic: ${sectionTopic}.`,
             actor: { id: adminUser.uid, role: "admin", name: adminUser.displayName },
-            target: { type: "reportSection", name: sectionTopic }, // Potentially link to report if saved later
+            target: { type: "reportSection", name: sectionTopic }, 
             details: { topic: sectionTopic, keywords: sectionKeywords || "none", sectionLength: result.generatedSectionText.length }
         });
       }
@@ -227,8 +227,7 @@ export default function AiReportToolPage() {
       await updateDoc(reportRef, { content: updatedContent });
       toast({ title: "تم الحفظ بنجاح", description: `تم حفظ القسم في التقرير: ${reportToUpdate.title}.` });
       
-      // If the updated report is the one currently loaded in the textarea, update it
-      if (selectedReportId === selectedReportId) { // This condition is always true if selectedReportId exists, meant to compare if it's the *current* one.
+      if (selectedReportId === reportSnap.id) { 
         setReportText(updatedContent);
       }
 
