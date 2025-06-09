@@ -1,9 +1,10 @@
+
 "use client";
 import { Card, CardHeader, CardTitle, CardDescription, CardContent } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Switch } from "@/components/ui/switch";
-import { Save, Bell, ShieldCheck, Palette, Loader2, Settings as SettingsIcon, Phone, Mail, MapPin, Paintbrush, Link as LinkIcon, Facebook, Twitter, Linkedin, Instagram } from "lucide-react";
+import { Save, Bell, ShieldCheck, Palette, Loader2, Settings as SettingsIcon, Phone, Mail, MapPin, Paintbrush, Link as LinkIcon, Facebook, Twitter, Linkedin, Instagram, Sun, Moon } from "lucide-react";
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
 import { useState, useEffect } from "react";
 import { useToast } from "@/hooks/use-toast";
@@ -32,14 +33,31 @@ const settingsSchema = z.object({
   companyPhone: z.string().optional(),
   companyAddress: z.string().max(250, { message: "العنوان يجب ألا يتجاوز 250 حرفًا."}).optional(),
   publicEmail: z.string().email({ message: "البريد الإلكتروني العام غير صالح." }).optional().or(z.literal('')),
-  themeBackground: optionalHslString,
-  themeForeground: optionalHslString,
-  themePrimary: optionalHslString,
-  themePrimaryForeground: optionalHslString,
-  themeAccent: optionalHslString,
-  themeAccentForeground: optionalHslString,
-  themeCard: optionalHslString,
-  themeCardForeground: optionalHslString,
+  
+  themeBackgroundLight: optionalHslString,
+  themeForegroundLight: optionalHslString,
+  themePrimaryLight: optionalHslString,
+  themePrimaryForegroundLight: optionalHslString,
+  themeAccentLight: optionalHslString,
+  themeAccentForegroundLight: optionalHslString,
+  themeCardLight: optionalHslString,
+  themeCardForegroundLight: optionalHslString,
+  themeBorderLight: optionalHslString,
+  themeInputLight: optionalHslString,
+  themeRingLight: optionalHslString,
+
+  themeBackgroundDark: optionalHslString,
+  themeForegroundDark: optionalHslString,
+  themePrimaryDark: optionalHslString,
+  themePrimaryForegroundDark: optionalHslString,
+  themeAccentDark: optionalHslString,
+  themeAccentForegroundDark: optionalHslString,
+  themeCardDark: optionalHslString,
+  themeCardForegroundDark: optionalHslString,
+  themeBorderDark: optionalHslString,
+  themeInputDark: optionalHslString,
+  themeRingDark: optionalHslString,
+
   socialFacebookUrl: optionalUrl,
   socialTwitterUrl: optionalUrl,
   socialLinkedinUrl: optionalUrl,
@@ -48,7 +66,6 @@ const settingsSchema = z.object({
 
 type SettingsFormValues = z.infer<typeof settingsSchema>;
 
-// Helper function to check HSL format for preview, distinct from Zod validation for submission
 const isValidHslForPreview = (value: string | undefined): boolean => {
   if (!value) return false;
   return hslFormatRegex.test(value.trim());
@@ -60,21 +77,38 @@ export default function AdminSettingsPage() {
   const siteSettingsHook = useSiteSettings();
   const { isLoadingSiteSettings: isFetchingSettings, ...initialSettings } = siteSettingsHook;
   
-  const DEFAULT_SETTINGS: SiteSettings = {
+  const DEFAULT_SETTINGS_FORM: SettingsFormValues = {
     portalName: "سيف مصر الوطنية للأمن",
     adminEmail: "admin@saifmasr.com",
     maintenanceMode: false,
     companyPhone: "",
     companyAddress: "",
     publicEmail: "",
-    themeBackground: "240 11% 89%",
-    themeForeground: "238 10% 20%",
-    themePrimary: "238 53% 37%",
-    themePrimaryForeground: "0 0% 98%",
-    themeAccent: "191 54% 41%",
-    themeAccentForeground: "0 0% 98%",
-    themeCard: "0 0% 100% / 0.85",
-    themeCardForeground: "238 10% 20%",
+
+    themeBackgroundLight: "240 11% 89%",
+    themeForegroundLight: "238 10% 20%",
+    themePrimaryLight: "238 53% 37%",
+    themePrimaryForegroundLight: "0 0% 98%",
+    themeAccentLight: "191 54% 41%",
+    themeAccentForegroundLight: "0 0% 98%",
+    themeCardLight: "0 0% 100% / 0.85",
+    themeCardForegroundLight: "238 10% 20%",
+    themeBorderLight: "240 10% 80%",
+    themeInputLight: "240 10% 85%",
+    themeRingLight: "191 54% 41%",
+
+    themeBackgroundDark: "238 10% 15%",
+    themeForegroundDark: "0 0% 95%",
+    themePrimaryDark: "238 60% 55%",
+    themePrimaryForegroundDark: "0 0% 98%",
+    themeAccentDark: "191 60% 50%",
+    themeAccentForegroundDark: "0 0% 98%",
+    themeCardDark: "238 10% 20% / 0.85",
+    themeCardForegroundDark: "0 0% 95%",
+    themeBorderDark: "238 10% 30%",
+    themeInputDark: "238 10% 30%",
+    themeRingDark: "191 60% 50%",
+    
     socialFacebookUrl: "",
     socialTwitterUrl: "",
     socialLinkedinUrl: "",
@@ -83,7 +117,7 @@ export default function AdminSettingsPage() {
 
   const form = useForm<SettingsFormValues>({
     resolver: zodResolver(settingsSchema),
-    defaultValues: DEFAULT_SETTINGS,
+    defaultValues: DEFAULT_SETTINGS_FORM,
   });
   const { handleSubmit, control, reset, formState: {isSubmitting}, watch } = form;
 
@@ -92,46 +126,80 @@ export default function AdminSettingsPage() {
   useEffect(() => {
     if (!isFetchingSettings && initialSettings) {
       reset({
-        portalName: initialSettings.portalName || DEFAULT_SETTINGS.portalName,
-        adminEmail: initialSettings.adminEmail || DEFAULT_SETTINGS.adminEmail,
-        maintenanceMode: initialSettings.maintenanceMode || DEFAULT_SETTINGS.maintenanceMode,
-        companyPhone: initialSettings.companyPhone || DEFAULT_SETTINGS.companyPhone,
-        companyAddress: initialSettings.companyAddress || DEFAULT_SETTINGS.companyAddress,
-        publicEmail: initialSettings.publicEmail || DEFAULT_SETTINGS.publicEmail,
-        themeBackground: initialSettings.themeBackground || DEFAULT_SETTINGS.themeBackground,
-        themeForeground: initialSettings.themeForeground || DEFAULT_SETTINGS.themeForeground,
-        themePrimary: initialSettings.themePrimary || DEFAULT_SETTINGS.themePrimary,
-        themePrimaryForeground: initialSettings.themePrimaryForeground || DEFAULT_SETTINGS.themePrimaryForeground,
-        themeAccent: initialSettings.themeAccent || DEFAULT_SETTINGS.themeAccent,
-        themeAccentForeground: initialSettings.themeAccentForeground || DEFAULT_SETTINGS.themeAccentForeground,
-        themeCard: initialSettings.themeCard || DEFAULT_SETTINGS.themeCard,
-        themeCardForeground: initialSettings.themeCardForeground || DEFAULT_SETTINGS.themeCardForeground,
-        socialFacebookUrl: initialSettings.socialFacebookUrl || DEFAULT_SETTINGS.socialFacebookUrl,
-        socialTwitterUrl: initialSettings.socialTwitterUrl || DEFAULT_SETTINGS.socialTwitterUrl,
-        socialLinkedinUrl: initialSettings.socialLinkedinUrl || DEFAULT_SETTINGS.socialLinkedinUrl,
-        socialInstagramUrl: initialSettings.socialInstagramUrl || DEFAULT_SETTINGS.socialInstagramUrl,
+        portalName: initialSettings.portalName || DEFAULT_SETTINGS_FORM.portalName,
+        adminEmail: initialSettings.adminEmail || DEFAULT_SETTINGS_FORM.adminEmail,
+        maintenanceMode: initialSettings.maintenanceMode || DEFAULT_SETTINGS_FORM.maintenanceMode,
+        companyPhone: initialSettings.companyPhone || DEFAULT_SETTINGS_FORM.companyPhone,
+        companyAddress: initialSettings.companyAddress || DEFAULT_SETTINGS_FORM.companyAddress,
+        publicEmail: initialSettings.publicEmail || DEFAULT_SETTINGS_FORM.publicEmail,
+        
+        themeBackgroundLight: initialSettings.themeBackgroundLight || DEFAULT_SETTINGS_FORM.themeBackgroundLight,
+        themeForegroundLight: initialSettings.themeForegroundLight || DEFAULT_SETTINGS_FORM.themeForegroundLight,
+        themePrimaryLight: initialSettings.themePrimaryLight || DEFAULT_SETTINGS_FORM.themePrimaryLight,
+        themePrimaryForegroundLight: initialSettings.themePrimaryForegroundLight || DEFAULT_SETTINGS_FORM.themePrimaryForegroundLight,
+        themeAccentLight: initialSettings.themeAccentLight || DEFAULT_SETTINGS_FORM.themeAccentLight,
+        themeAccentForegroundLight: initialSettings.themeAccentForegroundLight || DEFAULT_SETTINGS_FORM.themeAccentForegroundLight,
+        themeCardLight: initialSettings.themeCardLight || DEFAULT_SETTINGS_FORM.themeCardLight,
+        themeCardForegroundLight: initialSettings.themeCardForegroundLight || DEFAULT_SETTINGS_FORM.themeCardForegroundLight,
+        themeBorderLight: initialSettings.themeBorderLight || DEFAULT_SETTINGS_FORM.themeBorderLight,
+        themeInputLight: initialSettings.themeInputLight || DEFAULT_SETTINGS_FORM.themeInputLight,
+        themeRingLight: initialSettings.themeRingLight || DEFAULT_SETTINGS_FORM.themeRingLight,
+
+        themeBackgroundDark: initialSettings.themeBackgroundDark || DEFAULT_SETTINGS_FORM.themeBackgroundDark,
+        themeForegroundDark: initialSettings.themeForegroundDark || DEFAULT_SETTINGS_FORM.themeForegroundDark,
+        themePrimaryDark: initialSettings.themePrimaryDark || DEFAULT_SETTINGS_FORM.themePrimaryDark,
+        themePrimaryForegroundDark: initialSettings.themePrimaryForegroundDark || DEFAULT_SETTINGS_FORM.themePrimaryForegroundDark,
+        themeAccentDark: initialSettings.themeAccentDark || DEFAULT_SETTINGS_FORM.themeAccentDark,
+        themeAccentForegroundDark: initialSettings.themeAccentForegroundDark || DEFAULT_SETTINGS_FORM.themeAccentForegroundDark,
+        themeCardDark: initialSettings.themeCardDark || DEFAULT_SETTINGS_FORM.themeCardDark,
+        themeCardForegroundDark: initialSettings.themeCardForegroundDark || DEFAULT_SETTINGS_FORM.themeCardForegroundDark,
+        themeBorderDark: initialSettings.themeBorderDark || DEFAULT_SETTINGS_FORM.themeBorderDark,
+        themeInputDark: initialSettings.themeInputDark || DEFAULT_SETTINGS_FORM.themeInputDark,
+        themeRingDark: initialSettings.themeRingDark || DEFAULT_SETTINGS_FORM.themeRingDark,
+
+        socialFacebookUrl: initialSettings.socialFacebookUrl || DEFAULT_SETTINGS_FORM.socialFacebookUrl,
+        socialTwitterUrl: initialSettings.socialTwitterUrl || DEFAULT_SETTINGS_FORM.socialTwitterUrl,
+        socialLinkedinUrl: initialSettings.socialLinkedinUrl || DEFAULT_SETTINGS_FORM.socialLinkedinUrl,
+        socialInstagramUrl: initialSettings.socialInstagramUrl || DEFAULT_SETTINGS_FORM.socialInstagramUrl,
       });
     }
-  }, [isFetchingSettings, initialSettings, reset, DEFAULT_SETTINGS]);
+  }, [isFetchingSettings, initialSettings, reset, DEFAULT_SETTINGS_FORM]);
 
 
   const handleSaveSettings = async (data: SettingsFormValues) => {
     try {
       const dataToSave = {
         ...data,
-        portalName: data.portalName.trim() || DEFAULT_SETTINGS.portalName,
-        adminEmail: data.adminEmail.trim() || DEFAULT_SETTINGS.adminEmail,
+        portalName: data.portalName.trim() || DEFAULT_SETTINGS_FORM.portalName,
+        adminEmail: data.adminEmail.trim() || DEFAULT_SETTINGS_FORM.adminEmail,
         companyPhone: data.companyPhone?.trim() || "",
         companyAddress: data.companyAddress?.trim() || "",
         publicEmail: data.publicEmail?.trim() || "",
-        themeBackground: data.themeBackground?.trim() || DEFAULT_SETTINGS.themeBackground,
-        themeForeground: data.themeForeground?.trim() || DEFAULT_SETTINGS.themeForeground,
-        themePrimary: data.themePrimary?.trim() || DEFAULT_SETTINGS.themePrimary,
-        themePrimaryForeground: data.themePrimaryForeground?.trim() || DEFAULT_SETTINGS.themePrimaryForeground,
-        themeAccent: data.themeAccent?.trim() || DEFAULT_SETTINGS.themeAccent,
-        themeAccentForeground: data.themeAccentForeground?.trim() || DEFAULT_SETTINGS.themeAccentForeground,
-        themeCard: data.themeCard?.trim() || DEFAULT_SETTINGS.themeCard,
-        themeCardForeground: data.themeCardForeground?.trim() || DEFAULT_SETTINGS.themeCardForeground,
+
+        themeBackgroundLight: data.themeBackgroundLight?.trim() || DEFAULT_SETTINGS_FORM.themeBackgroundLight,
+        themeForegroundLight: data.themeForegroundLight?.trim() || DEFAULT_SETTINGS_FORM.themeForegroundLight,
+        themePrimaryLight: data.themePrimaryLight?.trim() || DEFAULT_SETTINGS_FORM.themePrimaryLight,
+        themePrimaryForegroundLight: data.themePrimaryForegroundLight?.trim() || DEFAULT_SETTINGS_FORM.themePrimaryForegroundLight,
+        themeAccentLight: data.themeAccentLight?.trim() || DEFAULT_SETTINGS_FORM.themeAccentLight,
+        themeAccentForegroundLight: data.themeAccentForegroundLight?.trim() || DEFAULT_SETTINGS_FORM.themeAccentForegroundLight,
+        themeCardLight: data.themeCardLight?.trim() || DEFAULT_SETTINGS_FORM.themeCardLight,
+        themeCardForegroundLight: data.themeCardForegroundLight?.trim() || DEFAULT_SETTINGS_FORM.themeCardForegroundLight,
+        themeBorderLight: data.themeBorderLight?.trim() || DEFAULT_SETTINGS_FORM.themeBorderLight,
+        themeInputLight: data.themeInputLight?.trim() || DEFAULT_SETTINGS_FORM.themeInputLight,
+        themeRingLight: data.themeRingLight?.trim() || DEFAULT_SETTINGS_FORM.themeRingLight,
+
+        themeBackgroundDark: data.themeBackgroundDark?.trim() || DEFAULT_SETTINGS_FORM.themeBackgroundDark,
+        themeForegroundDark: data.themeForegroundDark?.trim() || DEFAULT_SETTINGS_FORM.themeForegroundDark,
+        themePrimaryDark: data.themePrimaryDark?.trim() || DEFAULT_SETTINGS_FORM.themePrimaryDark,
+        themePrimaryForegroundDark: data.themePrimaryForegroundDark?.trim() || DEFAULT_SETTINGS_FORM.themePrimaryForegroundDark,
+        themeAccentDark: data.themeAccentDark?.trim() || DEFAULT_SETTINGS_FORM.themeAccentDark,
+        themeAccentForegroundDark: data.themeAccentForegroundDark?.trim() || DEFAULT_SETTINGS_FORM.themeAccentForegroundDark,
+        themeCardDark: data.themeCardDark?.trim() || DEFAULT_SETTINGS_FORM.themeCardDark,
+        themeCardForegroundDark: data.themeCardForegroundDark?.trim() || DEFAULT_SETTINGS_FORM.themeCardForegroundDark,
+        themeBorderDark: data.themeBorderDark?.trim() || DEFAULT_SETTINGS_FORM.themeBorderDark,
+        themeInputDark: data.themeInputDark?.trim() || DEFAULT_SETTINGS_FORM.themeInputDark,
+        themeRingDark: data.themeRingDark?.trim() || DEFAULT_SETTINGS_FORM.themeRingDark,
+        
         socialFacebookUrl: data.socialFacebookUrl?.trim() || "",
         socialTwitterUrl: data.socialTwitterUrl?.trim() || "",
         socialLinkedinUrl: data.socialLinkedinUrl?.trim() || "",
@@ -148,7 +216,7 @@ export default function AdminSettingsPage() {
           actionType: "SETTINGS_UPDATED",
           description: `Admin ${adminUser.displayName || adminUser.email} updated system settings.`,
           actor: { id: adminUser.uid, role: adminUser.role || undefined, name: adminUser.displayName },
-          details: dataToSave, 
+          details: { portalName: dataToSave.portalName, maintenanceMode: dataToSave.maintenanceMode }, 
         });
       }
     } catch (error) {
@@ -161,15 +229,18 @@ export default function AdminSettingsPage() {
     }
   };
 
-  const themeColorFields: Array<{name: keyof SettingsFormValues, label: string, placeholder: string}> = [
-    { name: "themeBackground", label: "لون الخلفية الرئيسي", placeholder: "مثال: 240 11% 89%" },
-    { name: "themeForeground", label: "لون النص الرئيسي", placeholder: "مثال: 238 10% 20%" },
-    { name: "themePrimary", label: "اللون الأساسي (Primary)", placeholder: "مثال: 238 53% 37%" },
-    { name: "themePrimaryForeground", label: "لون النص على الأساسي", placeholder: "مثال: 0 0% 98%" },
-    { name: "themeAccent", label: "اللون الثانوي (Accent)", placeholder: "مثال: 191 54% 41%" },
-    { name: "themeAccentForeground", label: "لون النص على الثانوي", placeholder: "مثال: 0 0% 98%" },
-    { name: "themeCard", label: "لون خلفية البطاقات", placeholder: "مثال: 0 0% 100% / 0.85" },
-    { name: "themeCardForeground", label: "لون نص البطاقات", placeholder: "مثال: 238 10% 20%" },
+  const themeColorFields: Array<{nameBase: string, label: string, placeholder: string}> = [
+    { nameBase: "themeBackground", label: "لون الخلفية", placeholder: "مثال: 240 10% 15%" },
+    { nameBase: "themeForeground", label: "لون النص", placeholder: "مثال: 0 0% 98%" },
+    { nameBase: "themePrimary", label: "اللون الأساسي", placeholder: "مثال: 238 60% 55%" },
+    { nameBase: "themePrimaryForeground", label: "لون النص على الأساسي", placeholder: "مثال: 0 0% 98%" },
+    { nameBase: "themeAccent", label: "اللون الثانوي", placeholder: "مثال: 191 60% 50%" },
+    { nameBase: "themeAccentForeground", label: "لون النص على الثانوي", placeholder: "مثال: 0 0% 98%" },
+    { nameBase: "themeCard", label: "لون خلفية البطاقات", placeholder: "مثال: 238 10% 20% / 0.85" },
+    { nameBase: "themeCardForeground", label: "لون نص البطاقات", placeholder: "مثال: 0 0% 95%" },
+    { nameBase: "themeBorder", label: "لون الحدود", placeholder: "مثال: 238 10% 30%" },
+    { nameBase: "themeInput", label: "لون حقول الإدخال", placeholder: "مثال: 238 10% 30%" },
+    { nameBase: "themeRing", label: "لون حلقة التركيز (Ring)", placeholder: "مثال: 191 60% 50%" },
   ];
 
   const socialMediaFields: Array<{name: keyof SettingsFormValues, label: string, placeholder: string, icon: React.ElementType}> = [
@@ -273,30 +344,62 @@ export default function AdminSettingsPage() {
 
                 <TabsContent value="appearance" className="space-y-6">
                   <Card>
-                    <CardHeader><CardTitle className="flex items-center gap-2"><Paintbrush className="h-5 w-5" />ألوان الواجهة (HSL)</CardTitle><CardDescription>اترك الحقل فارغًا لاستخدام القيمة الافتراضية. يجب أن تكون القيم بتنسيق HSL بدون الأقواس، مثال: <code className="dir-ltr text-xs p-1 bg-muted rounded">240 10% 15%</code>.</CardDescription></CardHeader>
-                    <CardContent className="grid grid-cols-1 md:grid-cols-2 gap-x-6 gap-y-4">
+                    <CardHeader>
+                        <CardTitle className="flex items-center gap-2"><Paintbrush className="h-5 w-5" />ألوان الواجهة (HSL)</CardTitle>
+                        <CardDescription>
+                            اترك الحقل فارغًا لاستخدام القيمة الافتراضية من <code className="text-xs p-1 bg-muted rounded">globals.css</code>. 
+                            يجب أن تكون القيم بتنسيق HSL بدون الأقواس، مثال: <code className="dir-ltr text-xs p-1 bg-muted rounded">240 10% 15%</code>.
+                        </CardDescription>
+                    </CardHeader>
+                    <CardContent className="space-y-6">
                       {themeColorFields.map(item => {
-                        const fieldValue = watch(item.name as keyof SettingsFormValues); 
+                        const lightFieldName = `${item.nameBase}Light` as keyof SettingsFormValues;
+                        const darkFieldName = `${item.nameBase}Dark` as keyof SettingsFormValues;
+                        const lightFieldValue = watch(lightFieldName);
+                        const darkFieldValue = watch(darkFieldName);
+
                         return (
-                          <FormField key={item.name} control={control} name={item.name as keyof SettingsFormValues} render={({ field }) => (
-                              <FormItem>
-                                <FormLabel>{item.label}</FormLabel>
-                                <div className="flex items-center gap-3">
+                          <div key={item.nameBase} className="grid grid-cols-1 md:grid-cols-2 gap-x-6 gap-y-4 border-b pb-4 last:border-b-0 last:pb-0">
+                            <h4 className="col-span-1 md:col-span-2 text-md font-medium text-muted-foreground mb-1">{item.label}</h4>
+                            <FormField control={control} name={lightFieldName} render={({ field }) => (
+                                <FormItem>
+                                  <FormLabel className="flex items-center gap-1"><Sun className="h-4 w-4" /> الوضع الفاتح</FormLabel>
+                                  <div className="flex items-center gap-2">
+                                    <FormControl>
+                                      <Input placeholder={item.placeholder} {...field} value={field.value || ""} disabled={isSubmitting} className="dir-ltr text-left" />
+                                    </FormControl>
+                                    {isValidHslForPreview(lightFieldValue) && (
+                                      <div
+                                        className="h-8 w-8 rounded-md border-2 border-border shadow-sm shrink-0"
+                                        style={{ backgroundColor: `hsl(${lightFieldValue})` }}
+                                        title={`Preview for ${lightFieldValue}`}
+                                      />
+                                    )}
+                                  </div>
+                                  <FormMessage />
+                                </FormItem>
+                              )}
+                            />
+                            <FormField control={control} name={darkFieldName} render={({ field }) => (
+                                <FormItem>
+                                  <FormLabel className="flex items-center gap-1"><Moon className="h-4 w-4" /> الوضع الداكن</FormLabel>
+                                  <div className="flex items-center gap-2">
                                   <FormControl>
                                     <Input placeholder={item.placeholder} {...field} value={field.value || ""} disabled={isSubmitting} className="dir-ltr text-left" />
                                   </FormControl>
-                                  {isValidHslForPreview(fieldValue) && (
-                                    <div
-                                      className="h-8 w-8 rounded-md border-2 border-border shadow-sm shrink-0"
-                                      style={{ backgroundColor: `hsl(${fieldValue})` }}
-                                      title={`Preview for ${fieldValue}`}
-                                    />
-                                  )}
-                                </div>
-                                <FormMessage />
-                              </FormItem>
-                            )}
-                          />
+                                  {isValidHslForPreview(darkFieldValue) && (
+                                      <div
+                                        className="h-8 w-8 rounded-md border-2 border-border shadow-sm shrink-0"
+                                        style={{ backgroundColor: `hsl(${darkFieldValue})` }}
+                                        title={`Preview for ${darkFieldValue}`}
+                                      />
+                                    )}
+                                  </div>
+                                  <FormMessage />
+                                </FormItem>
+                              )}
+                            />
+                          </div>
                         );
                       })}
                     </CardContent>
@@ -321,5 +424,3 @@ export default function AdminSettingsPage() {
     </div>
   );
 }
-
-    

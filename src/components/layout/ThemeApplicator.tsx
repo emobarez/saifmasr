@@ -1,46 +1,61 @@
+
 "use client";
 
 import { useEffect } from 'react';
 import { useSiteSettings } from '@/hooks/useSiteSettings';
 
-// Define a mapping from SiteSettings theme keys to CSS variable names
-// This mapping is kept for potential future use but the direct style application is removed for now.
-const themeKeyToCssVar: { [key: string]: string } = {
-  themeBackground: '--background',
-  themeForeground: '--foreground',
-  themePrimary: '--primary',
-  themePrimaryForeground: '--primary-foreground',
-  themeAccent: '--accent',
-  themeAccentForeground: '--accent-foreground',
-  themeCard: '--card',
-  themeCardForeground: '--card-foreground',
+const themePropertiesMap = {
+  Background: '--custom-background',
+  Foreground: '--custom-foreground',
+  Card: '--custom-card',
+  CardForeground: '--custom-card-foreground',
+  Popover: '--custom-popover', // Assuming popover uses card colors or similar base
+  PopoverForeground: '--custom-popover-foreground',
+  Primary: '--custom-primary',
+  PrimaryForeground: '--custom-primary-foreground',
+  Secondary: '--custom-secondary', // Less commonly customized, might map to card or background shades
+  SecondaryForeground: '--custom-secondary-foreground',
+  Muted: '--custom-muted', // Might be derived or set if distinct
+  MutedForeground: '--custom-muted-foreground',
+  Accent: '--custom-accent',
+  AccentForeground: '--custom-accent-foreground',
+  Destructive: '--custom-destructive', // Typically less customized, uses defaults
+  DestructiveForeground: '--custom-destructive-foreground',
+  Border: '--custom-border',
+  Input: '--custom-input',
+  Ring: '--custom-ring',
 };
 
 export function ThemeApplicator() {
   const siteSettings = useSiteSettings();
-  const { isLoadingSiteSettings } = siteSettings;
+  const { isLoadingSiteSettings, ...settings } = siteSettings;
 
   useEffect(() => {
-    if (isLoadingSiteSettings) return; 
+    if (isLoadingSiteSettings || !settings) return; 
 
-    // The following block is commented out to prevent ThemeApplicator
-    // from setting inline styles, which would override the .dark class
-    // styles defined in globals.css. The ThemeSwitcher component
-    // is responsible for toggling the .dark class on the HTML element.
-    // If dynamic theming from Firestore settings is desired in conjunction
-    // with light/dark mode, this component and globals.css would need
-    // a more sophisticated integration.
-    /*
-    Object.entries(themeKeyToCssVar).forEach(([settingKey, cssVarName]) => {
-      const value = siteSettings[settingKey as keyof typeof siteSettings] as string | undefined;
+    const root = document.documentElement;
+
+    Object.entries(themePropertiesMap).forEach(([baseName, cssVarPrefix]) => {
+      const lightSettingKey = `theme${baseName}Light` as keyof typeof settings;
+      const darkSettingKey = `theme${baseName}Dark` as keyof typeof settings;
+
+      const lightValue = settings[lightSettingKey] as string | undefined;
+      const darkValue = settings[darkSettingKey] as string | undefined;
+
+      if (lightValue && lightValue.trim() !== '') {
+        root.style.setProperty(`${cssVarPrefix}-light`, lightValue.trim());
+      } else {
+        root.style.removeProperty(`${cssVarPrefix}-light`);
+      }
       
-      if (typeof value === 'string' && value.trim() !== '') {
-        document.documentElement.style.setProperty(cssVarName, value.trim());
+      if (darkValue && darkValue.trim() !== '') {
+        root.style.setProperty(`${cssVarPrefix}-dark`, darkValue.trim());
+      } else {
+         root.style.removeProperty(`${cssVarPrefix}-dark`);
       }
     });
-    */
 
-  }, [siteSettings, isLoadingSiteSettings]);
+  }, [settings, isLoadingSiteSettings]);
 
   return null; 
 }

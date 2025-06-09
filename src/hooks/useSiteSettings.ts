@@ -1,3 +1,4 @@
+
 "use client";
 
 import { useState, useEffect } from 'react';
@@ -6,21 +7,38 @@ import { doc, onSnapshot } from 'firebase/firestore';
 
 const DEFAULT_PORTAL_NAME = "سيف مصر الوطنية للأمن";
 
-export interface SiteSettings { // Exporting the interface
+export interface SiteSettings {
   portalName: string;
   maintenanceMode: boolean;
   adminEmail: string;
   companyPhone?: string;
   companyAddress?: string;
   publicEmail?: string;
-  themeBackground?: string;
-  themeForeground?: string;
-  themePrimary?: string;
-  themePrimaryForeground?: string;
-  themeAccent?: string;
-  themeAccentForeground?: string;
-  themeCard?: string;
-  themeCardForeground?: string;
+
+  themeBackgroundLight?: string;
+  themeForegroundLight?: string;
+  themePrimaryLight?: string;
+  themePrimaryForegroundLight?: string;
+  themeAccentLight?: string;
+  themeAccentForegroundLight?: string;
+  themeCardLight?: string;
+  themeCardForegroundLight?: string;
+  themeBorderLight?: string;
+  themeInputLight?: string;
+  themeRingLight?: string;
+
+  themeBackgroundDark?: string;
+  themeForegroundDark?: string;
+  themePrimaryDark?: string;
+  themePrimaryForegroundDark?: string;
+  themeAccentDark?: string;
+  themeAccentForegroundDark?: string;
+  themeCardDark?: string;
+  themeCardForegroundDark?: string;
+  themeBorderDark?: string;
+  themeInputDark?: string;
+  themeRingDark?: string;
+
   socialFacebookUrl?: string;
   socialTwitterUrl?: string;
   socialLinkedinUrl?: string;
@@ -34,14 +52,31 @@ const DEFAULT_SETTINGS: SiteSettings = {
   companyPhone: "",
   companyAddress: "",
   publicEmail: "",
-  themeBackground: "240 11% 89%",
-  themeForeground: "238 10% 20%",
-  themePrimary: "238 53% 37%",
-  themePrimaryForeground: "0 0% 98%",
-  themeAccent: "191 54% 41%",
-  themeAccentForeground: "0 0% 98%",
-  themeCard: "0 0% 100% / 0.85",
-  themeCardForeground: "238 10% 20%",
+
+  themeBackgroundLight: "240 11% 89%",
+  themeForegroundLight: "238 10% 20%",
+  themePrimaryLight: "238 53% 37%",
+  themePrimaryForegroundLight: "0 0% 98%",
+  themeAccentLight: "191 54% 41%",
+  themeAccentForegroundLight: "0 0% 98%",
+  themeCardLight: "0 0% 100% / 0.85",
+  themeCardForegroundLight: "238 10% 20%",
+  themeBorderLight: "240 10% 80%",
+  themeInputLight: "240 10% 85%",
+  themeRingLight: "191 54% 41%",
+
+  themeBackgroundDark: "238 10% 15%",
+  themeForegroundDark: "0 0% 95%",
+  themePrimaryDark: "238 60% 55%",
+  themePrimaryForegroundDark: "0 0% 98%",
+  themeAccentDark: "191 60% 50%",
+  themeAccentForegroundDark: "0 0% 98%",
+  themeCardDark: "238 10% 20% / 0.85",
+  themeCardForegroundDark: "0 0% 95%",
+  themeBorderDark: "238 10% 30%",
+  themeInputDark: "238 10% 30%",
+  themeRingDark: "191 60% 50%",
+
   socialFacebookUrl: "",
   socialTwitterUrl: "",
   socialLinkedinUrl: "",
@@ -67,14 +102,31 @@ export function useSiteSettings() {
             companyPhone: data?.companyPhone || "",
             companyAddress: data?.companyAddress || "",
             publicEmail: data?.publicEmail || "",
-            themeBackground: data?.themeBackground?.trim() || DEFAULT_SETTINGS.themeBackground,
-            themeForeground: data?.themeForeground?.trim() || DEFAULT_SETTINGS.themeForeground,
-            themePrimary: data?.themePrimary?.trim() || DEFAULT_SETTINGS.themePrimary,
-            themePrimaryForeground: data?.themePrimaryForeground?.trim() || DEFAULT_SETTINGS.themePrimaryForeground,
-            themeAccent: data?.themeAccent?.trim() || DEFAULT_SETTINGS.themeAccent,
-            themeAccentForeground: data?.themeAccentForeground?.trim() || DEFAULT_SETTINGS.themeAccentForeground,
-            themeCard: data?.themeCard?.trim() || DEFAULT_SETTINGS.themeCard,
-            themeCardForeground: data?.themeCardForeground?.trim() || DEFAULT_SETTINGS.themeCardForeground,
+
+            themeBackgroundLight: data?.themeBackgroundLight?.trim() || DEFAULT_SETTINGS.themeBackgroundLight,
+            themeForegroundLight: data?.themeForegroundLight?.trim() || DEFAULT_SETTINGS.themeForegroundLight,
+            themePrimaryLight: data?.themePrimaryLight?.trim() || DEFAULT_SETTINGS.themePrimaryLight,
+            themePrimaryForegroundLight: data?.themePrimaryForegroundLight?.trim() || DEFAULT_SETTINGS.themePrimaryForegroundLight,
+            themeAccentLight: data?.themeAccentLight?.trim() || DEFAULT_SETTINGS.themeAccentLight,
+            themeAccentForegroundLight: data?.themeAccentForegroundLight?.trim() || DEFAULT_SETTINGS.themeAccentForegroundLight,
+            themeCardLight: data?.themeCardLight?.trim() || DEFAULT_SETTINGS.themeCardLight,
+            themeCardForegroundLight: data?.themeCardForegroundLight?.trim() || DEFAULT_SETTINGS.themeCardForegroundLight,
+            themeBorderLight: data?.themeBorderLight?.trim() || DEFAULT_SETTINGS.themeBorderLight,
+            themeInputLight: data?.themeInputLight?.trim() || DEFAULT_SETTINGS.themeInputLight,
+            themeRingLight: data?.themeRingLight?.trim() || DEFAULT_SETTINGS.themeRingLight,
+
+            themeBackgroundDark: data?.themeBackgroundDark?.trim() || DEFAULT_SETTINGS.themeBackgroundDark,
+            themeForegroundDark: data?.themeForegroundDark?.trim() || DEFAULT_SETTINGS.themeForegroundDark,
+            themePrimaryDark: data?.themePrimaryDark?.trim() || DEFAULT_SETTINGS.themePrimaryDark,
+            themePrimaryForegroundDark: data?.themePrimaryForegroundDark?.trim() || DEFAULT_SETTINGS.themePrimaryForegroundDark,
+            themeAccentDark: data?.themeAccentDark?.trim() || DEFAULT_SETTINGS.themeAccentDark,
+            themeAccentForegroundDark: data?.themeAccentForegroundDark?.trim() || DEFAULT_SETTINGS.themeAccentForegroundDark,
+            themeCardDark: data?.themeCardDark?.trim() || DEFAULT_SETTINGS.themeCardDark,
+            themeCardForegroundDark: data?.themeCardForegroundDark?.trim() || DEFAULT_SETTINGS.themeCardForegroundDark,
+            themeBorderDark: data?.themeBorderDark?.trim() || DEFAULT_SETTINGS.themeBorderDark,
+            themeInputDark: data?.themeInputDark?.trim() || DEFAULT_SETTINGS.themeInputDark,
+            themeRingDark: data?.themeRingDark?.trim() || DEFAULT_SETTINGS.themeRingDark,
+            
             socialFacebookUrl: data?.socialFacebookUrl || "",
             socialTwitterUrl: data?.socialTwitterUrl || "",
             socialLinkedinUrl: data?.socialLinkedinUrl || "",
@@ -97,4 +149,3 @@ export function useSiteSettings() {
 
   return { ...siteSettings, isLoadingSiteSettings };
 }
-

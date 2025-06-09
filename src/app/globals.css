@@ -9,33 +9,47 @@ body {
 
 @layer base {
   :root {
-    --background: 240 11% 89%; /* Light Gray #E0E0E5 */
-    --foreground: 238 10% 20%; /* Dark Grayish Blue */
+    /* Default HSL values for light theme - these act as fallbacks */
+    --default-background-light: 240 11% 89%;
+    --default-foreground-light: 238 10% 20%;
+    --default-card-light: 0 0% 100% / 0.85;
+    --default-card-foreground-light: 238 10% 20%;
+    --default-popover-light: 0 0% 100% / 0.85;
+    --default-popover-foreground-light: 238 10% 20%;
+    --default-primary-light: 238 53% 37%;
+    --default-primary-foreground-light: 0 0% 98%;
+    --default-secondary-light: 240 10% 94%;
+    --default-secondary-foreground-light: 238 10% 20%;
+    --default-muted-light: 240 10% 70%;
+    --default-muted-foreground-light: 240 10% 40%;
+    --default-accent-light: 191 54% 41%;
+    --default-accent-foreground-light: 0 0% 98%;
+    --default-destructive-light: 0 84.2% 60.2%;
+    --default-destructive-foreground-light: 0 0% 98%;
+    --default-border-light: 240 10% 80%;
+    --default-input-light: 240 10% 85%;
+    --default-ring-light: 191 54% 41%;
 
-    --card: 0 0% 100% / 0.85; /* White with opacity */
-    --card-foreground: 238 10% 20%; /* Dark Grayish Blue */
-
-    --popover: 0 0% 100% / 0.85; /* White with opacity */
-    --popover-foreground: 238 10% 20%; /* Dark Grayish Blue */
-
-    --primary: 238 53% 37%; /* Dark Blue #2E3192 */
-    --primary-foreground: 0 0% 98%; /* White */
-
-    --secondary: 240 10% 94%; /* Lighter shade of background */
-    --secondary-foreground: 238 10% 20%; /* Dark Grayish Blue */
-
-    --muted: 240 10% 70%; /* Muted Gray for less important text */
-    --muted-foreground: 240 10% 40%; /* Darker Muted Gray */
-
-    --accent: 191 54% 41%; /* Teal #308EA3 */
-    --accent-foreground: 0 0% 98%; /* White */
-
-    --destructive: 0 84.2% 60.2%;
-    --destructive-foreground: 0 0% 98%;
-
-    --border: 240 10% 80%; /* Border Gray */
-    --input: 240 10% 85%; /* Input Gray */
-    --ring: 191 54% 41%; /* Teal for Rings */
+    /* CSS variables using custom properties from ThemeApplicator, with fallbacks */
+    --background: var(--custom-background-light, var(--default-background-light));
+    --foreground: var(--custom-foreground-light, var(--default-foreground-light));
+    --card: var(--custom-card-light, var(--default-card-light));
+    --card-foreground: var(--custom-card-foreground-light, var(--default-card-foreground-light));
+    --popover: var(--custom-popover-light, var(--default-popover-light));
+    --popover-foreground: var(--custom-popover-foreground-light, var(--default-popover-foreground-light));
+    --primary: var(--custom-primary-light, var(--default-primary-light));
+    --primary-foreground: var(--custom-primary-foreground-light, var(--default-primary-foreground-light));
+    --secondary: var(--custom-secondary-light, var(--default-secondary-light));
+    --secondary-foreground: var(--custom-secondary-foreground-light, var(--default-secondary-foreground-light));
+    --muted: var(--custom-muted-light, var(--default-muted-light));
+    --muted-foreground: var(--custom-muted-foreground-light, var(--default-muted-foreground-light));
+    --accent: var(--custom-accent-light, var(--default-accent-light));
+    --accent-foreground: var(--custom-accent-foreground-light, var(--default-accent-foreground-light));
+    --destructive: var(--custom-destructive-light, var(--default-destructive-light));
+    --destructive-foreground: var(--custom-destructive-foreground-light, var(--default-destructive-foreground-light));
+    --border: var(--custom-border-light, var(--default-border-light));
+    --input: var(--custom-input-light, var(--default-input-light));
+    --ring: var(--custom-ring-light, var(--default-ring-light));
 
     --chart-1: 12 76% 61%;
     --chart-2: 173 58% 39%;
@@ -44,45 +58,59 @@ body {
     --chart-5: 27 87% 67%;
     --radius: 0.5rem;
 
-    /* Sidebar specific colors */
-    --sidebar-background: 238 30% 97% / 0.9; /* Very light, slightly desaturated blue with opacity */
-    --sidebar-foreground: 238 15% 30%; /* Darker text for sidebar */
-    --sidebar-primary: 238 53% 37%; /* Main primary color */
-    --sidebar-primary-foreground: 0 0% 98%; /* White */
-    --sidebar-accent: 191 50% 55%; /* Lighter/brighter teal for hover */
-    --sidebar-accent-foreground: 0 0% 98%; /* White */
-    --sidebar-border: 238 20% 88%; /* Sidebar border */
-    --sidebar-ring: 191 54% 41%; /* Teal for rings in sidebar */
+    /* Sidebar specific colors - kept separate for now, could be integrated later */
+    --sidebar-background: 238 30% 97% / 0.9; 
+    --sidebar-foreground: 238 15% 30%; 
+    --sidebar-primary: 238 53% 37%; 
+    --sidebar-primary-foreground: 0 0% 98%; 
+    --sidebar-accent: 191 50% 55%; 
+    --sidebar-accent-foreground: 0 0% 98%; 
+    --sidebar-border: 238 20% 88%; 
+    --sidebar-ring: 191 54% 41%; 
   }
 
   .dark {
-    --background: 238 10% 15%; /* Darker blue-gray for dark mode background */
-    --foreground: 0 0% 95%; /* Light gray for dark mode text */
+    /* Default HSL values for dark theme - these act as fallbacks */
+    --default-background-dark: 238 10% 15%;
+    --default-foreground-dark: 0 0% 95%;
+    --default-card-dark: 238 10% 20% / 0.85;
+    --default-card-foreground-dark: 0 0% 95%;
+    --default-popover-dark: 238 10% 20% / 0.85;
+    --default-popover-foreground-dark: 0 0% 95%;
+    --default-primary-dark: 238 60% 55%;
+    --default-primary-foreground-dark: 0 0% 98%;
+    --default-secondary-dark: 238 10% 25%;
+    --default-secondary-foreground-dark: 0 0% 95%;
+    --default-muted-dark: 238 10% 35%;
+    --default-muted-foreground-dark: 0 0% 65%;
+    --default-accent-dark: 191 60% 50%;
+    --default-accent-foreground-dark: 0 0% 98%;
+    --default-destructive-dark: 0 70% 50%;
+    --default-destructive-foreground-dark: 0 0% 98%;
+    --default-border-dark: 238 10% 30%;
+    --default-input-dark: 238 10% 30%;
+    --default-ring-dark: 191 60% 50%;
 
-    --card: 238 10% 20% / 0.85; /* Dark card background with opacity */
-    --card-foreground: 0 0% 95%; /* Light card text */
-
-    --popover: 238 10% 20% / 0.85; /* Dark popover background with opacity */
-    --popover-foreground: 0 0% 95%;
-
-    --primary: 238 60% 55%; /* Brighter primary for dark mode */
-    --primary-foreground: 0 0% 98%;
-
-    --secondary: 238 10% 25%; /* Dark secondary */
-    --secondary-foreground: 0 0% 95%;
-
-    --muted: 238 10% 35%;
-    --muted-foreground: 0 0% 65%;
-
-    --accent: 191 60% 50%; /* Brighter accent for dark mode */
-    --accent-foreground: 0 0% 98%;
-
-    --destructive: 0 70% 50%;
-    --destructive-foreground: 0 0% 98%;
-
-    --border: 238 10% 30%;
-    --input: 238 10% 30%;
-    --ring: 191 60% 50%;
+    /* CSS variables using custom properties from ThemeApplicator, with fallbacks for dark mode */
+    --background: var(--custom-background-dark, var(--default-background-dark));
+    --foreground: var(--custom-foreground-dark, var(--default-foreground-dark));
+    --card: var(--custom-card-dark, var(--default-card-dark));
+    --card-foreground: var(--custom-card-foreground-dark, var(--default-card-foreground-dark));
+    --popover: var(--custom-popover-dark, var(--default-popover-dark));
+    --popover-foreground: var(--custom-popover-foreground-dark, var(--default-popover-foreground-dark));
+    --primary: var(--custom-primary-dark, var(--default-primary-dark));
+    --primary-foreground: var(--custom-primary-foreground-dark, var(--default-primary-foreground-dark));
+    --secondary: var(--custom-secondary-dark, var(--default-secondary-dark));
+    --secondary-foreground: var(--custom-secondary-foreground-dark, var(--default-secondary-foreground-dark));
+    --muted: var(--custom-muted-dark, var(--default-muted-dark));
+    --muted-foreground: var(--custom-muted-foreground-dark, var(--default-muted-foreground-dark));
+    --accent: var(--custom-accent-dark, var(--default-accent-dark));
+    --accent-foreground: var(--custom-accent-foreground-dark, var(--default-accent-foreground-dark));
+    --destructive: var(--custom-destructive-dark, var(--default-destructive-dark));
+    --destructive-foreground: var(--custom-destructive-foreground-dark, var(--default-destructive-foreground-dark));
+    --border: var(--custom-border-dark, var(--default-border-dark));
+    --input: var(--custom-input-dark, var(--default-input-dark));
+    --ring: var(--custom-ring-dark, var(--default-ring-dark));
 
     --chart-1: 220 70% 50%;
     --chart-2: 160 60% 45%;
@@ -90,12 +118,12 @@ body {
     --chart-4: 280 65% 60%;
     --chart-5: 340 75% 55%;
 
-    /* Dark Sidebar specific colors */
-    --sidebar-background: 238 12% 18% / 0.9; /* Dark sidebar background with opacity */
-    --sidebar-foreground: 0 0% 85%; /* Light sidebar text */
-    --sidebar-primary: 238 60% 55%; /* Brighter primary for dark mode sidebar */
+    /* Dark Sidebar specific colors - kept separate for now */
+    --sidebar-background: 238 12% 18% / 0.9; 
+    --sidebar-foreground: 0 0% 85%; 
+    --sidebar-primary: 238 60% 55%; 
     --sidebar-primary-foreground: 0 0% 98%;
-    --sidebar-accent: 191 55% 60%; /* Brighter teal for dark mode sidebar hover */
+    --sidebar-accent: 191 55% 60%; 
     --sidebar-accent-foreground: 0 0% 98%;
     --sidebar-border: 238 10% 25%;
     --sidebar-ring: 191 60% 50%;
