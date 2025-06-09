@@ -78,7 +78,8 @@ export default function AiReportToolPage() {
         const reportSnap = await getDoc(reportRef);
         if (reportSnap.exists()) {
           const reportData = reportSnap.data();
-          setReportText(reportData?.content || "");
+          const currentContent = reportData?.content || "";
+          setReportText(currentContent);
           toast({ title: "تم التحميل", description: `تم تحميل محتوى التقرير: ${reportData?.title}` });
           if (adminUser && selectedReportDetails) {
              await logActivity({
@@ -86,7 +87,7 @@ export default function AiReportToolPage() {
                 description: `Admin ${adminUser.displayName || adminUser.email} loaded content of report "${selectedReportDetails.title}" into AI tool.`,
                 actor: { id: adminUser.uid, role: "admin", name: adminUser.displayName },
                 target: { type: "report", id: selectedReportId, name: selectedReportDetails.title },
-                details: { reportLength: reportData?.content?.length || 0 }
+                details: { reportLength: currentContent.length || 0 }
             });
           }
         } else {
@@ -118,12 +119,13 @@ export default function AiReportToolPage() {
       setSummaryResult(result);
       toast({ title: "تم بنجاح", description: "تم إنشاء ملخص التقرير واستخلاص الرؤى." });
       if (adminUser) {
+        const reportDetails = selectedReportId ? reports.find(r=>r.id === selectedReportId) : null;
         await logActivity({
             actionType: "AI_REPORT_SUMMARY_GENERATED",
-            description: `Admin ${adminUser.displayName || adminUser.email} generated a summary for a report.`,
+            description: `Admin ${adminUser.displayName || adminUser.email} generated a summary for ${reportDetails ? `report "${reportDetails.title}"` : "a report text"}.`,
             actor: { id: adminUser.uid, role: "admin", name: adminUser.displayName },
-            target: { type: "report", id: selectedReportId || undefined, name: selectedReportId ? reports.find(r=>r.id === selectedReportId)?.title : "Unspecified Report" },
-            details: { reportLength: reportText.length, summaryLength: result.summary.length }
+            target: { type: "report", id: reportDetails?.id, name: reportDetails?.title || "Unspecified Report" },
+            details: { reportLength: reportText.length, summaryLength: result.summary.length, insightsLength: result.insights.length }
         });
       }
     } catch (error) {
@@ -147,12 +149,13 @@ export default function AiReportToolPage() {
       setImprovementSuggestions(result);
       toast({ title: "تم بنجاح", description: "تم اقتراح تحسينات للتقرير." });
        if (adminUser) {
+        const reportDetails = selectedReportId ? reports.find(r=>r.id === selectedReportId) : null;
         await logActivity({
             actionType: "AI_REPORT_IMPROVEMENTS_SUGGESTED",
-            description: `Admin ${adminUser.displayName || adminUser.email} requested improvements for a report.`,
+            description: `Admin ${adminUser.displayName || adminUser.email} requested improvements for ${reportDetails ? `report "${reportDetails.title}"` : "a report text"}.`,
             actor: { id: adminUser.uid, role: "admin", name: adminUser.displayName },
-            target: { type: "report", id: selectedReportId || undefined, name: selectedReportId ? reports.find(r=>r.id === selectedReportId)?.title : "Unspecified Report" },
-            details: { reportLength: textToImprove.length, suggestionsCount: result.suggestions.length }
+            target: { type: "report", id: reportDetails?.id, name: reportDetails?.title || "Unspecified Report" },
+            details: { textLength: textToImprove.length, suggestionsCount: result.suggestions.length }
         });
       }
     } catch (error) {
@@ -183,8 +186,8 @@ export default function AiReportToolPage() {
             actionType: "AI_REPORT_SECTION_GENERATED",
             description: `Admin ${adminUser.displayName || adminUser.email} generated a new report section. Topic: ${sectionTopic}.`,
             actor: { id: adminUser.uid, role: "admin", name: adminUser.displayName },
-            target: { type: "reportSection", name: sectionTopic },
-            details: { topic: sectionTopic, keywords: sectionKeywords, sectionLength: result.generatedSectionText.length }
+            target: { type: "reportSection", name: sectionTopic }, // Potentially link to report if saved later
+            details: { topic: sectionTopic, keywords: sectionKeywords || "none", sectionLength: result.generatedSectionText.length }
         });
       }
     } catch (error) {
@@ -202,33 +205,40 @@ export default function AiReportToolPage() {
     }
     setIsSavingSection(true);
     const reportToUpdate = reports.find(r => r.id === selectedReportId);
+    if (!reportToUpdate) {
+        toast({ title: "خطأ", description: "لم يتم العثور على التقرير المحدد.", variant: "destructive" });
+        setIsSavingSection(false);
+        return;
+    }
+
     try {
       const reportRef = doc(db, "reports", selectedReportId);
       const reportSnap = await getDoc(reportRef);
       if (!reportSnap.exists()) {
-        toast({ title: "خطأ", description: "التقرير المحدد غير موجود.", variant: "destructive" });
+        toast({ title: "خطأ", description: "التقرير المحدد غير موجود في قاعدة البيانات.", variant: "destructive" });
         setIsSavingSection(false);
         return;
       }
       const currentContent = reportSnap.data()?.content || "";
-      const newContent = currentContent 
-        ? `${currentContent}\n\n---\n\n## ${sectionTopic || 'قسم جديد'}\n\n${generatedSection.generatedSectionText}` 
-        : `## ${sectionTopic || 'قسم جديد'}\n\n${generatedSection.generatedSectionText}`;
+      const sectionTitleForContent = sectionTopic.trim() || 'قسم جديد';
+      const newSectionContent = `\n\n---\n\n## ${sectionTitleForContent}\n\n${generatedSection.generatedSectionText}`;
+      const updatedContent = currentContent + newSectionContent;
       
-      await updateDoc(reportRef, { content: newContent });
-      toast({ title: "تم الحفظ بنجاح", description: "تم حفظ القسم في التقرير المحدد." });
+      await updateDoc(reportRef, { content: updatedContent });
+      toast({ title: "تم الحفظ بنجاح", description: `تم حفظ القسم في التقرير: ${reportToUpdate.title}.` });
       
-      if (selectedReportId === selectedReportId) { 
-        setReportText(newContent);
+      // If the updated report is the one currently loaded in the textarea, update it
+      if (selectedReportId === selectedReportId) { // This condition is always true if selectedReportId exists, meant to compare if it's the *current* one.
+        setReportText(updatedContent);
       }
 
-      if (adminUser && reportToUpdate) {
+      if (adminUser) {
         await logActivity({
             actionType: "AI_REPORT_SECTION_APPENDED",
-            description: `Admin ${adminUser.displayName || adminUser.email} appended a generated section titled "${sectionTopic || 'New Section'}" to report: ${reportToUpdate.title}.`,
+            description: `Admin ${adminUser.displayName || adminUser.email} appended a generated section titled "${sectionTitleForContent}" to report: ${reportToUpdate.title}.`,
             actor: { id: adminUser.uid, role: "admin", name: adminUser.displayName },
             target: { type: "report", id: selectedReportId, name: reportToUpdate.title },
-            details: { appendedSectionTitle: sectionTopic || "New Section", appendedSectionLength: generatedSection.generatedSectionText.length }
+            details: { appendedSectionTitle: sectionTitleForContent, appendedSectionLength: generatedSection.generatedSectionText.length }
         });
       }
     } catch (error) {
@@ -272,7 +282,7 @@ export default function AiReportToolPage() {
                   ))}
                 </SelectContent>
               </Select>
-              {isLoadingReportContent && <Loader2 className="h-5 w-5 animate-spin" />}
+              {isLoadingReportContent && <Loader2 className="h-5 w-5 animate-spin text-primary" />}
             </div>
           </div>
 
@@ -388,8 +398,8 @@ export default function AiReportToolPage() {
               حفظ القسم في التقرير المحدد (أعلاه)
             </Button>
           </div>
-           { !selectedReportId && generatedSection && (
-            <p className="text-sm text-destructive">ملاحظة: لحفظ هذا القسم، يرجى تحديد تقرير من القائمة في أعلى الصفحة أولاً.</p>
+           { !selectedReportId && generatedSection && !isSavingSection && (
+            <p className="text-sm text-destructive mt-2">ملاحظة: لحفظ هذا القسم، يرجى تحديد تقرير من القائمة في أعلى الصفحة أولاً.</p>
            )}
         </CardContent>
       </Card>
