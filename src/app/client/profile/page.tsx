@@ -130,6 +130,13 @@ export default function ClientProfilePage() {
       try {
         await updateProfile(auth.currentUser, { displayName: data.name });
         nameUpdated = true;
+         await logActivity({
+            actionType: "CLIENT_PROFILE_INFO_UPDATED",
+            description: `Client ${auth.currentUser.displayName || auth.currentUser.email} updated their display name to: ${data.name}.`,
+            actor: { id: auth.currentUser.uid, role: "client", name: data.name }, // Use new name
+            target: { id: auth.currentUser.uid, type: "userProfile" },
+            details: { oldName: auth.currentUser.displayName, newName: data.name }
+          });
       } catch (error: any) {
         toast({ title: "خطأ في تحديث الاسم", description: error.message || "لم نتمكن من حفظ اسمك.", variant: "destructive" });
         return; 
@@ -141,10 +148,6 @@ export default function ClientProfilePage() {
     if (imageFile) {
       setIsUploadingImage(true);
       try {
-        // Delete old image if it exists (optional, but good practice to avoid orphaned files)
-        // This part is tricky because we don't store the old file path. 
-        // For simplicity, we'll just overwrite or upload new. A more robust solution might store path in Firestore user profile.
-        
         const fileExtension = imageFile.name.split('.').pop();
         const imagePath = `profile-pictures/${auth.currentUser.uid}/profile.${fileExtension}`;
         const storageRef = ref(storage, imagePath);
@@ -154,7 +157,7 @@ export default function ClientProfilePage() {
         
         await new Promise<void>((resolve, reject) => {
           uploadTask.on('state_changed', 
-            null, // Can add progress indicator here if needed
+            null, 
             (error) => {
               console.error("Upload failed:", error);
               reject(error);
@@ -163,6 +166,12 @@ export default function ClientProfilePage() {
               const downloadURL = await getDownloadURL(uploadTask.snapshot.ref);
               await updateProfile(auth.currentUser!, { photoURL: downloadURL });
               profileImageUpdated = true;
+              await logActivity({
+                actionType: "CLIENT_PROFILE_PICTURE_UPDATED",
+                description: `Client ${auth.currentUser?.displayName || auth.currentUser?.email} updated their profile picture.`,
+                actor: { id: auth.currentUser!.uid, role: "client", name: auth.currentUser!.displayName },
+                target: { id: auth.currentUser!.uid, type: "userProfile" },
+              });
               resolve();
             }
           );
@@ -188,6 +197,12 @@ export default function ClientProfilePage() {
         await reauthenticateWithCredential(auth.currentUser, credential);
         await updatePassword(auth.currentUser, data.newPassword);
         passwordChanged = true;
+        await logActivity({
+            actionType: "CLIENT_PASSWORD_CHANGED",
+            description: `Client ${auth.currentUser.displayName || auth.currentUser.email} changed their password.`,
+            actor: { id: auth.currentUser.uid, role: "client", name: auth.currentUser.displayName },
+            target: { id: auth.currentUser.uid, type: "userProfile" },
+          });
       } catch (error: any) {
         let desc = "لم نتمكن من تحديث كلمة المرور.";
         if (error.code === "auth/wrong-password") {
@@ -208,23 +223,14 @@ export default function ClientProfilePage() {
     if (successMessage) {
       toast({ title: "تم التحديث بنجاح", description: successMessage.trim() });
       if (auth.currentUser && (nameUpdated || profileImageUpdated)) {
-        // Update user in AuthContext to reflect new displayName or photoURL
         const updatedUser = {
             uid: auth.currentUser.uid,
             email: auth.currentUser.email,
             displayName: auth.currentUser.displayName,
-            role: user?.role, // preserve existing role
-            photoURL: auth.currentUser.photoURL, // for avatar update
+            role: user?.role, 
+            photoURL: auth.currentUser.photoURL,
         };
-        setAuthUser(updatedUser as any); // Type assertion might be needed depending on User interface
-         if (profileImageUpdated && adminUser) { // Log activity if image was updated
-          await logActivity({
-            actionType: "CLIENT_PROFILE_PICTURE_UPDATED",
-            description: `Client ${auth.currentUser.displayName || auth.currentUser.email} updated their profile picture.`,
-            actor: { id: auth.currentUser.uid, role: "client", name: auth.currentUser.displayName },
-            target: { id: auth.currentUser.uid, type: "userProfile" },
-          });
-        }
+        setAuthUser(updatedUser as any); 
       }
     } else if (isEditing) {
       toast({ title: "لا تغييرات", description: "لم يتم إجراء أي تعديلات على ملفك الشخصي." });
@@ -265,8 +271,9 @@ export default function ClientProfilePage() {
       };
       reader.readAsDataURL(file);
     } else if (!isEditing) {
-      // When not editing or image is cleared, revert to user's current photoURL or null
       setImagePreview(user?.photoURL || null);
+    } else if (isEditing && !watchedProfileImage) {
+       setImagePreview(user?.photoURL || null); // Keep current image if no new one is selected during edit
     }
   }, [watchedProfileImage, user, isEditing]);
 
@@ -286,7 +293,7 @@ export default function ClientProfilePage() {
         <CardContent className="space-y-6">
           <div className="flex items-center space-x-4 space-x-reverse">
             <Avatar className="h-20 w-20">
-              <AvatarImage src={imagePreview || user?.photoURL || undefined} alt={user?.displayName || "User"} />
+              <AvatarImage src={imagePreview || undefined} alt={user?.displayName || "User"} />
               <AvatarFallback>{getInitials(user?.displayName)}</AvatarFallback>
             </Avatar>
             <div>

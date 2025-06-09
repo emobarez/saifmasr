@@ -1,3 +1,4 @@
+
 "use client";
 import Link from "next/link";
 import { Button } from "@/components/ui/button";
@@ -5,7 +6,7 @@ import { Sheet, SheetContent, SheetTrigger, SheetTitle, SheetClose } from "@/com
 import { Menu, ShieldHalf } from "lucide-react";
 import { useAuth } from "@/context/AuthContext";
 import { useRouter } from "next/navigation";
-import { useSiteSettings } from '@/hooks/useSiteSettings'; // Updated import
+import { useSiteSettings } from '@/hooks/useSiteSettings'; 
 import { useState, useEffect } from "react"; 
 import { ThemeSwitcher } from "./ThemeSwitcher";
 
@@ -18,7 +19,7 @@ const navLinks = [
 export function Header() {
   const { user, signOut, loading: authLoading } = useAuth();
   const router = useRouter();
-  const { portalName, isLoadingSiteSettings } = useSiteSettings(); // Updated hook usage
+  const { portalName, isLoadingSiteSettings } = useSiteSettings(); 
   const [isMobileMenuOpen, setIsMobileMenuOpen] = useState(false); 
 
   const handleAuthAction = () => {
