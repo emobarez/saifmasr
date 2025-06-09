@@ -12,12 +12,12 @@ export type ActivityActionType =
   | "AI_REPORT_SUMMARY_GENERATED" | "AI_REPORT_IMPROVEMENTS_SUGGESTED" | "AI_REPORT_SECTION_GENERATED" | "AI_REPORT_SECTION_APPENDED"
   | "AI_SERVICE_CATEGORY_SUGGESTED" | "AI_SERVICE_FAQS_GENERATED"
   | "SETTINGS_UPDATED"
-  | "USER_LOGIN" | "USER_LOGOUT" | "USER_REGISTERED"
+  | "USER_LOGIN" | "USER_LOGOUT" | "USER_REGISTERED" | "CLIENT_PROFILE_PICTURE_UPDATED"
   | "UNKNOWN_ACTION";
 
 interface ActivityLogActor {
   id: string | null;
-  role?: "client" | "admin" | null; // Refined type
+  role?: "client" | "admin" | null; 
   name?: string | null;
 }
 
@@ -35,7 +35,7 @@ interface ActivityLogPayload {
   details?: Record<string, any>;
 }
 
-export interface ActivityLogEntry extends ActivityLogPayload { // Added export for dashboard usage
+export interface ActivityLogEntry extends ActivityLogPayload { 
     id: string;
     timestamp: Timestamp;
 }
@@ -49,6 +49,6 @@ export async function logActivity(payload: ActivityLogPayload): Promise<void> {
     });
   } catch (error) {
     console.error("Error logging activity:", error);
-    // Optionally, handle this error more gracefully (e.g., report to an error service)
   }
 }
+

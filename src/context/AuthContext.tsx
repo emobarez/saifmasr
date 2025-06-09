@@ -2,8 +2,8 @@
 "use client";
 
 import type { User as FirebaseUser } from "firebase/auth";
-import { auth, db } from "@/lib/firebase"; // Added db
-import { doc, getDoc } from "firebase/firestore"; // Added Firestore imports
+import { auth, db } from "@/lib/firebase"; 
+import { doc, getDoc } from "firebase/firestore"; 
 import { 
   onAuthStateChanged, 
   signOut as firebaseSignOut,
@@ -21,6 +21,7 @@ interface User {
   email: string | null;
   displayName: string | null;
   role?: "client" | "admin"; 
+  photoURL?: string | null; // Added photoURL
 }
 
 interface AppSettings {
@@ -30,21 +31,22 @@ interface AppSettings {
 
 interface AuthContextType {
   user: User | null;
-  loading: boolean; // Covers auth state loading
+  loading: boolean; 
   settings: AppSettings | null;
-  isLoadingSettings: boolean; // Specifically for settings loading
+  isLoadingSettings: boolean; 
   signIn: (email: string, pass: string) => Promise<FirebaseUser>;
   signUp: (name: string, email: string, pass: string) => Promise<FirebaseUser>;
   signOut: () => Promise<void>;
+  setUser: (user: User | null) => void; // Added setUser for profile updates
 }
 
 const AuthContext = createContext<AuthContextType | undefined>(undefined);
 
 export const AuthProvider = ({ children }: { children: ReactNode }) => {
   const [user, setUser] = useState<User | null>(null);
-  const [loading, setLoading] = useState(true); // Auth loading
+  const [loading, setLoading] = useState(true); 
   const [settings, setSettings] = useState<AppSettings | null>(null);
-  const [isLoadingSettings, setIsLoadingSettings] = useState(true); // Settings loading
+  const [isLoadingSettings, setIsLoadingSettings] = useState(true); 
   const router = useRouter();
   const pathname = usePathname();
 
@@ -57,12 +59,10 @@ export const AuthProvider = ({ children }: { children: ReactNode }) => {
         if (docSnap.exists()) {
           setSettings(docSnap.data() as AppSettings);
         } else {
-          // Fallback to default settings if not found in Firestore
           setSettings({ maintenanceMode: false, portalName: "سيف مصر الوطنية للأمن" });
         }
       } catch (error) {
         console.error("Error fetching system settings:", error);
-        // Fallback on error
         setSettings({ maintenanceMode: false, portalName: "سيف مصر الوطنية للأمن" });
       } finally {
         setIsLoadingSettings(false);
@@ -79,12 +79,13 @@ export const AuthProvider = ({ children }: { children: ReactNode }) => {
           email: firebaseUser.email,
           displayName: firebaseUser.displayName,
           role: firebaseUser.email?.includes("admin@saifmasr.com") || firebaseUser.email?.includes("admin@example.com") ? "admin" : "client",
+          photoURL: firebaseUser.photoURL, // Include photoURL
         };
         setUser(appUser);
       } else {
         setUser(null);
       }
-      setLoading(false); // Auth state is now determined
+      setLoading(false); 
     });
 
     return () => unsubscribe();
@@ -99,6 +100,7 @@ export const AuthProvider = ({ children }: { children: ReactNode }) => {
         email: firebaseUser.email,
         displayName: firebaseUser.displayName,
         role: appUserRole,
+        photoURL: firebaseUser.photoURL,
     };
     // setUser(appUser); // Already handled by onAuthStateChanged
 
@@ -107,8 +109,6 @@ export const AuthProvider = ({ children }: { children: ReactNode }) => {
       description: `User ${appUser.email} logged in. Role: ${appUser.role}.`,
       actor: { id: appUser.uid, role: appUser.role, name: appUser.displayName },
     });
-
-    // Redirection logic will be handled by the main useEffect
     return firebaseUser;
   };
 
@@ -122,6 +122,7 @@ export const AuthProvider = ({ children }: { children: ReactNode }) => {
         email: firebaseUser.email,
         displayName: name, 
         role: 'client', 
+        photoURL: firebaseUser.photoURL,
     };
     // setUser(appUser); // Already handled by onAuthStateChanged
 
@@ -131,7 +132,6 @@ export const AuthProvider = ({ children }: { children: ReactNode }) => {
       actor: { id: appUser.uid, role: appUser.role, name: appUser.displayName },
     });
     
-    // Redirection logic will be handled by the main useEffect
     return firebaseUser;
   };
   
@@ -149,7 +149,7 @@ export const AuthProvider = ({ children }: { children: ReactNode }) => {
   };
 
   useEffect(() => {
-    if (loading || isLoadingSettings) return; // Wait for both auth and settings to load
+    if (loading || isLoadingSettings) return; 
 
     const publicPaths = ["/", "/auth/login", "/auth/register", "/services"];
     const maintenancePath = "/maintenance";
@@ -158,27 +158,21 @@ export const AuthProvider = ({ children }: { children: ReactNode }) => {
 
     if (settings?.maintenanceMode) {
       if (user?.role === 'admin') {
-        // Admin can access everything
-        if (isMaintenancePath) router.push('/admin/dashboard'); // If admin lands on maintenance, redirect to dashboard
+        if (isMaintenancePath) router.push('/admin/dashboard'); 
       } else if (isMaintenancePath) {
-        // Non-admin or unauth on maintenance page is fine
       } else {
-        // Everyone else (non-admin logged in, or unauthenticated not on a public/maintenance page)
         router.push(maintenancePath);
       }
-      return; // Maintenance mode logic takes precedence
+      return; 
     }
 
-    // --- Regular redirection logic (maintenance mode is OFF) ---
     if (!user && !isPublicPath && !isMaintenancePath) {
       router.push("/auth/login");
     } else if (user) {
       const userRole = user.role;
-      // If user is logged in and tries to access auth pages, redirect them to their dashboard
       if (pathname.startsWith('/auth/')) {
         router.push(userRole === 'admin' ? '/admin/dashboard' : '/client/dashboard');
       } 
-      // Role-based access control for admin/client areas
       else if (userRole === 'client' && pathname.startsWith('/admin')) {
         router.push('/client/dashboard');
       } else if (userRole === 'admin' && pathname.startsWith('/client')) {
@@ -188,7 +182,7 @@ export const AuthProvider = ({ children }: { children: ReactNode }) => {
   }, [user, loading, settings, isLoadingSettings, pathname, router]);
 
   return (
-    <AuthContext.Provider value={{ user, loading, settings, isLoadingSettings, signIn, signOut, signUp }}>
+    <AuthContext.Provider value={{ user, loading, settings, isLoadingSettings, signIn, signOut, signUp, setUser }}>
       {children}
     </AuthContext.Provider>
   );
@@ -201,3 +195,4 @@ export const useAuth = (): AuthContextType => {
   }
   return context;
 };
+
