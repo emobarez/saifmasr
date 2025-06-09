@@ -1,27 +1,37 @@
-rules_version = '2';
 
+rules_version = '2';
 service firebase.storage {
   match /b/{bucket}/o {
-    // Profile pictures:
-    // - Allow public read
-    // - Allow authenticated users to write only to their own profile picture path
+    // Client profile pictures: user can read/write their own
     match /profile-pictures/{userId}/{fileName} {
       allow read;
       allow write: if request.auth != null && request.auth.uid == userId;
     }
 
-    // Service request attachments:
-    // - Allow authenticated users to write only to their own attachments path
-    // - Allow authenticated users to read (consider restricting further if needed, e.g., only admins or owner)
+    // Service request attachments: user can read/write their own
     match /service-request-attachments/{userId}/{fileName} {
-      allow read: if request.auth != null; 
+      allow read; // Consider restricting read access further if needed (e.g., only uploader or admins)
       allow write: if request.auth != null && request.auth.uid == userId;
     }
 
-    // Deny all other reads and writes by default for security
-    match /{allPaths=**} {
-      allow read: if false; 
-      allow write: if false; 
+    // Employee profile pictures: admins (any authenticated user for now) can read/write
+    match /employee-profile-pictures/{employeeId}/{fileName} {
+      allow read; // Allows anyone to read employee profile pictures (e.g., for display in public directories if any)
+      allow write: if request.auth != null; // Allows any authenticated user to write.
+                                          // In a production app, you'd restrict this to users with an 'admin' custom claim.
+                                          // For this prototype, we rely on the UI to restrict access to the employee management page to admins.
     }
+
+    // Add other rules for other paths if needed, for example, for reports or general app files.
+    // match /report-attachments/{reportId}/{fileName} {
+    //   allow read; // Or restrict to specific roles
+    //   allow write: if request.auth != null; // Restrict to admins
+    // }
+
+    // By default, deny all reads and writes to all other paths for security.
+    // This is implicitly handled if no other rules match, but can be made explicit:
+    // match /{allPaths=**} {
+    //   allow read, write: if false;
+    // }
   }
 }

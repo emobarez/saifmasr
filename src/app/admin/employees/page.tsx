@@ -7,7 +7,7 @@ import { Input } from "@/components/ui/input";
 import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from "@/components/ui/table";
 import { Badge } from "@/components/ui/badge";
 import { Avatar, AvatarFallback, AvatarImage } from "@/components/ui/avatar";
-import { PlusCircle, Search, Edit, Trash2, Loader2, Users as UsersIcon, CalendarIcon, UserSquare2 } from "lucide-react";
+import { PlusCircle, Search, Edit, Trash2, Loader2, Users as UsersIcon, CalendarIcon, UserSquare2, Camera } from "lucide-react";
 import { Dialog, DialogContent, DialogDescription, DialogFooter, DialogHeader, DialogTitle, DialogTrigger } from "@/components/ui/dialog";
 import { useForm } from "react-hook-form";
 import { zodResolver } from "@hookform/resolvers/zod";
@@ -20,30 +20,32 @@ import { Calendar } from "@/components/ui/calendar";
 import { format as formatDateFn } from "date-fns";
 import { arSA } from "date-fns/locale";
 import { useToast } from "@/hooks/use-toast";
-import { db } from "@/lib/firebase";
+import { db, storage } from "@/lib/firebase"; // Added storage
 import { collection, addDoc, getDocs, serverTimestamp, Timestamp, query, orderBy, deleteDoc, doc, updateDoc } from "firebase/firestore";
+import { ref, uploadBytesResumable, getDownloadURL, deleteObject } from "firebase/storage"; // Added storage functions
 import { cn } from "@/lib/utils";
 import { useAuth } from "@/context/AuthContext";
 import { logActivity } from "@/lib/activityLogger";
 
-// Interface for Employee data
+const MAX_FILE_SIZE_EMPLOYEE = 2 * 1024 * 1024; // 2MB
+const ALLOWED_IMAGE_TYPES_EMPLOYEE = ["image/jpeg", "image/png", "image/gif", "image/webp"];
+
 export interface Employee {
   id: string;
   name: string;
-  employeeId: string; // الرقم الوظيفي
-  jobTitle: string; // المسمى الوظيفي
-  department: string; // القسم
-  joinDate: Timestamp | Date; // تاريخ الانضمام
-  status: "نشط" | "غير نشط" | "في إجازة"; // الحالة
+  employeeId: string; 
+  jobTitle: string; 
+  department: string; 
+  joinDate: Timestamp | Date; 
+  status: "نشط" | "غير نشط" | "في إجازة"; 
   phone: string;
   email: string;
   nationalId?: string;
   address?: string;
   profileImageUrl?: string;
-  createdAt?: Timestamp; // For sorting or tracking
+  createdAt?: Timestamp; 
 }
 
-// Zod schema for employee form validation
 const employeeSchema = z.object({
   name: z.string().min(2, { message: "الاسم يجب أن لا يقل عن حرفين" }),
   employeeId: z.string().min(1, { message: "الرقم الوظيفي مطلوب" }),
@@ -61,7 +63,7 @@ const employeeSchema = z.object({
 type EmployeeFormValues = z.infer<typeof employeeSchema>;
 
 const getInitials = (name: string) => {
-  if (!name) return "SM"; // Saif Masr initials or a default
+  if (!name) return "SM"; 
   const nameParts = name.split(" ");
   if (nameParts.length === 1) return nameParts[0].substring(0, 2).toUpperCase();
   return (nameParts[0][0] + (nameParts[nameParts.length - 1][0] || '')).toUpperCase();
@@ -77,6 +79,10 @@ export default function AdminEmployeesPage() {
   const [searchTerm, setSearchTerm] = useState("");
   const { toast } = useToast();
   const { user: adminUser } = useAuth();
+
+  const [selectedImageFile, setSelectedImageFile] = useState<File | null>(null);
+  const [imagePreviewUrl, setImagePreviewUrl] = useState<string | null>(null);
+  const [isUploadingImage, setIsUploadingImage] = useState(false);
 
   const fetchEmployees = async () => {
     setIsLoadingEmployees(true);
@@ -101,17 +107,8 @@ export default function AdminEmployeesPage() {
   const addEmployeeForm = useForm<EmployeeFormValues>({
     resolver: zodResolver(employeeSchema),
     defaultValues: {
-      name: "",
-      employeeId: "",
-      jobTitle: "",
-      department: "",
-      joinDate: new Date(),
-      status: "نشط",
-      phone: "",
-      email: "",
-      nationalId: "",
-      address: "",
-      profileImageUrl: "",
+      name: "", employeeId: "", jobTitle: "", department: "", joinDate: new Date(), status: "نشط",
+      phone: "", email: "", nationalId: "", address: "", profileImageUrl: "",
     },
   });
 
@@ -119,49 +116,143 @@ export default function AdminEmployeesPage() {
     resolver: zodResolver(employeeSchema),
   });
   
+  const handleImageFileChange = (event: React.ChangeEvent<HTMLInputElement>) => {
+    const file = event.target.files?.[0];
+    if (file) {
+      if (file.size > MAX_FILE_SIZE_EMPLOYEE) {
+        toast({ title: "خطأ في الملف", description: `حجم الصورة يجب أن لا يتجاوز ${MAX_FILE_SIZE_EMPLOYEE / 1024 / 1024} ميجا بايت.`, variant: "destructive" });
+        setSelectedImageFile(null);
+        setImagePreviewUrl(editingEmployee?.profileImageUrl || null); // Revert to original if edit, or null if add
+        event.target.value = ""; // Clear the file input
+        return;
+      }
+      if (!ALLOWED_IMAGE_TYPES_EMPLOYEE.includes(file.type)) {
+        toast({ title: "خطأ في الملف", description: "نوع الصورة غير مدعوم. الأنواع المسموح بها: JPG, PNG, GIF, WEBP.", variant: "destructive" });
+        setSelectedImageFile(null);
+        setImagePreviewUrl(editingEmployee?.profileImageUrl || null);
+        event.target.value = "";
+        return;
+      }
+      setSelectedImageFile(file);
+      setImagePreviewUrl(URL.createObjectURL(file));
+    } else {
+      setSelectedImageFile(null);
+      setImagePreviewUrl(editingEmployee?.profileImageUrl || null);
+    }
+  };
+
+  const uploadProfileImage = async (file: File, employeeId: string): Promise<string> => {
+    setIsUploadingImage(true);
+    try {
+      const fileExtension = file.name.split('.').pop();
+      const imagePath = `employee-profile-pictures/${employeeId}/profile.${fileExtension}`;
+      const storageRef = ref(storage, imagePath);
+      
+      toast({ title: "جارٍ رفع الصورة...", description: "قد يستغرق هذا بعض الوقت."});
+      const uploadTask = uploadBytesResumable(storageRef, file);
+      
+      return new Promise<string>((resolve, reject) => {
+        uploadTask.on('state_changed', 
+          null, 
+          (error) => {
+            console.error("Upload failed:", error);
+            reject(error);
+          }, 
+          async () => {
+            const downloadURL = await getDownloadURL(uploadTask.snapshot.ref);
+            resolve(downloadURL);
+          }
+        );
+      });
+    } finally {
+      setIsUploadingImage(false);
+    }
+  };
+
 
   const handleAddEmployeeSubmit = async (data: EmployeeFormValues) => {
+    let finalProfileImageUrl = data.profileImageUrl || null;
+    let docRefId: string | null = null;
+
     try {
-      const docRef = await addDoc(collection(db, "employees"), {
+      // Create employee document first (without image URL if new image is being uploaded)
+      const employeeData: Omit<Employee, 'id' | 'profileImageUrl'> & { profileImageUrl?: string | null, joinDate: Timestamp, createdAt: Timestamp} = {
         ...data,
-        nationalId: data.nationalId || null,
-        address: data.address || null,
-        profileImageUrl: data.profileImageUrl || null,
+        nationalId: data.nationalId || undefined,
+        address: data.address || undefined,
         joinDate: Timestamp.fromDate(data.joinDate),
-        createdAt: serverTimestamp(),
-      });
+        createdAt: serverTimestamp() as Timestamp,
+      };
+      // Temporarily remove profileImageUrl if a new file is selected, it will be updated later
+      if (selectedImageFile) {
+          delete employeeData.profileImageUrl;
+      }
+
+
+      const docRef = await addDoc(collection(db, "employees"), employeeData);
+      docRefId = docRef.id;
+
+      if (selectedImageFile) {
+        finalProfileImageUrl = await uploadProfileImage(selectedImageFile, docRef.id);
+        await updateDoc(doc(db, "employees", docRef.id), { profileImageUrl: finalProfileImageUrl });
+      }
+      
       toast({ title: "تم بنجاح", description: `تمت إضافة الموظف ${data.name} بنجاح.` });
 
-      if (adminUser) {
+      if (adminUser && docRefId) {
         await logActivity({
           actionType: "EMPLOYEE_CREATED",
           description: `Admin ${adminUser.displayName || adminUser.email} added new employee: ${data.name}.`,
           actor: { id: adminUser.uid, role: adminUser.role, name: adminUser.displayName },
-          target: { id: docRef.id, type: "employee", name: data.name },
-          details: { employeeId: data.employeeId, jobTitle: data.jobTitle, department: data.department, phone: data.phone, email: data.email }
+          target: { id: docRefId, type: "employee", name: data.name },
+          details: { employeeId: data.employeeId, jobTitle: data.jobTitle, hasProfileImage: !!finalProfileImageUrl }
         });
+        if (selectedImageFile) {
+            await logActivity({
+                actionType: "EMPLOYEE_PROFILE_PICTURE_UPDATED",
+                description: `Admin ${adminUser.displayName || adminUser.email} set profile picture for new employee: ${data.name}.`,
+                actor: { id: adminUser.uid, role: adminUser.role, name: adminUser.displayName },
+                target: { id: docRefId, type: "employee", name: data.name },
+            });
+        }
       }
 
-      addEmployeeForm.reset({ name: "", employeeId: "", jobTitle: "", department: "", joinDate: new Date(), status: "نشط", phone: "", email: "", nationalId: "", address: "", profileImageUrl: "" });
+      addEmployeeForm.reset();
+      setSelectedImageFile(null);
+      setImagePreviewUrl(null);
       setIsAddEmployeeDialogOpen(false);
       fetchEmployees(); 
     } catch (error) {
       console.error("Error adding employee:", error);
       toast({ title: "خطأ", description: "حدث خطأ أثناء إضافة الموظف.", variant: "destructive" });
+      setIsUploadingImage(false); // Ensure uploader is reset on error
     }
   };
 
   const handleEditEmployeeSubmit = async (data: EmployeeFormValues) => {
     if (!editingEmployee) return;
+    let finalProfileImageUrl = data.profileImageUrl || null; // Start with URL from form (text input)
+
     try {
+      if (selectedImageFile) {
+        finalProfileImageUrl = await uploadProfileImage(selectedImageFile, editingEmployee.id);
+      }
+      // If no new file, and data.profileImageUrl (from text input) is empty, this means clear the image.
+      // If data.profileImageUrl is a URL, and no new file, that URL will be used.
+      else if (data.profileImageUrl === '') {
+          finalProfileImageUrl = null; 
+          // Optionally delete old image from storage here if finalProfileImageUrl becomes null
+          // and editingEmployee.profileImageUrl existed. This is complex and skipped for now.
+      }
+
+
       const employeeRef = doc(db, "employees", editingEmployee.id);
       await updateDoc(employeeRef, {
         ...data,
-        nationalId: data.nationalId || null,
-        address: data.address || null,
-        profileImageUrl: data.profileImageUrl || null,
+        nationalId: data.nationalId || undefined,
+        address: data.address || undefined,
+        profileImageUrl: finalProfileImageUrl,
         joinDate: Timestamp.fromDate(data.joinDate),
-        // We don't update createdAt on edit
       });
       toast({ title: "تم التعديل بنجاح", description: `تم تعديل بيانات الموظف ${data.name}.` });
 
@@ -171,21 +262,34 @@ export default function AdminEmployeesPage() {
           description: `Admin ${adminUser.displayName || adminUser.email} updated employee: ${data.name}.`,
           actor: { id: adminUser.uid, role: adminUser.role, name: adminUser.displayName },
           target: { id: editingEmployee.id, type: "employee", name: data.name },
-          details: { employeeId: data.employeeId, jobTitle: data.jobTitle, department: data.department, phone: data.phone, email: data.email }
+          details: { employeeId: data.employeeId, jobTitle: data.jobTitle }
         });
+         if (selectedImageFile || (data.profileImageUrl !== editingEmployee.profileImageUrl)) { // Log if image changed
+            await logActivity({
+                actionType: "EMPLOYEE_PROFILE_PICTURE_UPDATED",
+                description: `Admin ${adminUser.displayName || adminUser.email} updated profile picture for employee: ${data.name}.`,
+                actor: { id: adminUser.uid, role: adminUser.role, name: adminUser.displayName },
+                target: { id: editingEmployee.id, type: "employee", name: data.name },
+            });
+        }
       }
 
+      setSelectedImageFile(null);
+      setImagePreviewUrl(null);
       setIsEditEmployeeDialogOpen(false);
       setEditingEmployee(null);
       fetchEmployees();
     } catch (error) {
       console.error("Error updating employee:", error);
       toast({ title: "خطأ", description: "حدث خطأ أثناء تعديل بيانات الموظف.", variant: "destructive" });
+      setIsUploadingImage(false);
     }
   };
   
   const openEditDialog = (employee: Employee) => {
     setEditingEmployee(employee);
+    setSelectedImageFile(null);
+    setImagePreviewUrl(employee.profileImageUrl || null);
     editEmployeeForm.reset({
       ...employee,
       joinDate: employee.joinDate instanceof Timestamp ? employee.joinDate.toDate() : new Date(employee.joinDate),
@@ -195,10 +299,24 @@ export default function AdminEmployeesPage() {
     });
     setIsEditEmployeeDialogOpen(true);
   };
+  
+  const openAddDialog = () => {
+    addEmployeeForm.reset({ name: "", employeeId: "", jobTitle: "", department: "", joinDate: new Date(), status: "نشط", phone: "", email: "", nationalId: "", address: "", profileImageUrl: "" });
+    setSelectedImageFile(null);
+    setImagePreviewUrl(null);
+    setIsAddEmployeeDialogOpen(true);
+  }
+
 
   const handleDeleteEmployee = async (employeeId: string, employeeName: string) => {
     if (!window.confirm(`هل أنت متأكد أنك تريد حذف الموظف ${employeeName}؟\nهذا الإجراء لا يمكن التراجع عنه.`)) return;
     try {
+      // Note: Deleting the profile image from storage should ideally happen here too.
+      // This requires knowing the storage path, which depends on the filename/extension.
+      // For simplicity, this step is omitted, but in production, you'd want to avoid orphaned files.
+      // Example: const imageRef = ref(storage, `employee-profile-pictures/${employeeId}/profile.jpg`); await deleteObject(imageRef);
+      // This requires storing the full path or deriving it if the filename pattern is fixed.
+      
       await deleteDoc(doc(db, "employees", employeeId));
       toast({ title: "تم الحذف", description: `تم حذف الموظف ${employeeName} بنجاح.` });
 
@@ -220,20 +338,16 @@ export default function AdminEmployeesPage() {
   const getStatusVariant = (status: Employee["status"]): "default" | "secondary" | "destructive" => {
     if (status === "نشط") return "default";
     if (status === "غير نشط") return "secondary";
-    if (status === "في إجازة") return "secondary"; // Keep same color as "غير نشط" or choose another
+    if (status === "في إجازة") return "secondary"; 
     return "default";
   };
 
   const formatDate = (dateValue: Timestamp | Date | undefined): string => {
     if (!dateValue) return "غير متوفر";
     let date: Date;
-    if (dateValue instanceof Timestamp) {
-      date = dateValue.toDate();
-    } else if (dateValue instanceof Date) {
-      date = dateValue;
-    } else {
-      return "تاريخ غير صالح";
-    }
+    if (dateValue instanceof Timestamp) { date = dateValue.toDate(); } 
+    else if (dateValue instanceof Date) { date = dateValue; } 
+    else { return "تاريخ غير صالح"; }
     return new Intl.DateTimeFormat('ar-EG', { year: 'numeric', month: 'short', day: 'numeric' }).format(date);
   };
 
@@ -246,32 +360,39 @@ export default function AdminEmployeesPage() {
       employee.jobTitle.toLowerCase().includes(lowercasedFilter) ||
       employee.department.toLowerCase().includes(lowercasedFilter) ||
       employee.email.toLowerCase().includes(lowercasedFilter) ||
-      employee.phone.includes(searchTerm) // Phone might not need toLowerCase
+      employee.phone.includes(searchTerm) 
     );
   }, [employees, searchTerm]);
 
 
-  const renderEmployeeFormFields = (formInstance: typeof addEmployeeForm | typeof editEmployeeForm, isEditing = false, currentImageUrl?: string) => (
+  const renderEmployeeFormFields = (formInstance: typeof addEmployeeForm | typeof editEmployeeForm, isEditing = false) => (
     <>
-      {isEditing && currentImageUrl && (
-        <div className="mb-4 flex justify-center">
-          <Avatar className="h-24 w-24">
-            <AvatarImage src={currentImageUrl} alt="الصورة الحالية للموظف" />
+        <div className="mb-4 flex flex-col items-center">
+          <Avatar className="h-24 w-24 mb-2">
+            <AvatarImage src={imagePreviewUrl || (isEditing ? editingEmployee?.profileImageUrl : null) || undefined} alt="الصورة الشخصية للموظف" />
             <AvatarFallback><UserSquare2 className="h-12 w-12 text-muted-foreground" /></AvatarFallback>
           </Avatar>
+          <Input 
+            id="profileImageUpload"
+            type="file" 
+            accept="image/*" 
+            onChange={handleImageFileChange} 
+            className="text-xs max-w-xs"
+            disabled={isUploadingImage || formInstance.formState.isSubmitting}
+          />
+          <FormMessage>{/* For potential file input errors not caught by zod on profileImageUrl string field */}</FormMessage>
         </div>
-      )}
        <FormField control={formInstance.control} name="name" render={({ field }) => (
-          <FormItem><FormLabel>اسم الموظف</FormLabel><FormControl><Input placeholder="الاسم بالكامل" {...field} /></FormControl><FormMessage /></FormItem>
+          <FormItem><FormLabel>اسم الموظف</FormLabel><FormControl><Input placeholder="الاسم بالكامل" {...field} disabled={isUploadingImage} /></FormControl><FormMessage /></FormItem>
         )}/>
         <FormField control={formInstance.control} name="employeeId" render={({ field }) => (
-          <FormItem><FormLabel>الرقم الوظيفي</FormLabel><FormControl><Input placeholder="مثال: EMP001" {...field} /></FormControl><FormMessage /></FormItem>
+          <FormItem><FormLabel>الرقم الوظيفي</FormLabel><FormControl><Input placeholder="مثال: EMP001" {...field} disabled={isUploadingImage} /></FormControl><FormMessage /></FormItem>
         )}/>
         <FormField control={formInstance.control} name="jobTitle" render={({ field }) => (
-          <FormItem><FormLabel>المسمى الوظيفي</FormLabel><FormControl><Input placeholder="مثال: فرد أمن" {...field} /></FormControl><FormMessage /></FormItem>
+          <FormItem><FormLabel>المسمى الوظيفي</FormLabel><FormControl><Input placeholder="مثال: فرد أمن" {...field} disabled={isUploadingImage} /></FormControl><FormMessage /></FormItem>
         )}/>
         <FormField control={formInstance.control} name="department" render={({ field }) => (
-          <FormItem><FormLabel>القسم</FormLabel><FormControl><Input placeholder="مثال: عمليات الموقع" {...field} /></FormControl><FormMessage /></FormItem>
+          <FormItem><FormLabel>القسم</FormLabel><FormControl><Input placeholder="مثال: عمليات الموقع" {...field} disabled={isUploadingImage} /></FormControl><FormMessage /></FormItem>
         )}/>
         <FormField control={formInstance.control} name="joinDate" render={({ field }) => (
             <FormItem className="flex flex-col">
@@ -279,7 +400,7 @@ export default function AdminEmployeesPage() {
               <Popover>
                 <PopoverTrigger asChild>
                   <FormControl>
-                    <Button variant={"outline"} className={cn("w-full justify-start text-left font-normal", !field.value && "text-muted-foreground")}>
+                    <Button variant={"outline"} className={cn("w-full justify-start text-left font-normal", !field.value && "text-muted-foreground")} disabled={isUploadingImage}>
                       <CalendarIcon className="me-2 h-4 w-4" />
                       {field.value ? formatDateFn(field.value, "PPP", { locale: arSA }) : <span>اختر تاريخ</span>}
                     </Button>
@@ -294,7 +415,7 @@ export default function AdminEmployeesPage() {
           )}/>
         <FormField control={formInstance.control} name="status" render={({ field }) => (
             <FormItem><FormLabel>حالة الموظف</FormLabel>
-            <Select onValueChange={field.onChange} value={field.value} dir="rtl">
+            <Select onValueChange={field.onChange} value={field.value} dir="rtl" disabled={isUploadingImage}>
                 <FormControl><SelectTrigger><SelectValue placeholder="اختر حالة الموظف" /></SelectTrigger></FormControl>
                 <SelectContent>
                     <SelectItem value="نشط">نشط</SelectItem>
@@ -304,19 +425,23 @@ export default function AdminEmployeesPage() {
             </Select><FormMessage /></FormItem>
         )}/>
         <FormField control={formInstance.control} name="phone" render={({ field }) => (
-            <FormItem><FormLabel>رقم الهاتف</FormLabel><FormControl><Input type="tel" placeholder="01xxxxxxxxx" {...field} /></FormControl><FormMessage /></FormItem>
+            <FormItem><FormLabel>رقم الهاتف</FormLabel><FormControl><Input type="tel" placeholder="01xxxxxxxxx" {...field} disabled={isUploadingImage} /></FormControl><FormMessage /></FormItem>
         )}/>
         <FormField control={formInstance.control} name="email" render={({ field }) => (
-            <FormItem><FormLabel>البريد الإلكتروني</FormLabel><FormControl><Input type="email" placeholder="employee@example.com" {...field} /></FormControl><FormMessage /></FormItem>
+            <FormItem><FormLabel>البريد الإلكتروني</FormLabel><FormControl><Input type="email" placeholder="employee@example.com" {...field} disabled={isUploadingImage} /></FormControl><FormMessage /></FormItem>
         )}/>
         <FormField control={formInstance.control} name="nationalId" render={({ field }) => (
-            <FormItem><FormLabel>الرقم القومي (اختياري)</FormLabel><FormControl><Input placeholder="14 رقمًا" {...field} /></FormControl><FormMessage /></FormItem>
+            <FormItem><FormLabel>الرقم القومي (اختياري)</FormLabel><FormControl><Input placeholder="14 رقمًا" {...field} disabled={isUploadingImage} /></FormControl><FormMessage /></FormItem>
         )}/>
         <FormField control={formInstance.control} name="address" render={({ field }) => (
-            <FormItem><FormLabel>العنوان (اختياري)</FormLabel><FormControl><Textarea placeholder="عنوان إقامة الموظف" {...field} rows={2} /></FormControl><FormMessage /></FormItem>
+            <FormItem><FormLabel>العنوان (اختياري)</FormLabel><FormControl><Textarea placeholder="عنوان إقامة الموظف" {...field} rows={2} disabled={isUploadingImage}/></FormControl><FormMessage /></FormItem>
         )}/>
         <FormField control={formInstance.control} name="profileImageUrl" render={({ field }) => (
-            <FormItem><FormLabel>رابط صورة الملف الشخصي (اختياري)</FormLabel><FormControl><Input placeholder="https://example.com/image.png" {...field} /></FormControl><FormMessage /></FormItem>
+            <FormItem>
+                <FormLabel className="flex items-center gap-1"><Camera className="h-4 w-4 text-muted-foreground" />رابط صورة الملف الشخصي (أو ارفع صورة أعلاه)</FormLabel>
+                <FormControl><Input placeholder="https://example.com/image.png" {...field} disabled={isUploadingImage} /></FormControl>
+                <FormMessage />
+            </FormItem>
         )}/>
     </>
   );
@@ -335,7 +460,7 @@ export default function AdminEmployeesPage() {
           </div>
           <Dialog open={isAddEmployeeDialogOpen} onOpenChange={setIsAddEmployeeDialogOpen}>
             <DialogTrigger asChild>
-                <Button className="mt-4 md:mt-0" onClick={() => addEmployeeForm.reset({ joinDate: new Date(), status: "نشط", name: "", employeeId: "", jobTitle: "", department: "", phone: "", email: "", nationalId: "", address: "", profileImageUrl: "" })}>
+                <Button className="mt-4 md:mt-0" onClick={openAddDialog}>
                     <PlusCircle className="me-2 h-5 w-5" />
                     إضافة موظف جديد
                 </Button>
@@ -351,10 +476,10 @@ export default function AdminEmployeesPage() {
                 <form onSubmit={addEmployeeForm.handleSubmit(handleAddEmployeeSubmit)} className="space-y-4 py-4 max-h-[70vh] overflow-y-auto px-2">
                   {renderEmployeeFormFields(addEmployeeForm)}
                   <DialogFooter className="pt-4 sticky bottom-0 bg-card pb-4">
-                    <Button type="button" variant="outline" onClick={() => setIsAddEmployeeDialogOpen(false)} disabled={addEmployeeForm.formState.isSubmitting}>إلغاء</Button>
-                    <Button type="submit" disabled={addEmployeeForm.formState.isSubmitting}>
-                      {addEmployeeForm.formState.isSubmitting && <Loader2 className="me-2 h-4 w-4 animate-spin" />}
-                      إضافة الموظف
+                    <Button type="button" variant="outline" onClick={() => setIsAddEmployeeDialogOpen(false)} disabled={addEmployeeForm.formState.isSubmitting || isUploadingImage}>إلغاء</Button>
+                    <Button type="submit" disabled={addEmployeeForm.formState.isSubmitting || isUploadingImage}>
+                      {(addEmployeeForm.formState.isSubmitting || isUploadingImage) && <Loader2 className="me-2 h-4 w-4 animate-spin" />}
+                      {isUploadingImage ? "جارٍ رفع الصورة..." : addEmployeeForm.formState.isSubmitting ? "جارٍ الحفظ..." : "إضافة الموظف"}
                     </Button>
                   </DialogFooter>
                 </form>
@@ -434,12 +559,12 @@ export default function AdminEmployeesPage() {
           {editingEmployee && (
             <Form {...editEmployeeForm}>
               <form onSubmit={editEmployeeForm.handleSubmit(handleEditEmployeeSubmit)} className="space-y-4 py-4 max-h-[70vh] overflow-y-auto px-2">
-                {renderEmployeeFormFields(editEmployeeForm, true, editingEmployee.profileImageUrl)}
+                {renderEmployeeFormFields(editEmployeeForm, true)}
                 <DialogFooter className="pt-4 sticky bottom-0 bg-card pb-4">
-                  <Button type="button" variant="outline" onClick={() => setIsEditEmployeeDialogOpen(false)} disabled={editEmployeeForm.formState.isSubmitting}>إلغاء</Button>
-                  <Button type="submit" disabled={editEmployeeForm.formState.isSubmitting}>
-                    {editEmployeeForm.formState.isSubmitting && <Loader2 className="me-2 h-4 w-4 animate-spin" />}
-                    حفظ التعديلات
+                  <Button type="button" variant="outline" onClick={() => setIsEditEmployeeDialogOpen(false)} disabled={editEmployeeForm.formState.isSubmitting || isUploadingImage}>إلغاء</Button>
+                  <Button type="submit" disabled={editEmployeeForm.formState.isSubmitting || isUploadingImage}>
+                     {(editEmployeeForm.formState.isSubmitting || isUploadingImage) && <Loader2 className="me-2 h-4 w-4 animate-spin" />}
+                     {isUploadingImage ? "جارٍ رفع الصورة..." : editEmployeeForm.formState.isSubmitting ? "جارٍ الحفظ..." : "حفظ التعديلات"}
                   </Button>
                 </DialogFooter>
               </form>
@@ -451,10 +576,3 @@ export default function AdminEmployeesPage() {
   );
 }
     
-
-    
-
-    
-
-    
-
