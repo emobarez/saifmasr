@@ -352,7 +352,7 @@ export default function AdminEmployeesPage() {
   };
 
   const filteredEmployees = useMemo(() => {
-    if (!searchTerm) return employees;
+    if (!searchTerm.trim()) return employees;
     const lowercasedFilter = searchTerm.toLowerCase();
     return employees.filter(employee =>
       employee.name.toLowerCase().includes(lowercasedFilter) ||
@@ -576,3 +576,4 @@ export default function AdminEmployeesPage() {
   );
 }
     
+
