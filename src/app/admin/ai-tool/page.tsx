@@ -383,24 +383,31 @@ export default function AiReportToolPage() {
               disabled={isLoadingReportContent || isLoadingSummary || isLoadingImprovements || isLoadingSection || isSavingSection}
             />
           </div>
-          <div className="flex flex-col sm:flex-row gap-4">
+          <div className="flex flex-col sm:flex-row gap-4 items-start">
             <Button onClick={handleGenerateSection} disabled={isLoadingReportContent || isLoadingSummary || isLoadingImprovements || isLoadingSection || isSavingSection || !sectionTopic.trim()} className="w-full sm:w-auto">
               {isLoadingSection ? <Loader2 className="me-2 h-5 w-5 animate-spin" /> : <FileText className="me-2 h-5 w-5" />}
               إنشاء قسم التقرير
             </Button>
-             <Button 
-                onClick={handleSaveSectionToReport} 
-                disabled={!selectedReportId || !generatedSection || isLoadingReportContent || isLoadingSummary || isLoadingImprovements || isLoadingSection || isSavingSection} 
-                variant="outline"
-                className="w-full sm:w-auto"
-              >
-              {isSavingSection ? <Loader2 className="me-2 h-5 w-5 animate-spin" /> : <Save className="me-2 h-5 w-5" />}
-              حفظ القسم في التقرير المحدد (أعلاه)
-            </Button>
+            <div className="flex-grow">
+                {selectedReportId && generatedSection && !isSavingSection && (
+                    <p className="text-sm text-foreground mt-1 mb-2">
+                        سيتم إضافة هذا القسم إلى التقرير: <strong className="text-primary">{reports.find(r => r.id === selectedReportId)?.title || '...'}</strong>
+                    </p>
+                )}
+                <Button 
+                    onClick={handleSaveSectionToReport} 
+                    disabled={!selectedReportId || !generatedSection || isLoadingReportContent || isLoadingSummary || isLoadingImprovements || isLoadingSection || isSavingSection} 
+                    variant="outline"
+                    className="w-full sm:w-auto"
+                >
+                {isSavingSection ? <Loader2 className="me-2 h-5 w-5 animate-spin" /> : <Save className="me-2 h-5 w-5" />}
+                حفظ القسم في التقرير المحدد (أعلاه)
+                </Button>
+                 {!selectedReportId && generatedSection && !isSavingSection && (
+                <p className="text-sm text-destructive mt-2">ملاحظة: لحفظ هذا القسم، يرجى تحديد تقرير من القائمة في أعلى الصفحة أولاً.</p>
+                )}
+            </div>
           </div>
-           { !selectedReportId && generatedSection && !isSavingSection && (
-            <p className="text-sm text-destructive mt-2">ملاحظة: لحفظ هذا القسم، يرجى تحديد تقرير من القائمة في أعلى الصفحة أولاً.</p>
-           )}
         </CardContent>
       </Card>
 
