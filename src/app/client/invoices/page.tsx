@@ -3,18 +3,18 @@
 import { Card, CardHeader, CardTitle, CardDescription, CardContent } from "@/components/ui/card";
 import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from "@/components/ui/table";
 import { Badge } from "@/components/ui/badge";
-import { Download, Printer, Loader2, Eye } from "lucide-react"; // Added Eye icon
+import { Download, Printer, Loader2, Eye, Filter } from "lucide-react"; 
 import { Button } from "@/components/ui/button";
-import { useState, useEffect } from "react";
+import { useState, useEffect, useMemo } from "react";
 import { useAuth } from "@/context/AuthContext";
 import { db } from "@/lib/firebase";
 import { collection, query, where, getDocs, orderBy, Timestamp } from "firebase/firestore";
 import { useToast } from "@/hooks/use-toast";
-import { InvoiceDetailsDialog } from "@/components/client/InvoiceDetailsDialog"; // Import new dialog
+import { InvoiceDetailsDialog } from "@/components/client/InvoiceDetailsDialog"; 
+import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
 
-// Interface for invoice data from Firestore
 interface Invoice {
-  id: string; // Firestore document ID
+  id: string; 
   invoiceNumber: string;
   issueDate: Timestamp;
   dueDate: Timestamp;
@@ -23,11 +23,17 @@ interface Invoice {
   description: string; 
 }
 
+type InvoiceStatus = Invoice["status"];
+const invoiceStatusOptions: InvoiceStatus[] = ["مستحقة", "مدفوعة", "متأخرة", "ملغاة"];
+const filterInvoiceStatusOptions: ("all" | InvoiceStatus)[] = ["all", ...invoiceStatusOptions];
+
+
 export default function ClientInvoicesPage() {
   const [invoices, setInvoices] = useState<Invoice[]>([]);
   const [isLoading, setIsLoading] = useState(true);
   const [viewingInvoice, setViewingInvoice] = useState<Invoice | null>(null);
   const [isViewDetailsDialogOpen, setIsViewDetailsDialogOpen] = useState(false);
+  const [statusFilter, setStatusFilter] = useState<"all" | InvoiceStatus>("all");
   const { user } = useAuth();
   const { toast } = useToast();
 
@@ -57,6 +63,13 @@ export default function ClientInvoicesPage() {
 
     fetchInvoices();
   }, [user, toast]);
+
+  const filteredInvoices = useMemo(() => {
+    if (statusFilter === "all") {
+      return invoices;
+    }
+    return invoices.filter(invoice => invoice.status === statusFilter);
+  }, [invoices, statusFilter]);
 
   const formatDateForDisplay = (dateValue: Timestamp | Date | undefined): string => {
     if (!dateValue) return "غير متوفر";
@@ -110,47 +123,71 @@ export default function ClientInvoicesPage() {
           <CardDescription>عرض وإدارة فواتير الخدمات الخاصة بك.</CardDescription>
         </CardHeader>
         <CardContent>
+          <div className="flex items-center gap-4 mb-6">
+            <Filter className="h-5 w-5 text-muted-foreground" />
+            <Select
+              value={statusFilter}
+              onValueChange={(value) => setStatusFilter(value as "all" | InvoiceStatus)}
+              dir="rtl"
+            >
+              <SelectTrigger className="w-full sm:w-[200px]">
+                <SelectValue placeholder="تصفية حسب الحالة" />
+              </SelectTrigger>
+              <SelectContent>
+                {filterInvoiceStatusOptions.map((option) => (
+                  <SelectItem key={option} value={option}>
+                    {option === "all" ? "الكل" : option}
+                  </SelectItem>
+                ))}
+              </SelectContent>
+            </Select>
+          </div>
+
           {isLoading ? (
             <div className="flex justify-center items-center py-8"><Loader2 className="h-8 w-8 animate-spin text-primary" /><p className="ms-2">جارٍ تحميل الفواتير...</p></div>
-          ) : invoices.length > 0 ? (
-          <Table>
-            <TableHeader>
-              <TableRow>
-                <TableHead>رقم الفاتورة</TableHead>
-                <TableHead>تاريخ الإصدار</TableHead>
-                <TableHead>تاريخ الاستحقاق</TableHead>
-                <TableHead>المبلغ</TableHead>
-                <TableHead>الحالة</TableHead>
-                <TableHead>إجراءات</TableHead>
-              </TableRow>
-            </TableHeader>
-            <TableBody>
-              {invoices.map((invoice) => (
-                <TableRow key={invoice.id}>
-                  <TableCell className="font-medium">{invoice.invoiceNumber}</TableCell>
-                  <TableCell>{formatDateForDisplay(invoice.issueDate)}</TableCell>
-                  <TableCell>{formatDateForDisplay(invoice.dueDate)}</TableCell>
-                  <TableCell>{formatCurrency(invoice.totalAmount)}</TableCell>
-                  <TableCell>
-                    <Badge variant={getStatusVariant(invoice.status)}>{invoice.status}</Badge>
-                  </TableCell>
-                  <TableCell className="space-x-1 space-x-reverse">
-                    <Button variant="ghost" size="icon" aria-label="عرض تفاصيل الفاتورة" onClick={() => handleViewDetails(invoice)}>
-                      <Eye className="h-5 w-5" />
-                    </Button>
-                    <Button variant="ghost" size="icon" aria-label="تحميل الفاتورة" onClick={handleDownloadInvoice}>
-                      <Download className="h-5 w-5" />
-                    </Button>
-                    <Button variant="ghost" size="icon" aria-label="طباعة الفاتورة" onClick={handlePrintInvoice}>
-                      <Printer className="h-5 w-5" />
-                    </Button>
-                  </TableCell>
+          ) : filteredInvoices.length > 0 ? (
+          <div className="overflow-x-auto">
+            <Table>
+                <TableHeader>
+                <TableRow>
+                    <TableHead className="min-w-[120px]">رقم الفاتورة</TableHead>
+                    <TableHead className="min-w-[120px]">تاريخ الإصدار</TableHead>
+                    <TableHead className="min-w-[120px]">تاريخ الاستحقاق</TableHead>
+                    <TableHead className="min-w-[100px]">المبلغ</TableHead>
+                    <TableHead className="min-w-[100px]">الحالة</TableHead>
+                    <TableHead className="min-w-[120px]">إجراءات</TableHead>
                 </TableRow>
-              ))}
-            </TableBody>
-          </Table>
+                </TableHeader>
+                <TableBody>
+                {filteredInvoices.map((invoice) => (
+                    <TableRow key={invoice.id}>
+                    <TableCell className="font-medium">{invoice.invoiceNumber}</TableCell>
+                    <TableCell>{formatDateForDisplay(invoice.issueDate)}</TableCell>
+                    <TableCell>{formatDateForDisplay(invoice.dueDate)}</TableCell>
+                    <TableCell>{formatCurrency(invoice.totalAmount)}</TableCell>
+                    <TableCell>
+                        <Badge variant={getStatusVariant(invoice.status)}>{invoice.status}</Badge>
+                    </TableCell>
+                    <TableCell className="space-x-1 space-x-reverse">
+                        <Button variant="ghost" size="icon" aria-label="عرض تفاصيل الفاتورة" onClick={() => handleViewDetails(invoice)}>
+                        <Eye className="h-5 w-5" />
+                        </Button>
+                        <Button variant="ghost" size="icon" aria-label="تحميل الفاتورة" onClick={handleDownloadInvoice}>
+                        <Download className="h-5 w-5" />
+                        </Button>
+                        <Button variant="ghost" size="icon" aria-label="طباعة الفاتورة" onClick={handlePrintInvoice}>
+                        <Printer className="h-5 w-5" />
+                        </Button>
+                    </TableCell>
+                    </TableRow>
+                ))}
+                </TableBody>
+            </Table>
+          </div>
            ) : (
-            <p className="text-muted-foreground text-center py-8">لا توجد فواتير لعرضها حالياً.</p>
+            <p className="text-muted-foreground text-center py-8">
+              {statusFilter !== "all" ? "لا توجد فواتير تطابق حالة التصفية المختارة." : "لا توجد فواتير لعرضها حالياً."}
+            </p>
           )}
         </CardContent>
       </Card>
