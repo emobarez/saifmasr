@@ -7,7 +7,7 @@ import { Input } from "@/components/ui/input";
 import { Textarea } from "@/components/ui/textarea";
 import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from "@/components/ui/table";
 import { Badge } from "@/components/ui/badge";
-import { PlusCircle, Edit, Trash2, Loader2, FilePieChart, Search, Eye } from "lucide-react";
+import { PlusCircle, Edit, Trash2, Loader2, FilePieChart, Search, Eye, Filter } from "lucide-react"; // Added Filter
 import { Dialog, DialogContent, DialogDescription, DialogFooter, DialogHeader, DialogTitle, DialogTrigger } from "@/components/ui/dialog";
 import { useForm } from "react-hook-form";
 import { zodResolver } from "@hookform/resolvers/zod";
@@ -32,6 +32,11 @@ interface Report {
   updatedAt: Timestamp;
 }
 
+type ReportStatus = Report["status"];
+const reportStatusOptions: ReportStatus[] = ["مسودة", "قيد المراجعة", "منشور", "مؤرشف"];
+const filterReportStatusOptions: ("all" | ReportStatus)[] = ["all", ...reportStatusOptions];
+
+
 const reportSchema = z.object({
   title: z.string().min(3, { message: "عنوان التقرير يجب أن لا يقل عن 3 أحرف" }),
   description: z.string().min(10, { message: "وصف التقرير يجب أن لا يقل عن 10 أحرف" }).max(500, { message: "وصف التقرير يجب أن لا يتجاوز 500 حرف" }),
@@ -50,6 +55,7 @@ export default function AdminReportsPage() {
   const [viewingReport, setViewingReport] = useState<Report | null>(null); 
   const [isViewReportDialogOpen, setIsViewReportDialogOpen] = useState(false); 
   const [searchTerm, setSearchTerm] = useState("");
+  const [statusFilter, setStatusFilter] = useState<"all" | ReportStatus>("all");
   const { toast } = useToast();
   const { user: adminUser } = useAuth();
 
@@ -197,13 +203,19 @@ export default function AdminReportsPage() {
   };
 
   const filteredReports = useMemo(() => {
-    if (!searchTerm) return reports;
-    return reports.filter(report =>
-      report.title.toLowerCase().includes(searchTerm.toLowerCase()) ||
-      report.description.toLowerCase().includes(searchTerm.toLowerCase()) ||
-      report.status.toLowerCase().includes(searchTerm.toLowerCase())
-    );
-  }, [reports, searchTerm]);
+    let tempReports = reports;
+    if (searchTerm) {
+      const lowercasedFilter = searchTerm.toLowerCase();
+      tempReports = tempReports.filter(report =>
+        report.title.toLowerCase().includes(lowercasedFilter) ||
+        report.description.toLowerCase().includes(lowercasedFilter)
+      );
+    }
+    if (statusFilter !== "all") {
+      tempReports = tempReports.filter(report => report.status === statusFilter);
+    }
+    return tempReports;
+  }, [reports, searchTerm, statusFilter]);
 
   const renderReportFormFields = (formInstance: typeof addReportForm | typeof editReportForm) => (
     <>
@@ -277,15 +289,36 @@ export default function AdminReportsPage() {
           </div>
         </CardHeader>
         <CardContent>
-          <div className="mb-4 relative max-w-md">
-            <Input 
-              placeholder="ابحث عن تقرير (بالعنوان، الوصف، أو الحالة)..." 
-              className="ps-10"
-              value={searchTerm}
-              onChange={(e) => setSearchTerm(e.target.value)}
-            />
-            <Search className="absolute start-3 top-1/2 -translate-y-1/2 h-5 w-5 text-muted-foreground" />
-          </div>
+          <div className="flex flex-col sm:flex-row gap-4 mb-4">
+            <div className="relative flex-grow sm:max-w-md">
+                <Input 
+                placeholder="ابحث عن تقرير (بالعنوان، الوصف)..." 
+                className="ps-10"
+                value={searchTerm}
+                onChange={(e) => setSearchTerm(e.target.value)}
+                />
+                <Search className="absolute start-3 top-1/2 -translate-y-1/2 h-5 w-5 text-muted-foreground" />
+            </div>
+            <div className="flex items-center gap-2">
+                <Filter className="h-5 w-5 text-muted-foreground"/>
+                <Select 
+                    value={statusFilter} 
+                    onValueChange={(value) => setStatusFilter(value as "all" | ReportStatus)}
+                    dir="rtl"
+                >
+                    <SelectTrigger className="w-full sm:w-[180px]">
+                    <SelectValue placeholder="تصفية بالحالة" />
+                    </SelectTrigger>
+                    <SelectContent>
+                    {filterReportStatusOptions.map(option => (
+                        <SelectItem key={option} value={option}>
+                        {option === "all" ? "الكل" : option}
+                        </SelectItem>
+                    ))}
+                    </SelectContent>
+                </Select>
+            </div>
+           </div>
           {isLoadingReports ? (
             <div className="flex justify-center items-center py-8"><Loader2 className="h-8 w-8 animate-spin text-primary" /><p className="ms-2">جارٍ تحميل التقارير...</p></div>
           ) : filteredReports.length > 0 ? (
@@ -324,7 +357,9 @@ export default function AdminReportsPage() {
               </Table>
             </div>
           ) : (
-             <p className="text-muted-foreground text-center py-8">{searchTerm ? "لم يتم العثور على تقارير تطابق بحثك." : "لا توجد تقارير لعرضها حالياً."}</p>
+             <p className="text-muted-foreground text-center py-8">
+                {searchTerm || statusFilter !== "all" ? "لم يتم العثور على تقارير تطابق معايير البحث والتصفية الحالية." : "لا توجد تقارير لعرضها حالياً."}
+            </p>
           )}
         </CardContent>
       </Card>
@@ -367,3 +402,4 @@ export default function AdminReportsPage() {
     
 
     
+
