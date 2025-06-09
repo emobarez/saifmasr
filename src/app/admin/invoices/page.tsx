@@ -6,7 +6,7 @@ import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from "@/components/ui/table";
 import { Badge } from "@/components/ui/badge";
-import { PlusCircle, Edit, Trash2, Loader2, FileText, CalendarIcon, Search, Eye } from "lucide-react"; // Added Eye
+import { PlusCircle, Edit, Trash2, Loader2, FileText, CalendarIcon, Search, Eye } from "lucide-react"; 
 import { Dialog, DialogContent, DialogDescription, DialogFooter, DialogHeader, DialogTitle, DialogTrigger } from "@/components/ui/dialog";
 import { useForm } from "react-hook-form";
 import { zodResolver } from "@hookform/resolvers/zod";
@@ -22,7 +22,7 @@ import { useToast } from "@/hooks/use-toast";
 import { db } from "@/lib/firebase";
 import { collection, addDoc, getDocs, serverTimestamp, Timestamp, query, orderBy, deleteDoc, doc, updateDoc } from "firebase/firestore";
 import { cn } from "@/lib/utils";
-import { InvoiceDetailsDialog } from "@/components/admin/InvoiceDetailsDialog"; // Use Admin version
+import { InvoiceDetailsDialog } from "@/components/admin/InvoiceDetailsDialog"; 
 import { useAuth } from "@/context/AuthContext";
 import { logActivity } from "@/lib/activityLogger";
 
