@@ -19,13 +19,8 @@ interface ServiceWithFAQs {
   faqs: FAQItemData[];
 }
 
-interface AggregatedFAQ extends FAQItemData {
-  serviceName: string;
-  serviceId: string;
-}
-
 export default function ClientFAQPage() {
-  const [aggregatedFAQs, setAggregatedFAQs] = useState<AggregatedFAQ[]>([]);
+  const [servicesWithFAQs, setServicesWithFAQs] = useState<ServiceWithFAQs[]>([]);
   const [isLoading, setIsLoading] = useState(true);
   const { toast } = useToast();
 
@@ -35,34 +30,25 @@ export default function ClientFAQPage() {
       try {
         const servicesQuery = query(
           collection(db, "services"),
-          where("status", "==", "متاحة")
+          where("status", "==", "متاحة"),
+          orderBy("name", "asc") // Sort by service name
         );
         const querySnapshot = await getDocs(servicesQuery);
         
-        let allFAQs: AggregatedFAQ[] = [];
+        const fetchedServices: ServiceWithFAQs[] = [];
         querySnapshot.forEach((doc) => {
           const serviceData = doc.data();
-          const service = { id: doc.id, ...serviceData } as ServiceWithFAQs;
-          if (service.faqs && service.faqs.length > 0) {
-            const serviceFAQs = service.faqs.map(faq => ({
-              ...faq,
-              serviceName: service.name,
-              serviceId: service.id,
-            }));
-            allFAQs = allFAQs.concat(serviceFAQs);
+          // Ensure faqs is an array and filter out services with no FAQs or empty FAQs array
+          if (Array.isArray(serviceData.faqs) && serviceData.faqs.length > 0) {
+            fetchedServices.push({
+              id: doc.id,
+              name: serviceData.name as string,
+              faqs: serviceData.faqs as FAQItemData[],
+            });
           }
         });
         
-        // Optional: Sort FAQs, e.g., by service name then by question
-        allFAQs.sort((a, b) => {
-          if (a.serviceName < b.serviceName) return -1;
-          if (a.serviceName > b.serviceName) return 1;
-          if (a.question < b.question) return -1;
-          if (a.question > b.question) return 1;
-          return 0;
-        });
-
-        setAggregatedFAQs(allFAQs);
+        setServicesWithFAQs(fetchedServices);
 
       } catch (error) {
         console.error("Error fetching FAQs:", error);
@@ -92,24 +78,39 @@ export default function ClientFAQPage() {
               <Loader2 className="h-10 w-10 animate-spin text-primary" />
               <p className="ms-3 text-lg text-muted-foreground">جارٍ تحميل الأسئلة...</p>
             </div>
-          ) : aggregatedFAQs.length > 0 ? (
-            <Accordion type="single" collapsible className="w-full space-y-2">
-              {aggregatedFAQs.map((faq, index) => (
-                <AccordionItem value={`faq-${index}`} key={index} className="bg-card border rounded-lg shadow-sm hover:shadow-md transition-shadow">
-                  <AccordionTrigger className="p-4 text-md font-semibold text-start hover:no-underline">
-                    <div className="flex flex-col">
-                        <span className="text-primary">{faq.question}</span>
-                        <span className="text-xs text-muted-foreground mt-1">عن خدمة: {faq.serviceName}</span>
-                    </div>
-                  </AccordionTrigger>
-                  <AccordionContent className="p-4 pt-0">
-                    <p className="text-sm text-foreground/90 whitespace-pre-wrap bg-secondary/40 p-3 rounded-md">
-                      {faq.answer}
-                    </p>
-                  </AccordionContent>
-                </AccordionItem>
+          ) : servicesWithFAQs.length > 0 ? (
+            <div className="space-y-6">
+              {servicesWithFAQs.map((service) => (
+                <Card key={service.id} className="shadow-md">
+                  <CardHeader>
+                    <CardTitle className="font-headline text-lg text-primary flex items-center gap-2">
+                      <HelpCircle className="h-6 w-6 opacity-80" />
+                      أسئلة شائعة لخدمة: {service.name}
+                    </CardTitle>
+                  </CardHeader>
+                  <CardContent>
+                    {service.faqs.length > 0 ? (
+                        <Accordion type="single" collapsible className="w-full space-y-2">
+                        {service.faqs.map((faq, index) => (
+                            <AccordionItem value={`faq-${service.id}-${index}`} key={`faq-${service.id}-${index}`} className="bg-secondary/40 rounded-md shadow-sm hover:shadow-md transition-shadow">
+                            <AccordionTrigger className="p-3 text-md font-semibold text-start hover:no-underline text-foreground">
+                                {faq.question}
+                            </AccordionTrigger>
+                            <AccordionContent className="p-3 pt-0">
+                                <p className="text-sm text-foreground/80 whitespace-pre-wrap bg-background/50 p-2 rounded-sm">
+                                {faq.answer}
+                                </p>
+                            </AccordionContent>
+                            </AccordionItem>
+                        ))}
+                        </Accordion>
+                    ) : (
+                        <p className="text-sm text-muted-foreground">لا توجد أسئلة شائعة متاحة لهذه الخدمة حاليًا.</p>
+                    )}
+                  </CardContent>
+                </Card>
               ))}
-            </Accordion>
+            </div>
           ) : (
             <div className="text-center py-12 text-muted-foreground">
               <Info className="h-12 w-12 mx-auto mb-4 text-primary/30" />
