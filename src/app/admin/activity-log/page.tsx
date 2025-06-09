@@ -153,7 +153,7 @@ export default function AdminActivityLogPage() {
 
   useEffect(() => {
     fetchLogs();
-  }, [toast]); // Removed 'toast' from dependency array as it's stable, if it causes re-fetches unnecessarily. Kept it for now.
+  }, [toast]);
 
   const handleLoadMore = () => {
     if (hasMoreLogs && !isLoadingMore) {
@@ -251,6 +251,3 @@ export default function AdminActivityLogPage() {
     </div>
   );
 }
-
-
-    
