@@ -4,7 +4,7 @@ import { useState, useEffect } from "react";
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card";
 import { Badge } from "@/components/ui/badge";
 import { Accordion, AccordionContent, AccordionItem, AccordionTrigger } from "@/components/ui/accordion";
-import { Briefcase, Loader2, Tag, CreditCard, HelpCircle, Phone } from "lucide-react";
+import { Briefcase, Loader2, Tag, CreditCard, HelpCircle, Phone, ArrowLeftCircle } from "lucide-react";
 import Image from "next/image";
 import { db } from "@/lib/firebase";
 import { collection, query, where, getDocs, orderBy, Timestamp } from "firebase/firestore";
@@ -105,29 +105,36 @@ export default function PublicServicesPage() {
                     </div>
                   </CardHeader>
                   <CardContent className="flex-grow flex flex-col justify-between">
-                    <CardDescription className="mb-4 text-sm leading-relaxed">{service.description}</CardDescription>
-                    {service.faqs && service.faqs.length > 0 && (
-                      <div className="mt-auto">
-                        <Accordion type="single" collapsible className="w-full">
-                          <AccordionItem value="faqs" className="border-t pt-2">
-                            <AccordionTrigger className="text-sm font-medium hover:no-underline text-primary/80">
-                              <div className="flex items-center gap-2">
-                                <HelpCircle className="h-4 w-4" />
-                                الأسئلة الشائعة ({service.faqs.length})
-                              </div>
-                            </AccordionTrigger>
-                            <AccordionContent className="pt-2 space-y-2">
-                              {service.faqs.map((faq, index) => (
-                                <div key={index} className="text-xs p-2 bg-secondary/50 rounded-md">
-                                  <p className="font-semibold text-foreground/90">{faq.question}</p>
-                                  <p className="text-muted-foreground">{faq.answer}</p>
-                                </div>
-                              ))}
-                            </AccordionContent>
-                          </AccordionItem>
-                        </Accordion>
-                      </div>
-                    )}
+                    <div>
+                        <CardDescription className="mb-4 text-sm leading-relaxed line-clamp-3">{service.description}</CardDescription>
+                        {service.faqs && service.faqs.length > 0 && (
+                          <div className="mt-auto mb-4">
+                            <Accordion type="single" collapsible className="w-full">
+                              <AccordionItem value="faqs" className="border-t pt-2">
+                                <AccordionTrigger className="text-sm font-medium hover:no-underline text-primary/80">
+                                  <div className="flex items-center gap-2">
+                                    <HelpCircle className="h-4 w-4" />
+                                    الأسئلة الشائعة ({service.faqs.length})
+                                  </div>
+                                </AccordionTrigger>
+                                <AccordionContent className="pt-2 space-y-2 max-h-32 overflow-y-auto">
+                                  {service.faqs.map((faq, index) => (
+                                    <div key={index} className="text-xs p-2 bg-secondary/50 rounded-md">
+                                      <p className="font-semibold text-foreground/90">{faq.question}</p>
+                                      <p className="text-muted-foreground">{faq.answer}</p>
+                                    </div>
+                                  ))}
+                                </AccordionContent>
+                              </AccordionItem>
+                            </Accordion>
+                          </div>
+                        )}
+                    </div>
+                    <Button asChild size="sm" variant="outline" className="w-full mt-auto">
+                        <Link href={`/services/${service.id}`}>
+                            تفاصيل الخدمة <ArrowLeftCircle className="ms-2 h-4 w-4" />
+                        </Link>
+                    </Button>
                   </CardContent>
                 </Card>
               ))}
@@ -153,3 +160,4 @@ export default function PublicServicesPage() {
     </div>
   );
 }
+
