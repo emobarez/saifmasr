@@ -6,15 +6,15 @@ import { Input } from "@/components/ui/input";
 import { Avatar, AvatarFallback, AvatarImage } from "@/components/ui/avatar";
 import { Edit3, Save, Loader2, ShieldAlert, Camera } from "lucide-react";
 import { useAuth } from "@/context/AuthContext";
-import { useEffect, useState } from "react";
+import { useEffect, useState, useRef } from "react";
 import { useForm } from "react-hook-form";
 import { zodResolver } from "@hookform/resolvers/zod";
 import * as z from "zod";
 import { Form, FormControl, FormField, FormItem, FormLabel, FormMessage } from "@/components/ui/form";
 import { useToast } from "@/hooks/use-toast";
 import { updateProfile, reauthenticateWithCredential, EmailAuthProvider, updatePassword } from "firebase/auth";
-import { auth, storage } from "@/lib/firebase"; // Added storage
-import { ref, uploadBytesResumable, getDownloadURL, deleteObject } from "firebase/storage"; // Added storage functions
+import { auth, storage } from "@/lib/firebase"; 
+import { ref, uploadBytesResumable, getDownloadURL } from "firebase/storage"; 
 import { logActivity } from "@/lib/activityLogger";
 
 const MAX_FILE_SIZE = 2 * 1024 * 1024; // 2MB
@@ -62,10 +62,12 @@ const updateProfileSchema = z.object({
 type UpdateProfileFormValues = z.infer<typeof updateProfileSchema>;
 
 export default function ClientProfilePage() {
-  const { user, loading: authLoading, setUser: setAuthUser } = useAuth(); // Added setAuthUser
+  const { user, loading: authLoading, setUser: setAuthUser } = useAuth(); 
   const { toast } = useToast();
   const [isEditing, setIsEditing] = useState(false);
   const [isUploadingImage, setIsUploadingImage] = useState(false);
+  const [imagePreview, setImagePreview] = useState<string | null>(null);
+  const fileInputRef = useRef<HTMLInputElement>(null);
 
   const form = useForm<UpdateProfileFormValues>({
     resolver: zodResolver(updateProfileSchema),
@@ -91,11 +93,12 @@ export default function ClientProfilePage() {
         newPassword: "",
         confirmNewPassword: "",
       });
+      setImagePreview(user.photoURL || null);
     }
   }, [user, reset]);
 
   const getInitials = (name?: string | null) => {
-    if (!name) return "CM";
+    if (!name) return "SM"; // Consistent fallback
     return name.split(" ").map(n => n[0]).join("").toUpperCase();
   };
 
@@ -110,10 +113,48 @@ export default function ClientProfilePage() {
           newPassword: "",
           confirmNewPassword: "",
         });
+        setImagePreview(user.photoURL || null);
+        if (fileInputRef.current) {
+          fileInputRef.current.value = ""; // Clear file input on cancel
+        }
       }
     }
     setIsEditing(!isEditing);
   };
+
+  const handleProfileImageChange = (event: React.ChangeEvent<HTMLInputElement>) => {
+    const files = event.target.files;
+    if (files && files.length > 0) {
+      const file = files[0];
+      // Validate file size and type here *before* setting preview
+      if (file.size > MAX_FILE_SIZE) {
+        toast({ title: "خطأ في الملف", description: `حجم الصورة يجب أن لا يتجاوز ${MAX_FILE_SIZE / 1024 / 1024} ميجا بايت.`, variant: "destructive" });
+        setImagePreview(user?.photoURL || null); // Revert to original
+        if (fileInputRef.current) fileInputRef.current.value = ""; // Clear input
+        form.setValue("profileImage", undefined); // Clear from form state
+        return;
+      }
+      if (!ALLOWED_IMAGE_TYPES.includes(file.type)) {
+        toast({ title: "خطأ في الملف", description: "نوع الصورة غير مدعوم. الأنواع المسموح بها: JPG, PNG, GIF, WEBP.", variant: "destructive" });
+        setImagePreview(user?.photoURL || null); // Revert to original
+        if (fileInputRef.current) fileInputRef.current.value = ""; // Clear input
+        form.setValue("profileImage", undefined); // Clear from form state
+        return;
+      }
+      // File is valid, proceed with preview and form update
+      const reader = new FileReader();
+      reader.onloadend = () => {
+        setImagePreview(reader.result as string);
+      };
+      reader.readAsDataURL(file);
+      form.setValue("profileImage", files); // Update React Hook Form state
+    } else {
+      // No file selected or selection cleared
+      setImagePreview(user?.photoURL || null);
+      form.setValue("profileImage", undefined);
+    }
+  };
+
 
   const onSubmit = async (data: UpdateProfileFormValues) => {
     if (!auth.currentUser) {
@@ -125,7 +166,6 @@ export default function ClientProfilePage() {
     let passwordChanged = false;
     let profileImageUpdated = false;
 
-    // Update Display Name
     if (data.name !== auth.currentUser.displayName) {
       try {
         await updateProfile(auth.currentUser, { displayName: data.name });
@@ -133,7 +173,7 @@ export default function ClientProfilePage() {
          await logActivity({
             actionType: "CLIENT_PROFILE_INFO_UPDATED",
             description: `Client ${auth.currentUser.displayName || auth.currentUser.email} updated their display name to: ${data.name}.`,
-            actor: { id: auth.currentUser.uid, role: "client", name: data.name }, // Use new name
+            actor: { id: auth.currentUser.uid, role: "client", name: data.name }, 
             target: { id: auth.currentUser.uid, type: "userProfile" },
             details: { oldName: auth.currentUser.displayName, newName: data.name }
           });
@@ -143,17 +183,16 @@ export default function ClientProfilePage() {
       }
     }
     
-    // Update Profile Image
     const imageFile = data.profileImage?.[0];
     if (imageFile) {
       setIsUploadingImage(true);
       try {
         const fileExtension = imageFile.name.split('.').pop();
         const imagePath = `profile-pictures/${auth.currentUser.uid}/profile.${fileExtension}`;
-        const storageRef = ref(storage, imagePath);
+        const storageRefInstance = ref(storage, imagePath);
         
         toast({ title: "جارٍ رفع الصورة...", description: "قد يستغرق هذا بعض الوقت."});
-        const uploadTask = uploadBytesResumable(storageRef, imageFile);
+        const uploadTask = uploadBytesResumable(storageRefInstance, imageFile);
         
         await new Promise<void>((resolve, reject) => {
           uploadTask.on('state_changed', 
@@ -166,6 +205,7 @@ export default function ClientProfilePage() {
               const downloadURL = await getDownloadURL(uploadTask.snapshot.ref);
               await updateProfile(auth.currentUser!, { photoURL: downloadURL });
               profileImageUpdated = true;
+              setImagePreview(downloadURL); // Update preview with final URL
               await logActivity({
                 actionType: "CLIENT_PROFILE_PICTURE_UPDATED",
                 description: `Client ${auth.currentUser?.displayName || auth.currentUser?.email} updated their profile picture.`,
@@ -186,7 +226,6 @@ export default function ClientProfilePage() {
     }
 
 
-    // Change Password if newPassword is provided
     if (data.newPassword && data.currentPassword) {
       try {
         if (!auth.currentUser.email) {
@@ -232,7 +271,7 @@ export default function ClientProfilePage() {
         };
         setAuthUser(updatedUser as any); 
       }
-    } else if (isEditing) {
+    } else if (isEditing && !data.profileImage && !data.newPassword && data.name === auth.currentUser.displayName) {
       toast({ title: "لا تغييرات", description: "لم يتم إجراء أي تعديلات على ملفك الشخصي." });
     }
     
@@ -246,6 +285,9 @@ export default function ClientProfilePage() {
           newPassword: "",
           confirmNewPassword: "",
         });
+        if (fileInputRef.current) {
+          fileInputRef.current.value = ""; // Clear file input after successful submission
+        }
     }
   };
 
@@ -259,23 +301,6 @@ export default function ClientProfilePage() {
   }
   
   const watchedNewPassword = watch("newPassword");
-  const watchedProfileImage = watch("profileImage");
-  const [imagePreview, setImagePreview] = useState<string | null>(user?.photoURL || null);
-
-  useEffect(() => {
-    if (watchedProfileImage && watchedProfileImage.length > 0) {
-      const file = watchedProfileImage[0];
-      const reader = new FileReader();
-      reader.onloadend = () => {
-        setImagePreview(reader.result as string);
-      };
-      reader.readAsDataURL(file);
-    } else if (!isEditing) {
-      setImagePreview(user?.photoURL || null);
-    } else if (isEditing && !watchedProfileImage) {
-       setImagePreview(user?.photoURL || null); // Keep current image if no new one is selected during edit
-    }
-  }, [watchedProfileImage, user, isEditing]);
 
 
   return (
@@ -332,28 +357,24 @@ export default function ClientProfilePage() {
                 )}
               />
               {isEditing && (
-                <FormField
-                  control={control}
-                  name="profileImage"
-                  render={({ field: { onChange, value, ...restField } }) => (
-                    <FormItem>
-                      <FormLabel className="flex items-center gap-2">
-                        <Camera className="h-5 w-5"/>
-                        تغيير الصورة الشخصية (اختياري)
-                      </FormLabel>
-                      <FormControl>
-                        <Input 
-                          type="file" 
-                          accept="image/*"
-                          onChange={(e) => onChange(e.target.files)}
-                          {...restField}
-                          disabled={isSubmitting || isUploadingImage}
-                        />
-                      </FormControl>
-                       <FormMessage />
-                    </FormItem>
-                  )}
-                />
+                // Use a controlled input, but react-hook-form handles the FileList.
+                // We use a ref to clear it manually if needed.
+                <FormItem>
+                  <FormLabel className="flex items-center gap-2">
+                    <Camera className="h-5 w-5"/>
+                    تغيير الصورة الشخصية (اختياري)
+                  </FormLabel>
+                  <FormControl>
+                    <Input 
+                      type="file" 
+                      accept="image/*"
+                      ref={fileInputRef} // For manual clearing
+                      onChange={handleProfileImageChange} // Custom handler
+                      disabled={isSubmitting || isUploadingImage}
+                    />
+                  </FormControl>
+                  <FormMessage>{form.formState.errors.profileImage?.message}</FormMessage> 
+                </FormItem>
               )}
               
               {isEditing && (
