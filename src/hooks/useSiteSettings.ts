@@ -81,7 +81,7 @@ export interface SiteSettings {
 }
 
 // PRD Aligned Default Settings / Replit Elite Dark Theme
-const DEFAULT_SETTINGS: SiteSettings = {
+export const DEFAULT_SETTINGS: SiteSettings = {
   portalName: DEFAULT_PORTAL_NAME,
   maintenanceMode: false,
   adminEmail: "admin@saifmasr.com",
@@ -260,3 +260,4 @@ export function useSiteSettings() {
     isLoadingSiteSettings,
   }), [siteSettings, isLoadingSiteSettings]);
 }
+
