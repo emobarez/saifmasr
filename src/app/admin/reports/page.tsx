@@ -226,7 +226,7 @@ export default function AdminReportsPage() {
         <FormItem><FormLabel>وصف موجز للتقرير</FormLabel><FormControl><Textarea placeholder="وصف قصير لمحتوى التقرير والغرض منه..." {...field} rows={3} /></FormControl><FormMessage /></FormItem>
       )} />
       <FormField control={formInstance.control} name="content" render={({ field }) => (
-        <FormItem><FormLabel>محتوى التقرير</FormLabel><FormControl><Textarea placeholder="أدخل محتوى التقرير هنا..." {...field} rows={10} /></FormControl><FormMessage /></FormItem>
+        <FormItem><FormLabel>محتوى التقرير</FormLabel><FormControl><Textarea placeholder="أدخل محتوى التقرير هنا..." {...field} rows={15} /></FormControl><FormMessage /></FormItem>
       )} />
       <FormField control={formInstance.control} name="status" render={({ field }) => (
         <FormItem><FormLabel>حالة التقرير</FormLabel>
