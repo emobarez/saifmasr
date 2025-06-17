@@ -26,78 +26,6 @@ const optionalHslString = z.string().optional().refine(
 );
 const optionalUrl = z.string().url({ message: "الرابط غير صالح. تأكد من تضمين http:// أو https://" }).optional().or(z.literal(''));
 
-const DEFAULT_SETTINGS_FORM_OUTSIDE_COMPONENT: SettingsFormValues = {
-  portalName: DEFAULT_SETTINGS.portalName,
-  adminEmail: DEFAULT_SETTINGS.adminEmail,
-  maintenanceMode: DEFAULT_SETTINGS.maintenanceMode,
-  companyPhone: DEFAULT_SETTINGS.companyPhone,
-  companyAddress: DEFAULT_SETTINGS.companyAddress,
-  publicEmail: DEFAULT_SETTINGS.publicEmail,
-
-  themeBackgroundLight: DEFAULT_SETTINGS.themeBackgroundLight,
-  themeForegroundLight: DEFAULT_SETTINGS.themeForegroundLight,
-  themePrimaryLight: DEFAULT_SETTINGS.themePrimaryLight,
-  themePrimaryForegroundLight: DEFAULT_SETTINGS.themePrimaryForegroundLight,
-  themeAccentLight: DEFAULT_SETTINGS.themeAccentLight,
-  themeAccentForegroundLight: DEFAULT_SETTINGS.themeAccentForegroundLight,
-  themeCardLight: DEFAULT_SETTINGS.themeCardLight,
-  themeCardForegroundLight: DEFAULT_SETTINGS.themeCardForegroundLight,
-  themePopoverLight: DEFAULT_SETTINGS.themePopoverLight,
-  themePopoverForegroundLight: DEFAULT_SETTINGS.themePopoverForegroundLight,
-  themeSecondaryLight: DEFAULT_SETTINGS.themeSecondaryLight,
-  themeSecondaryForegroundLight: DEFAULT_SETTINGS.themeSecondaryForegroundLight,
-  themeMutedLight: DEFAULT_SETTINGS.themeMutedLight,
-  themeMutedForegroundLight: DEFAULT_SETTINGS.themeMutedForegroundLight,
-  themeBorderLight: DEFAULT_SETTINGS.themeBorderLight,
-  themeInputLight: DEFAULT_SETTINGS.themeInputLight,
-  themeRingLight: DEFAULT_SETTINGS.themeRingLight,
-  themeDestructiveLight: DEFAULT_SETTINGS.themeDestructiveLight,
-  themeDestructiveForegroundLight: DEFAULT_SETTINGS.themeDestructiveForegroundLight,
-
-  themeBackgroundDark: DEFAULT_SETTINGS.themeBackgroundDark,
-  themeForegroundDark: DEFAULT_SETTINGS.themeForegroundDark,
-  themePrimaryDark: DEFAULT_SETTINGS.themePrimaryDark,
-  themePrimaryForegroundDark: DEFAULT_SETTINGS.themePrimaryForegroundDark,
-  themeAccentDark: DEFAULT_SETTINGS.themeAccentDark,
-  themeAccentForegroundDark: DEFAULT_SETTINGS.themeAccentForegroundDark,
-  themeCardDark: DEFAULT_SETTINGS.themeCardDark,
-  themeCardForegroundDark: DEFAULT_SETTINGS.themeCardForegroundDark,
-  themePopoverDark: DEFAULT_SETTINGS.themePopoverDark,
-  themePopoverForegroundDark: DEFAULT_SETTINGS.themePopoverForegroundDark,
-  themeSecondaryDark: DEFAULT_SETTINGS.themeSecondaryDark,
-  themeSecondaryForegroundDark: DEFAULT_SETTINGS.themeSecondaryForegroundDark,
-  themeMutedDark: DEFAULT_SETTINGS.themeMutedDark,
-  themeMutedForegroundDark: DEFAULT_SETTINGS.themeMutedForegroundDark,
-  themeBorderDark: DEFAULT_SETTINGS.themeBorderDark,
-  themeInputDark: DEFAULT_SETTINGS.themeInputDark,
-  themeRingDark: DEFAULT_SETTINGS.themeRingDark,
-  themeDestructiveDark: DEFAULT_SETTINGS.themeDestructiveDark,
-  themeDestructiveForegroundDark: DEFAULT_SETTINGS.themeDestructiveForegroundDark,
-  
-  socialFacebookUrl: DEFAULT_SETTINGS.socialFacebookUrl,
-  socialTwitterUrl: DEFAULT_SETTINGS.socialTwitterUrl,
-  socialLinkedinUrl: DEFAULT_SETTINGS.socialLinkedinUrl,
-  socialInstagramUrl: DEFAULT_SETTINGS.socialInstagramUrl,
-
-  themeSidebarBackgroundLight: DEFAULT_SETTINGS.themeSidebarBackgroundLight,
-  themeSidebarForegroundLight: DEFAULT_SETTINGS.themeSidebarForegroundLight,
-  themeSidebarPrimaryLight: DEFAULT_SETTINGS.themeSidebarPrimaryLight,
-  themeSidebarPrimaryForegroundLight: DEFAULT_SETTINGS.themeSidebarPrimaryForegroundLight,
-  themeSidebarAccentLight: DEFAULT_SETTINGS.themeSidebarAccentLight,
-  themeSidebarAccentForegroundLight: DEFAULT_SETTINGS.themeSidebarAccentForegroundLight,
-  themeSidebarBorderLight: DEFAULT_SETTINGS.themeSidebarBorderLight,
-  themeSidebarRingLight: DEFAULT_SETTINGS.themeSidebarRingLight,
-
-  themeSidebarBackgroundDark: DEFAULT_SETTINGS.themeSidebarBackgroundDark,
-  themeSidebarForegroundDark: DEFAULT_SETTINGS.themeSidebarForegroundDark,
-  themeSidebarPrimaryDark: DEFAULT_SETTINGS.themeSidebarPrimaryDark,
-  themeSidebarPrimaryForegroundDark: DEFAULT_SETTINGS.themeSidebarPrimaryForegroundDark,
-  themeSidebarAccentDark: DEFAULT_SETTINGS.themeSidebarAccentDark,
-  themeSidebarAccentForegroundDark: DEFAULT_SETTINGS.themeSidebarAccentForegroundDark,
-  themeSidebarBorderDark: DEFAULT_SETTINGS.themeSidebarBorderDark,
-  themeSidebarRingDark: DEFAULT_SETTINGS.themeSidebarRingDark,
-};
-
 const settingsSchema = z.object({
   portalName: z.string().min(3, { message: "اسم البوابة يجب أن لا يقل عن 3 أحرف." }),
   adminEmail: z.string().email({ message: "البريد الإلكتروني للمسؤول غير صالح." }),
@@ -172,6 +100,79 @@ const settingsSchema = z.object({
 
 type SettingsFormValues = z.infer<typeof settingsSchema>;
 
+// Moved outside the component
+const DEFAULT_SETTINGS_FORM_OUTSIDE_COMPONENT: SettingsFormValues = {
+  portalName: DEFAULT_SETTINGS.portalName,
+  adminEmail: DEFAULT_SETTINGS.adminEmail,
+  maintenanceMode: DEFAULT_SETTINGS.maintenanceMode,
+  companyPhone: DEFAULT_SETTINGS.companyPhone,
+  companyAddress: DEFAULT_SETTINGS.companyAddress,
+  publicEmail: DEFAULT_SETTINGS.publicEmail,
+
+  themeBackgroundLight: DEFAULT_SETTINGS.themeBackgroundLight,
+  themeForegroundLight: DEFAULT_SETTINGS.themeForegroundLight,
+  themePrimaryLight: DEFAULT_SETTINGS.themePrimaryLight,
+  themePrimaryForegroundLight: DEFAULT_SETTINGS.themePrimaryForegroundLight,
+  themeAccentLight: DEFAULT_SETTINGS.themeAccentLight,
+  themeAccentForegroundLight: DEFAULT_SETTINGS.themeAccentForegroundLight,
+  themeCardLight: DEFAULT_SETTINGS.themeCardLight,
+  themeCardForegroundLight: DEFAULT_SETTINGS.themeCardForegroundLight,
+  themePopoverLight: DEFAULT_SETTINGS.themePopoverLight,
+  themePopoverForegroundLight: DEFAULT_SETTINGS.themePopoverForegroundLight,
+  themeSecondaryLight: DEFAULT_SETTINGS.themeSecondaryLight,
+  themeSecondaryForegroundLight: DEFAULT_SETTINGS.themeSecondaryForegroundLight,
+  themeMutedLight: DEFAULT_SETTINGS.themeMutedLight,
+  themeMutedForegroundLight: DEFAULT_SETTINGS.themeMutedForegroundLight,
+  themeBorderLight: DEFAULT_SETTINGS.themeBorderLight,
+  themeInputLight: DEFAULT_SETTINGS.themeInputLight,
+  themeRingLight: DEFAULT_SETTINGS.themeRingLight,
+  themeDestructiveLight: DEFAULT_SETTINGS.themeDestructiveLight,
+  themeDestructiveForegroundLight: DEFAULT_SETTINGS.themeDestructiveForegroundLight,
+
+  themeBackgroundDark: DEFAULT_SETTINGS.themeBackgroundDark,
+  themeForegroundDark: DEFAULT_SETTINGS.themeForegroundDark,
+  themePrimaryDark: DEFAULT_SETTINGS.themePrimaryDark,
+  themePrimaryForegroundDark: DEFAULT_SETTINGS.themePrimaryForegroundDark,
+  themeAccentDark: DEFAULT_SETTINGS.themeAccentDark,
+  themeAccentForegroundDark: DEFAULT_SETTINGS.themeAccentForegroundDark,
+  themeCardDark: DEFAULT_SETTINGS.themeCardDark,
+  themeCardForegroundDark: DEFAULT_SETTINGS.themeCardForegroundDark,
+  themePopoverDark: DEFAULT_SETTINGS.themePopoverDark,
+  themePopoverForegroundDark: DEFAULT_SETTINGS.themePopoverForegroundDark,
+  themeSecondaryDark: DEFAULT_SETTINGS.themeSecondaryDark,
+  themeSecondaryForegroundDark: DEFAULT_SETTINGS.themeSecondaryForegroundDark,
+  themeMutedDark: DEFAULT_SETTINGS.themeMutedDark,
+  themeMutedForegroundDark: DEFAULT_SETTINGS.themeMutedForegroundDark,
+  themeBorderDark: DEFAULT_SETTINGS.themeBorderDark,
+  themeInputDark: DEFAULT_SETTINGS.themeInputDark,
+  themeRingDark: DEFAULT_SETTINGS.themeRingDark,
+  themeDestructiveDark: DEFAULT_SETTINGS.themeDestructiveDark,
+  themeDestructiveForegroundDark: DEFAULT_SETTINGS.themeDestructiveForegroundDark,
+  
+  socialFacebookUrl: DEFAULT_SETTINGS.socialFacebookUrl,
+  socialTwitterUrl: DEFAULT_SETTINGS.socialTwitterUrl,
+  socialLinkedinUrl: DEFAULT_SETTINGS.socialLinkedinUrl,
+  socialInstagramUrl: DEFAULT_SETTINGS.socialInstagramUrl,
+
+  themeSidebarBackgroundLight: DEFAULT_SETTINGS.themeSidebarBackgroundLight,
+  themeSidebarForegroundLight: DEFAULT_SETTINGS.themeSidebarForegroundLight,
+  themeSidebarPrimaryLight: DEFAULT_SETTINGS.themeSidebarPrimaryLight,
+  themeSidebarPrimaryForegroundLight: DEFAULT_SETTINGS.themeSidebarPrimaryForegroundLight,
+  themeSidebarAccentLight: DEFAULT_SETTINGS.themeSidebarAccentLight,
+  themeSidebarAccentForegroundLight: DEFAULT_SETTINGS.themeSidebarAccentForegroundLight,
+  themeSidebarBorderLight: DEFAULT_SETTINGS.themeSidebarBorderLight,
+  themeSidebarRingLight: DEFAULT_SETTINGS.themeSidebarRingLight,
+
+  themeSidebarBackgroundDark: DEFAULT_SETTINGS.themeSidebarBackgroundDark,
+  themeSidebarForegroundDark: DEFAULT_SETTINGS.themeSidebarForegroundDark,
+  themeSidebarPrimaryDark: DEFAULT_SETTINGS.themeSidebarPrimaryDark,
+  themeSidebarPrimaryForegroundDark: DEFAULT_SETTINGS.themeSidebarPrimaryForegroundDark,
+  themeSidebarAccentDark: DEFAULT_SETTINGS.themeSidebarAccentDark,
+  themeSidebarAccentForegroundDark: DEFAULT_SETTINGS.themeSidebarAccentForegroundDark,
+  themeSidebarBorderDark: DEFAULT_SETTINGS.themeSidebarBorderDark,
+  themeSidebarRingDark: DEFAULT_SETTINGS.themeSidebarRingDark,
+};
+
 
 // Helper function for HSL preview
 const isValidHslForPreview = (value: string | undefined): boolean => {
@@ -194,6 +195,7 @@ export default function AdminSettingsPage() {
   const settingsDocRef = doc(db, "systemSettings", "general");
   
   useEffect(() => {
+    // Use siteSettingsDataFromHook directly as a dependency
     if (!siteSettingsDataFromHook.isLoadingSiteSettings && siteSettingsDataFromHook.portalName !== undefined) {
       const { isLoadingSiteSettings: _, ...loadedSettings } = siteSettingsDataFromHook;
       reset({
