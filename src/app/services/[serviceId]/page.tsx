@@ -106,11 +106,13 @@ export default function ServiceDetailPage() {
     let title = "خدمة غير موجودة";
     let description = "عفواً، الخدمة التي تبحث عنها إما أنها غير موجودة أو قد تم حذفها.";
     let icon = <AlertTriangle className="h-16 w-16 text-destructive mx-auto mb-6" />;
+    let titleColor = "text-destructive";
 
     if (notFoundReason === 'notAvailable') {
         title = "خدمة غير متاحة حاليًا";
         description = "عفواً، هذه الخدمة موجودة ولكنها غير متاحة للعرض في الوقت الحالي. قد تكون قيد التطوير أو متوقفة مؤقتًا.";
-        icon = <Info className="h-16 w-16 text-yellow-500 mx-auto mb-6" />;
+        icon = <Info className="h-16 w-16 text-yellow-500 dark:text-yellow-400 mx-auto mb-6" />;
+        titleColor = "text-yellow-600 dark:text-yellow-400";
     }
     
     return (
@@ -118,7 +120,7 @@ export default function ServiceDetailPage() {
         <Header />
         <main className="flex-grow container mx-auto px-6 py-12 md:py-20 text-center">
           {icon}
-          <h1 className={`text-3xl font-bold font-headline mb-4 ${notFoundReason === 'notAvailable' ? 'text-yellow-600' : 'text-destructive'}`}>{title}</h1>
+          <h1 className={`text-3xl font-bold font-headline mb-4 ${titleColor}`}>{title}</h1>
           <p className="text-lg text-muted-foreground mb-8 max-w-md mx-auto">
             {description}
           </p>
@@ -240,3 +242,4 @@ export default function ServiceDetailPage() {
     </div>
   );
 }
+
