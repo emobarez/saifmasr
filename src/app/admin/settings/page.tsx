@@ -213,6 +213,7 @@ const HtmlColorPicker = ({ formFieldName, watch, setValue, disabled }: {
     if (newHex.toUpperCase() !== pickerHex.toUpperCase()) {
       setPickerHex(newHex);
     }
+  // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [hslValueFromForm, formFieldName, pickerHex]);
 
 
@@ -536,7 +537,10 @@ export default function AdminSettingsPage() {
                 
                 <TabsContent value="general" className="space-y-6">
                   <Card>
-                    <CardHeader><CardTitle className="flex items-center gap-2"><SettingsIcon className="h-5 w-5" />الإعدادات العامة</CardTitle></CardHeader>
+                    <CardHeader>
+                        <CardTitle className="flex items-center gap-2"><SettingsIcon className="h-5 w-5" />الإعدادات العامة</CardTitle>
+                        <CardDescription>التحكم في الإعدادات الأساسية للبوابة مثل اسم الموقع، بريد المسؤول، وتفعيل وضع الصيانة.</CardDescription>
+                    </CardHeader>
                     <CardContent className="space-y-6">
                       <FormField control={control} name="portalName" render={({ field }) => (
                           <FormItem><FormLabel>اسم البوابة</FormLabel><FormControl><Input {...field} disabled={isSubmitting} /></FormControl><FormMessage /></FormItem>
@@ -557,7 +561,10 @@ export default function AdminSettingsPage() {
                   </Card>
                   
                   <Card>
-                    <CardHeader><CardTitle className="flex items-center gap-2"><ImageIcon className="h-5 w-5" />إعدادات الهوية البصرية</CardTitle></CardHeader>
+                    <CardHeader>
+                        <CardTitle className="flex items-center gap-2"><ImageIcon className="h-5 w-5" />إعدادات الهوية البصرية</CardTitle>
+                        <CardDescription>تخصيص شعار البوابة وأيقونة الموقع لتعزيز الهوية البصرية.</CardDescription>
+                    </CardHeader>
                     <CardContent className="space-y-6">
                         <FormField control={control} name="logoUrl" render={({ field }) => (
                             <FormItem><FormLabel className="flex items-center gap-1"><ImageIcon className="h-4 w-4 text-muted-foreground" />رابط شعار البوابة (Logo)</FormLabel><FormControl><Input placeholder="https://example.com/logo.png" {...field} value={field.value || ""} disabled={isSubmitting} /></FormControl><FormMessage /></FormItem>
@@ -571,7 +578,10 @@ export default function AdminSettingsPage() {
                   </Card>
 
                   <Card>
-                    <CardHeader><CardTitle className="flex items-center gap-2"><Phone className="h-5 w-5" />معلومات الاتصال العامة</CardTitle></CardHeader>
+                    <CardHeader>
+                        <CardTitle className="flex items-center gap-2"><Phone className="h-5 w-5" />معلومات الاتصال العامة</CardTitle>
+                        <CardDescription>إدارة معلومات الاتصال العامة التي ستظهر للزوار والعملاء.</CardDescription>
+                    </CardHeader>
                     <CardContent className="space-y-6">
                         <FormField control={control} name="publicEmail" render={({ field }) => (
                             <FormItem><FormLabel className="flex items-center gap-1"><Mail className="h-4 w-4 text-muted-foreground" />البريد الإلكتروني العام (للتواصل)</FormLabel><FormControl><Input type="email" placeholder="contact@example.com" {...field} value={field.value || ""} disabled={isSubmitting} /></FormControl><FormMessage /></FormItem>
