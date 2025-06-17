@@ -69,7 +69,7 @@ export default function AiReportToolPage() {
         setImprovementSuggestions(null);
         return;
       }
-      setIsLoadingReportContent(true); // Moved here
+      setIsLoadingReportContent(true); 
       setSummaryResult(null);
       setImprovementSuggestions(null);
       const selectedReportDetails = reports.find(r => r.id === selectedReportId);
@@ -103,7 +103,8 @@ export default function AiReportToolPage() {
       }
     };
     loadReportContent();
-  }, [selectedReportId, toast, adminUser, reports]);
+  // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [selectedReportId, toast, adminUser]);
 
 
   const handleGenerateSummary = async () => {
@@ -199,8 +200,8 @@ export default function AiReportToolPage() {
   };
 
   const handleSaveSectionToReport = async () => {
-    if (!selectedReportId || !generatedSection?.generatedSectionText) {
-      toast({ title: "خطأ", description: "يرجى تحديد تقرير وإنشاء قسم لحفظه.", variant: "destructive" });
+    if (!selectedReportId || !generatedSection?.generatedSectionText || !sectionTopic.trim()) {
+      toast({ title: "خطأ", description: "يرجى تحديد تقرير، إدخال موضوع للقسم، وإنشاء القسم لحفظه.", variant: "destructive" });
       return;
     }
     setIsSavingSection(true);
@@ -220,7 +221,7 @@ export default function AiReportToolPage() {
         return;
       }
       const currentContent = reportSnap.data()?.content || "";
-      const sectionTitleForContent = sectionTopic.trim() || 'قسم جديد';
+      const sectionTitleForContent = sectionTopic.trim(); // Already validated not to be empty
       const newSectionContent = `\n\n---\n\n## ${sectionTitleForContent}\n\n${generatedSection.generatedSectionText}`;
       const updatedContent = currentContent + newSectionContent;
       
@@ -388,22 +389,27 @@ export default function AiReportToolPage() {
               إنشاء قسم التقرير
             </Button>
             <div className="flex-grow">
-                {selectedReportId && generatedSection && !isSavingSection && (
+                {selectedReportId && generatedSection && sectionTopic.trim() && !isSavingSection && (
                     <p className="text-sm text-foreground mt-1 mb-2">
-                        سيتم إضافة هذا القسم إلى التقرير: <strong className="text-primary">{reports.find(r => r.id === selectedReportId)?.title || '...'}</strong>
+                        سيتم إضافة هذا القسم بعنوان "<strong className="text-primary">{sectionTopic.trim()}</strong>" إلى التقرير: <strong className="text-primary">{reports.find(r => r.id === selectedReportId)?.title || '...'}</strong>
                     </p>
                 )}
                 <Button 
                     onClick={handleSaveSectionToReport} 
-                    disabled={!selectedReportId || !generatedSection || isLoadingReportContent || isLoadingSummary || isLoadingImprovements || isLoadingSection || isSavingSection} 
+                    disabled={!selectedReportId || !generatedSection || !sectionTopic.trim() || isLoadingReportContent || isLoadingSummary || isLoadingImprovements || isLoadingSection || isSavingSection} 
                     variant="outline"
                     className="w-full sm:w-auto"
                 >
                 {isSavingSection ? <Loader2 className="me-2 h-5 w-5 animate-spin" /> : <Save className="me-2 h-5 w-5" />}
                 حفظ القسم في التقرير المحدد (أعلاه)
                 </Button>
-                 {!selectedReportId && generatedSection && !isSavingSection && (
-                <p className="text-sm text-destructive mt-2">ملاحظة: لحفظ هذا القسم، يرجى تحديد تقرير من القائمة في أعلى الصفحة أولاً.</p>
+                 {generatedSection && (!selectedReportId || !sectionTopic.trim()) && !isSavingSection && (
+                <p className="text-sm text-destructive mt-2">
+                    ملاحظة: لحفظ هذا القسم، يرجى { !selectedReportId ? "تحديد تقرير من القائمة في أعلى الصفحة" : ""}
+                    { !selectedReportId && !sectionTopic.trim() ? " و" : ""}
+                    { !sectionTopic.trim() ? "إدخال موضوع للقسم" : ""}
+                    {" "}أولاً.
+                </p>
                 )}
             </div>
           </div>
