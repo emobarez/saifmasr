@@ -10,7 +10,7 @@ import {
   Users, 
   Briefcase, 
   FileTextIcon, 
-  SettingsIcon as PageSettingsIcon, // Renamed to avoid conflict
+  SettingsIcon as PageSettingsIcon,
   Receipt, 
   ClipboardList,
   PlusCircleIcon,
@@ -21,11 +21,11 @@ import {
   LightbulbIcon,
   SparklesIcon,
   InfoIcon,
-  ImageUpIcon, // For profile picture updates
-  CheckCircle2Icon, // For submitted/completed actions
-  FilePlus2, // For AI generated report section
-  FileEditIcon, // For AI appended report section
-  MessageSquarePlus // For AI generated FAQs
+  ImageUpIcon, 
+  CheckCircle2Icon,
+  FilePlus2, 
+  FileEditIcon, 
+  MessageSquarePlus
 } from "lucide-react";
 import { useToast } from "@/hooks/use-toast";
 import { db } from "@/lib/firebase";
@@ -36,6 +36,44 @@ import { Tooltip, TooltipContent, TooltipProvider, TooltipTrigger } from "@/comp
 import { Button } from "@/components/ui/button";
 
 const ITEMS_PER_PAGE = 25;
+
+const translateActionType = (actionType: ActivityActionType): string => {
+  switch (actionType) {
+    case "CLIENT_CREATED": return "إنشاء عميل جديد";
+    case "CLIENT_UPDATED": return "تحديث بيانات عميل";
+    case "CLIENT_DELETED": return "حذف عميل";
+    case "SERVICE_CREATED": return "إنشاء خدمة جديدة";
+    case "SERVICE_UPDATED": return "تحديث بيانات خدمة";
+    case "SERVICE_DELETED": return "حذف خدمة";
+    case "EMPLOYEE_CREATED": return "إضافة موظف جديد";
+    case "EMPLOYEE_UPDATED": return "تحديث بيانات موظف";
+    case "EMPLOYEE_DELETED": return "حذف موظف";
+    case "EMPLOYEE_PROFILE_PICTURE_UPDATED": return "تحديث صورة ملف موظف";
+    case "INVOICE_CREATED": return "إنشاء فاتورة جديدة";
+    case "INVOICE_UPDATED": return "تحديث بيانات فاتورة";
+    case "INVOICE_DELETED": return "حذف فاتورة";
+    case "REPORT_CREATED": return "إنشاء تقرير جديد";
+    case "REPORT_UPDATED": return "تحديث بيانات تقرير";
+    case "REPORT_DELETED": return "حذف تقرير";
+    case "SERVICE_REQUEST_SUBMITTED": return "تقديم طلب خدمة";
+    case "SERVICE_REQUEST_STATUS_UPDATED": return "تحديث حالة طلب خدمة";
+    case "AI_REPORT_SUMMARY_GENERATED": return "إنشاء ملخص تقرير (AI)";
+    case "AI_REPORT_IMPROVEMENTS_SUGGESTED": return "اقتراح تحسينات لتقرير (AI)";
+    case "AI_REPORT_SECTION_GENERATED": return "إنشاء قسم تقرير (AI)";
+    case "AI_REPORT_SECTION_APPENDED": return "إضافة قسم لتقرير (AI)";
+    case "AI_SERVICE_CATEGORY_SUGGESTED": return "اقتراح فئة خدمة (AI)";
+    case "AI_SERVICE_FAQS_GENERATED": return "إنشاء أسئلة شائعة (AI)";
+    case "SETTINGS_UPDATED": return "تحديث إعدادات النظام";
+    case "USER_LOGIN": return "تسجيل دخول مستخدم";
+    case "USER_LOGOUT": return "تسجيل خروج مستخدم";
+    case "USER_REGISTERED": return "تسجيل مستخدم جديد";
+    case "CLIENT_PROFILE_PICTURE_UPDATED": return "تحديث صورة الملف الشخصي (عميل)";
+    case "CLIENT_PROFILE_INFO_UPDATED": return "تحديث معلومات الملف الشخصي (عميل)";
+    case "CLIENT_PASSWORD_CHANGED": return "تغيير كلمة المرور (عميل)";
+    case "UNKNOWN_ACTION": return "إجراء غير معروف";
+    default: return actionType; // Fallback to the original type if not mapped
+  }
+};
 
 export default function AdminActivityLogPage() {
   const [logs, setLogs] = useState<ActivityLogEntry[]>([]);
@@ -76,7 +114,7 @@ export default function AdminActivityLogPage() {
     if (lowerActionType === "ai_report_summary_generated") return <SparklesIcon className="h-4 w-4 inline me-1.5" />;
     if (lowerActionType === "ai_report_section_generated") return <FilePlus2 className="h-4 w-4 inline me-1.5" />;
     if (lowerActionType === "ai_service_faqs_generated") return <MessageSquarePlus className="h-4 w-4 inline me-1.5" />;
-    if (lowerActionType.includes("generated")) return <SparklesIcon className="h-4 w-4 inline me-1.5" />; // General generated
+    if (lowerActionType.includes("generated")) return <SparklesIcon className="h-4 w-4 inline me-1.5" />; 
     if (lowerActionType.includes("submitted")) return <CheckCircle2Icon className="h-4 w-4 inline me-1.5" />;
     if (lowerActionType === "ai_report_section_appended") return <FileEditIcon className="h-4 w-4 inline me-1.5" />;
     if (lowerActionType.includes("updated") && !lowerActionType.includes("status") && !lowerActionType.includes("picture")) return <Edit3Icon className="h-4 w-4 inline me-1.5" />;
@@ -85,7 +123,7 @@ export default function AdminActivityLogPage() {
     if (lowerActionType.includes("login")) return <LogInIcon className="h-4 w-4 inline me-1.5" />;
     if (lowerActionType.includes("logout")) return <LogOutIcon className="h-4 w-4 inline me-1.5" />;
     if (lowerActionType.includes("suggested")) return <LightbulbIcon className="h-4 w-4 inline me-1.5" />;
-    if (lowerActionType.includes("ai_") && !lowerActionType.includes("generated") && !lowerActionType.includes("appended")) return <SparklesIcon className="h-4 w-4 inline me-1.5" />; // other AI
+    if (lowerActionType.includes("ai_") && !lowerActionType.includes("generated") && !lowerActionType.includes("appended")) return <SparklesIcon className="h-4 w-4 inline me-1.5" />;
     if (lowerActionType.includes("picture_updated")) return <ImageUpIcon className="h-4 w-4 inline me-1.5" />;
     if (lowerActionType.includes("status_updated") || lowerActionType.includes("settings_updated")) return <Edit3Icon className="h-4 w-4 inline me-1.5" />;
     return <InfoIcon className="h-4 w-4 inline me-1.5" />;
@@ -101,7 +139,7 @@ export default function AdminActivityLogPage() {
       case "invoice": return <Receipt className="h-4 w-4 inline me-1 text-muted-foreground" />;
       case "servicerequest": return <ClipboardList className="h-4 w-4 inline me-1 text-muted-foreground" />;
       case "settings": return <PageSettingsIcon className="h-4 w-4 inline me-1 text-muted-foreground" />;
-      case "userprofile": return <Users className="h-4 w-4 inline me-1 text-muted-foreground" />; // For profile picture update
+      case "userprofile": return <Users className="h-4 w-4 inline me-1 text-muted-foreground" />; 
       default: return null;
     }
   }
@@ -193,7 +231,7 @@ export default function AdminActivityLogPage() {
                     <TableRow>
                       <TableHead className="min-w-[160px]">الوقت والتاريخ</TableHead>
                       <TableHead className="min-w-[150px]">الفاعل</TableHead>
-                      <TableHead className="min-w-[180px]">نوع الإجراء</TableHead>
+                      <TableHead className="min-w-[200px]">نوع الإجراء</TableHead>
                       <TableHead className="min-w-[250px]">الوصف</TableHead>
                       <TableHead className="min-w-[180px]">الهدف</TableHead>
                       <TableHead className="min-w-[120px]">تفاصيل إضافية</TableHead>
@@ -210,7 +248,7 @@ export default function AdminActivityLogPage() {
                         <TableCell>
                           <div className={`flex items-center font-medium ${getActionTypeColor(log.actionType)}`}>
                             {getActionTypeIcon(log.actionType)}
-                            <span>{log.actionType}</span>
+                            <span>{translateActionType(log.actionType)}</span>
                           </div>
                         </TableCell>
                         <TableCell className="leading-relaxed">{log.description}</TableCell>
