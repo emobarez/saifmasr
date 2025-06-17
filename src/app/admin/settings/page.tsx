@@ -173,6 +173,7 @@ const DEFAULT_SETTINGS_FORM: SettingsFormValues = {
   themeSidebarRingDark: "217 91.2% 59.8%",
 };
 
+// Helper function for HSL preview
 const isValidHslForPreview = (value: string | undefined): boolean => {
   if (!value) return false;
   return hslFormatRegex.test(value.trim());
@@ -182,8 +183,7 @@ export default function AdminSettingsPage() {
   const { toast } = useToast();
   const { user: adminUser } = useAuth();
   
-  const siteSettingsDataFromHook = useSiteSettings(); // Use the entire memoized object from the hook
-  const { isLoadingSiteSettings: isFetchingSettings } = siteSettingsDataFromHook; // Destructure for loader
+  const siteSettingsDataFromHook = useSiteSettings(); 
 
   const form = useForm<SettingsFormValues>({
     resolver: zodResolver(settingsSchema),
@@ -194,8 +194,6 @@ export default function AdminSettingsPage() {
   const settingsDocRef = doc(db, "systemSettings", "general");
   
   useEffect(() => {
-    // Use siteSettingsDataFromHook directly in the dependency array.
-    // Destructure its properties inside the effect if needed for the reset call.
     if (!siteSettingsDataFromHook.isLoadingSiteSettings && siteSettingsDataFromHook.portalName !== undefined) {
       reset({
         portalName: siteSettingsDataFromHook.portalName || DEFAULT_SETTINGS_FORM.portalName,
@@ -465,7 +463,7 @@ export default function AdminSettingsPage() {
   };
 
 
-  if (isFetchingSettings) {
+  if (siteSettingsDataFromHook.isLoadingSiteSettings) {
     return (
       <div className="flex justify-center items-center h-full">
         <Loader2 className="h-8 w-8 animate-spin text-primary" />
@@ -589,7 +587,7 @@ export default function AdminSettingsPage() {
               </Tabs>
 
               <div className="mt-8 flex justify-end">
-                <Button type="submit" disabled={isSubmitting || isFetchingSettings}>
+                <Button type="submit" disabled={isSubmitting || siteSettingsDataFromHook.isLoadingSiteSettings}>
                   {isSubmitting ? <Loader2 className="me-2 h-5 w-5 animate-spin" /> : <Save className="me-2 h-5 w-5" />}
                   حفظ الإعدادات
                 </Button>
@@ -601,4 +599,6 @@ export default function AdminSettingsPage() {
     </div>
   );
 }
+    
+
     
