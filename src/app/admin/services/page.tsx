@@ -143,12 +143,19 @@ export default function AdminServicesPage() {
         ...data, // includes name, category, price, description, status from form
       };
 
-      if (generatedFAQs !== null) { // If FAQs were interacted with (generated, cleared, or modified)
+      // If generatedFAQs state has been explicitly set (not null), use it.
+      // This covers scenarios where FAQs were generated, cleared, or (if manual editing was added) modified.
+      if (generatedFAQs !== null) { 
         serviceDataToUpdate.faqs = generatedFAQs;
-      } else if (editingService.faqs) { // If FAQs were not touched, keep existing ones
+      } 
+      // If generatedFAQs is null, it means no interaction with FAQs happened during this edit session,
+      // OR AI generation resulted in no FAQs and user didn't manually add.
+      // In this case, we preserve what was originally in editingService.faqs.
+      // If editingService.faqs was undefined/empty, and generatedFAQs is null, it effectively stays empty.
+      else if (editingService.faqs) { 
         serviceDataToUpdate.faqs = editingService.faqs;
-      } else { // If not touched and no existing FAQs, set to empty array
-         serviceDataToUpdate.faqs = [];
+      } else { 
+         serviceDataToUpdate.faqs = []; // Default to empty array if no existing and no new ones.
       }
 
 
@@ -185,7 +192,7 @@ export default function AdminServicesPage() {
         price: service.price,
         description: service.description,
         status: service.status,
-        faqs: service.faqs || [], // Ensure faqs is at least an empty array for the form
+        faqs: service.faqs || [], 
     });
     // Load existing FAQs into the generatedFAQs state for display and potential modification
     setGeneratedFAQs(service.faqs && service.faqs.length > 0 ? [...service.faqs] : null); 
@@ -272,6 +279,7 @@ export default function AdminServicesPage() {
     }
     
     setIsGeneratingFAQs(true);
+    setGeneratedFAQs(null); // Clear previous before generating
     try {
       const input: GenerateServiceFAQsInput = { serviceName, serviceDescription, faqCount: 3 }; 
       const result = await generateServiceFAQs(input);
@@ -289,12 +297,13 @@ export default function AdminServicesPage() {
           });
         }
       } else {
-        setGeneratedFAQs([]); 
+        setGeneratedFAQs([]); // Set to empty array to indicate an attempt was made but yielded nothing
         formInstance.setValue("faqs", [], { shouldValidate: true });
         toast({ title: "لم يتم إنشاء أسئلة", description: "لم يتمكن الذكاء الاصطناعي من إنشاء أسئلة شائعة. يمكنك المحاولة مرة أخرى أو إضافتها يدوياً لاحقاً.", variant: "default" });
       }
     } catch (error) {
       console.error("Error generating FAQs:", error);
+      setGeneratedFAQs([]); // Also set to empty array on error to show feedback
       toast({ title: "خطأ في إنشاء الأسئلة", description: "حدث خطأ أثناء محاولة إنشاء الأسئلة الشائعة.", variant: "destructive" });
     } finally {
       setIsGeneratingFAQs(false);
@@ -351,7 +360,8 @@ export default function AdminServicesPage() {
           إنشاء أسئلة شائعة (AI)
         </Button>
       </div>
-      {(generatedFAQs && generatedFAQs.length > 0) && (
+      {/* Display existing/generated FAQs */}
+      {(generatedFAQs !== null && generatedFAQs.length > 0) && (
         <div className="pt-4">
           <h4 className="text-md font-semibold mb-2">الأسئلة الشائعة المقترحة/الحالية:</h4>
           <Accordion type="single" collapsible className="w-full" defaultValue={generatedFAQs.length > 0 ? "faq-0" : undefined}>
@@ -366,7 +376,8 @@ export default function AdminServicesPage() {
           </Accordion>
         </div>
       )}
-       {(generatedFAQs && generatedFAQs.length === 0 && !isGeneratingFAQs) && (
+      {/* Feedback if no FAQs are generated/present after an attempt */}
+       {(generatedFAQs !== null && generatedFAQs.length === 0 && !isGeneratingFAQs) && (
           <p className="pt-4 text-sm text-muted-foreground">لم يتم إنشاء أسئلة شائعة. يمكنك المحاولة مرة أخرى أو إضافتها يدوياً لاحقاً.</p>
        )}
         <FormField control={formInstance.control} name="faqs" render={({ field }) => (<FormItem className="hidden"><FormMessage /></FormItem>)} />
@@ -507,3 +518,4 @@ export default function AdminServicesPage() {
 
 
     
+
