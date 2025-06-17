@@ -281,8 +281,8 @@ export default function AdminServiceRequestsPage() {
                               </div>
                             </TooltipTrigger>
                             {(request.aiReasoning || request.aiError) && (
-                              <TooltipContent side="top" className="max-w-xs">
-                                <p className="text-xs">
+                              <TooltipContent side="top" className="max-w-xs bg-popover p-3 shadow-lg rounded-md text-popover-foreground">
+                                <p className="text-xs whitespace-pre-wrap break-words">
                                   {request.aiReasoning}
                                   {request.aiReasoning && request.aiError && <br />}
                                   {request.aiError && <span className="text-destructive">{request.aiError}</span>}
