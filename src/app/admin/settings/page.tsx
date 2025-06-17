@@ -101,7 +101,6 @@ const settingsSchema = z.object({
 
 type SettingsFormValues = z.infer<typeof settingsSchema>;
 
-// Moved DEFAULT_SETTINGS_FORM outside the component
 const DEFAULT_SETTINGS_FORM: SettingsFormValues = {
   portalName: "سيف مصر الوطنية للأمن",
   adminEmail: "admin@saifmasr.com",
@@ -130,24 +129,24 @@ const DEFAULT_SETTINGS_FORM: SettingsFormValues = {
   themeDestructiveLight: "0 84.2% 60.2%",
   themeDestructiveForegroundLight: "0 0% 98%",
 
-  themeBackgroundDark: "238 10% 12%",
-  themeForegroundDark: "0 0% 90%",
-  themePrimaryDark: "238 55% 65%",
-  themePrimaryForegroundDark: "0 0% 98%",
-  themeAccentDark: "191 58% 55%",
-  themeAccentForegroundDark: "0 0% 98%",
-  themeCardDark: "238 10% 18% / 0.9",
-  themeCardForegroundDark: "0 0% 90%",
-  themePopoverDark: "238 10% 18% / 0.9",
-  themePopoverForegroundDark: "0 0% 90%",
-  themeSecondaryDark: "238 10% 22%",
-  themeSecondaryForegroundDark: "0 0% 85%",
-  themeMutedDark: "238 10% 30%",
-  themeMutedForegroundDark: "0 0% 60%",
-  themeBorderDark: "238 10% 25%",
-  themeInputDark: "238 10% 25%",
-  themeRingDark: "191 58% 55%",
-  themeDestructiveDark: "0 70% 50%",
+  themeBackgroundDark: "222 84% 4.9%",
+  themeForegroundDark: "210 40% 98%",
+  themePrimaryDark: "217 91.2% 59.8%",
+  themePrimaryForegroundDark: "210 40% 98%",
+  themeAccentDark: "188 92% 50%",
+  themeAccentForegroundDark: "222 84% 4.9%",
+  themeCardDark: "222 80% 8%",
+  themeCardForegroundDark: "210 40% 96.1%",
+  themePopoverDark: "222 80% 8%",
+  themePopoverForegroundDark: "210 40% 96.1%",
+  themeSecondaryDark: "217.2 32.6% 17.5%",
+  themeSecondaryForegroundDark: "210 40% 98%",
+  themeMutedDark: "217.2 32.6% 17.5%",
+  themeMutedForegroundDark: "215 20.2% 65.1%",
+  themeBorderDark: "217.2 32.6% 17.5%",
+  themeInputDark: "217.2 32.6% 17.5%",
+  themeRingDark: "217 91.2% 59.8%",
+  themeDestructiveDark: "0 62.8% 30.6%",
   themeDestructiveForegroundDark: "0 0% 98%",
   
   socialFacebookUrl: "",
@@ -164,16 +163,15 @@ const DEFAULT_SETTINGS_FORM: SettingsFormValues = {
   themeSidebarBorderLight: "238 20% 88%",
   themeSidebarRingLight: "191 55% 41%",
 
-  themeSidebarBackgroundDark: "238 12% 15% / 0.9",
-  themeSidebarForegroundDark: "0 0% 85%",
-  themeSidebarPrimaryDark: "238 55% 65%",
+  themeSidebarBackgroundDark: "222 80% 6.5% / 0.9",
+  themeSidebarForegroundDark: "210 40% 90%",
+  themeSidebarPrimaryDark: "217 91.2% 59.8%",
   themeSidebarPrimaryForegroundDark: "0 0% 98%",
-  themeSidebarAccentDark: "191 58% 55%",
-  themeSidebarAccentForegroundDark: "0 0% 98%",
-  themeSidebarBorderDark: "238 10% 22%",
-  themeSidebarRingDark: "191 58% 55%",
+  themeSidebarAccentDark: "188 92% 50%",
+  themeSidebarAccentForegroundDark: "222 84% 4.9%",
+  themeSidebarBorderDark: "217.2 32.6% 14%",
+  themeSidebarRingDark: "217 91.2% 59.8%",
 };
-
 
 const isValidHslForPreview = (value: string | undefined): boolean => {
   if (!value) return false;
@@ -183,100 +181,102 @@ const isValidHslForPreview = (value: string | undefined): boolean => {
 export default function AdminSettingsPage() {
   const { toast } = useToast();
   const { user: adminUser } = useAuth();
-  const siteSettingsHook = useSiteSettings();
-  const { isLoadingSiteSettings: isFetchingSettings, ...initialSettings } = siteSettingsHook;
   
+  const siteSettingsDataFromHook = useSiteSettings(); // Use the entire memoized object from the hook
+  const { isLoadingSiteSettings: isFetchingSettings } = siteSettingsDataFromHook; // Destructure for loader
+
   const form = useForm<SettingsFormValues>({
     resolver: zodResolver(settingsSchema),
-    defaultValues: DEFAULT_SETTINGS_FORM,
+    defaultValues: DEFAULT_SETTINGS_FORM, 
   });
   const { handleSubmit, control, reset, formState: {isSubmitting}, watch } = form;
 
   const settingsDocRef = doc(db, "systemSettings", "general");
   
   useEffect(() => {
-    if (!isFetchingSettings && initialSettings) {
+    // Use siteSettingsDataFromHook directly in the dependency array.
+    // Destructure its properties inside the effect if needed for the reset call.
+    if (!siteSettingsDataFromHook.isLoadingSiteSettings && siteSettingsDataFromHook.portalName !== undefined) {
       reset({
-        portalName: initialSettings.portalName || DEFAULT_SETTINGS_FORM.portalName,
-        adminEmail: initialSettings.adminEmail || DEFAULT_SETTINGS_FORM.adminEmail,
-        maintenanceMode: initialSettings.maintenanceMode === undefined ? DEFAULT_SETTINGS_FORM.maintenanceMode : initialSettings.maintenanceMode,
-        companyPhone: initialSettings.companyPhone || DEFAULT_SETTINGS_FORM.companyPhone,
-        companyAddress: initialSettings.companyAddress || DEFAULT_SETTINGS_FORM.companyAddress,
-        publicEmail: initialSettings.publicEmail || DEFAULT_SETTINGS_FORM.publicEmail,
+        portalName: siteSettingsDataFromHook.portalName || DEFAULT_SETTINGS_FORM.portalName,
+        adminEmail: siteSettingsDataFromHook.adminEmail || DEFAULT_SETTINGS_FORM.adminEmail,
+        maintenanceMode: siteSettingsDataFromHook.maintenanceMode === undefined ? DEFAULT_SETTINGS_FORM.maintenanceMode : siteSettingsDataFromHook.maintenanceMode,
+        companyPhone: siteSettingsDataFromHook.companyPhone || DEFAULT_SETTINGS_FORM.companyPhone,
+        companyAddress: siteSettingsDataFromHook.companyAddress || DEFAULT_SETTINGS_FORM.companyAddress,
+        publicEmail: siteSettingsDataFromHook.publicEmail || DEFAULT_SETTINGS_FORM.publicEmail,
         
-        themeBackgroundLight: initialSettings.themeBackgroundLight || DEFAULT_SETTINGS_FORM.themeBackgroundLight,
-        themeForegroundLight: initialSettings.themeForegroundLight || DEFAULT_SETTINGS_FORM.themeForegroundLight,
-        themePrimaryLight: initialSettings.themePrimaryLight || DEFAULT_SETTINGS_FORM.themePrimaryLight,
-        themePrimaryForegroundLight: initialSettings.themePrimaryForegroundLight || DEFAULT_SETTINGS_FORM.themePrimaryForegroundLight,
-        themeAccentLight: initialSettings.themeAccentLight || DEFAULT_SETTINGS_FORM.themeAccentLight,
-        themeAccentForegroundLight: initialSettings.themeAccentForegroundLight || DEFAULT_SETTINGS_FORM.themeAccentForegroundLight,
-        themeCardLight: initialSettings.themeCardLight || DEFAULT_SETTINGS_FORM.themeCardLight,
-        themeCardForegroundLight: initialSettings.themeCardForegroundLight || DEFAULT_SETTINGS_FORM.themeCardForegroundLight,
-        themePopoverLight: initialSettings.themePopoverLight || DEFAULT_SETTINGS_FORM.themePopoverLight,
-        themePopoverForegroundLight: initialSettings.themePopoverForegroundLight || DEFAULT_SETTINGS_FORM.themePopoverForegroundLight,
-        themeSecondaryLight: initialSettings.themeSecondaryLight || DEFAULT_SETTINGS_FORM.themeSecondaryLight,
-        themeSecondaryForegroundLight: initialSettings.themeSecondaryForegroundLight || DEFAULT_SETTINGS_FORM.themeSecondaryForegroundLight,
-        themeMutedLight: initialSettings.themeMutedLight || DEFAULT_SETTINGS_FORM.themeMutedLight,
-        themeMutedForegroundLight: initialSettings.themeMutedForegroundLight || DEFAULT_SETTINGS_FORM.themeMutedForegroundLight,
-        themeBorderLight: initialSettings.themeBorderLight || DEFAULT_SETTINGS_FORM.themeBorderLight,
-        themeInputLight: initialSettings.themeInputLight || DEFAULT_SETTINGS_FORM.themeInputLight,
-        themeRingLight: initialSettings.themeRingLight || DEFAULT_SETTINGS_FORM.themeRingLight,
-        themeDestructiveLight: initialSettings.themeDestructiveLight || DEFAULT_SETTINGS_FORM.themeDestructiveLight,
-        themeDestructiveForegroundLight: initialSettings.themeDestructiveForegroundLight || DEFAULT_SETTINGS_FORM.themeDestructiveForegroundLight,
+        themeBackgroundLight: siteSettingsDataFromHook.themeBackgroundLight || DEFAULT_SETTINGS_FORM.themeBackgroundLight,
+        themeForegroundLight: siteSettingsDataFromHook.themeForegroundLight || DEFAULT_SETTINGS_FORM.themeForegroundLight,
+        themePrimaryLight: siteSettingsDataFromHook.themePrimaryLight || DEFAULT_SETTINGS_FORM.themePrimaryLight,
+        themePrimaryForegroundLight: siteSettingsDataFromHook.themePrimaryForegroundLight || DEFAULT_SETTINGS_FORM.themePrimaryForegroundLight,
+        themeAccentLight: siteSettingsDataFromHook.themeAccentLight || DEFAULT_SETTINGS_FORM.themeAccentLight,
+        themeAccentForegroundLight: siteSettingsDataFromHook.themeAccentForegroundLight || DEFAULT_SETTINGS_FORM.themeAccentForegroundLight,
+        themeCardLight: siteSettingsDataFromHook.themeCardLight || DEFAULT_SETTINGS_FORM.themeCardLight,
+        themeCardForegroundLight: siteSettingsDataFromHook.themeCardForegroundLight || DEFAULT_SETTINGS_FORM.themeCardForegroundLight,
+        themePopoverLight: siteSettingsDataFromHook.themePopoverLight || DEFAULT_SETTINGS_FORM.themePopoverLight,
+        themePopoverForegroundLight: siteSettingsDataFromHook.themePopoverForegroundLight || DEFAULT_SETTINGS_FORM.themePopoverForegroundLight,
+        themeSecondaryLight: siteSettingsDataFromHook.themeSecondaryLight || DEFAULT_SETTINGS_FORM.themeSecondaryLight,
+        themeSecondaryForegroundLight: siteSettingsDataFromHook.themeSecondaryForegroundLight || DEFAULT_SETTINGS_FORM.themeSecondaryForegroundLight,
+        themeMutedLight: siteSettingsDataFromHook.themeMutedLight || DEFAULT_SETTINGS_FORM.themeMutedLight,
+        themeMutedForegroundLight: siteSettingsDataFromHook.themeMutedForegroundLight || DEFAULT_SETTINGS_FORM.themeMutedForegroundLight,
+        themeBorderLight: siteSettingsDataFromHook.themeBorderLight || DEFAULT_SETTINGS_FORM.themeBorderLight,
+        themeInputLight: siteSettingsDataFromHook.themeInputLight || DEFAULT_SETTINGS_FORM.themeInputLight,
+        themeRingLight: siteSettingsDataFromHook.themeRingLight || DEFAULT_SETTINGS_FORM.themeRingLight,
+        themeDestructiveLight: siteSettingsDataFromHook.themeDestructiveLight || DEFAULT_SETTINGS_FORM.themeDestructiveLight,
+        themeDestructiveForegroundLight: siteSettingsDataFromHook.themeDestructiveForegroundLight || DEFAULT_SETTINGS_FORM.themeDestructiveForegroundLight,
 
-        themeBackgroundDark: initialSettings.themeBackgroundDark || DEFAULT_SETTINGS_FORM.themeBackgroundDark,
-        themeForegroundDark: initialSettings.themeForegroundDark || DEFAULT_SETTINGS_FORM.themeForegroundDark,
-        themePrimaryDark: initialSettings.themePrimaryDark || DEFAULT_SETTINGS_FORM.themePrimaryDark,
-        themePrimaryForegroundDark: initialSettings.themePrimaryForegroundDark || DEFAULT_SETTINGS_FORM.themePrimaryForegroundDark,
-        themeAccentDark: initialSettings.themeAccentDark || DEFAULT_SETTINGS_FORM.themeAccentDark,
-        themeAccentForegroundDark: initialSettings.themeAccentForegroundDark || DEFAULT_SETTINGS_FORM.themeAccentForegroundDark,
-        themeCardDark: initialSettings.themeCardDark || DEFAULT_SETTINGS_FORM.themeCardDark,
-        themeCardForegroundDark: initialSettings.themeCardForegroundDark || DEFAULT_SETTINGS_FORM.themeCardForegroundDark,
-        themePopoverDark: initialSettings.themePopoverDark || DEFAULT_SETTINGS_FORM.themePopoverDark,
-        themePopoverForegroundDark: initialSettings.themePopoverForegroundDark || DEFAULT_SETTINGS_FORM.themePopoverForegroundDark,
-        themeSecondaryDark: initialSettings.themeSecondaryDark || DEFAULT_SETTINGS_FORM.themeSecondaryDark,
-        themeSecondaryForegroundDark: initialSettings.themeSecondaryForegroundDark || DEFAULT_SETTINGS_FORM.themeSecondaryForegroundDark,
-        themeMutedDark: initialSettings.themeMutedDark || DEFAULT_SETTINGS_FORM.themeMutedDark,
-        themeMutedForegroundDark: initialSettings.themeMutedForegroundDark || DEFAULT_SETTINGS_FORM.themeMutedForegroundDark,
-        themeBorderDark: initialSettings.themeBorderDark || DEFAULT_SETTINGS_FORM.themeBorderDark,
-        themeInputDark: initialSettings.themeInputDark || DEFAULT_SETTINGS_FORM.themeInputDark,
-        themeRingDark: initialSettings.themeRingDark || DEFAULT_SETTINGS_FORM.themeRingDark,
-        themeDestructiveDark: initialSettings.themeDestructiveDark || DEFAULT_SETTINGS_FORM.themeDestructiveDark,
-        themeDestructiveForegroundDark: initialSettings.themeDestructiveForegroundDark || DEFAULT_SETTINGS_FORM.themeDestructiveForegroundDark,
+        themeBackgroundDark: siteSettingsDataFromHook.themeBackgroundDark || DEFAULT_SETTINGS_FORM.themeBackgroundDark,
+        themeForegroundDark: siteSettingsDataFromHook.themeForegroundDark || DEFAULT_SETTINGS_FORM.themeForegroundDark,
+        themePrimaryDark: siteSettingsDataFromHook.themePrimaryDark || DEFAULT_SETTINGS_FORM.themePrimaryDark,
+        themePrimaryForegroundDark: siteSettingsDataFromHook.themePrimaryForegroundDark || DEFAULT_SETTINGS_FORM.themePrimaryForegroundDark,
+        themeAccentDark: siteSettingsDataFromHook.themeAccentDark || DEFAULT_SETTINGS_FORM.themeAccentDark,
+        themeAccentForegroundDark: siteSettingsDataFromHook.themeAccentForegroundDark || DEFAULT_SETTINGS_FORM.themeAccentForegroundDark,
+        themeCardDark: siteSettingsDataFromHook.themeCardDark || DEFAULT_SETTINGS_FORM.themeCardDark,
+        themeCardForegroundDark: siteSettingsDataFromHook.themeCardForegroundDark || DEFAULT_SETTINGS_FORM.themeCardForegroundDark,
+        themePopoverDark: siteSettingsDataFromHook.themePopoverDark || DEFAULT_SETTINGS_FORM.themePopoverDark,
+        themePopoverForegroundDark: siteSettingsDataFromHook.themePopoverForegroundDark || DEFAULT_SETTINGS_FORM.themePopoverForegroundDark,
+        themeSecondaryDark: siteSettingsDataFromHook.themeSecondaryDark || DEFAULT_SETTINGS_FORM.themeSecondaryDark,
+        themeSecondaryForegroundDark: siteSettingsDataFromHook.themeSecondaryForegroundDark || DEFAULT_SETTINGS_FORM.themeSecondaryForegroundDark,
+        themeMutedDark: siteSettingsDataFromHook.themeMutedDark || DEFAULT_SETTINGS_FORM.themeMutedDark,
+        themeMutedForegroundDark: siteSettingsDataFromHook.themeMutedForegroundDark || DEFAULT_SETTINGS_FORM.themeMutedForegroundDark,
+        themeBorderDark: siteSettingsDataFromHook.themeBorderDark || DEFAULT_SETTINGS_FORM.themeBorderDark,
+        themeInputDark: siteSettingsDataFromHook.themeInputDark || DEFAULT_SETTINGS_FORM.themeInputDark,
+        themeRingDark: siteSettingsDataFromHook.themeRingDark || DEFAULT_SETTINGS_FORM.themeRingDark,
+        themeDestructiveDark: siteSettingsDataFromHook.themeDestructiveDark || DEFAULT_SETTINGS_FORM.themeDestructiveDark,
+        themeDestructiveForegroundDark: siteSettingsDataFromHook.themeDestructiveForegroundDark || DEFAULT_SETTINGS_FORM.themeDestructiveForegroundDark,
 
-        socialFacebookUrl: initialSettings.socialFacebookUrl || DEFAULT_SETTINGS_FORM.socialFacebookUrl,
-        socialTwitterUrl: initialSettings.socialTwitterUrl || DEFAULT_SETTINGS_FORM.socialTwitterUrl,
-        socialLinkedinUrl: initialSettings.socialLinkedinUrl || DEFAULT_SETTINGS_FORM.socialLinkedinUrl,
-        socialInstagramUrl: initialSettings.socialInstagramUrl || DEFAULT_SETTINGS_FORM.socialInstagramUrl,
+        socialFacebookUrl: siteSettingsDataFromHook.socialFacebookUrl || DEFAULT_SETTINGS_FORM.socialFacebookUrl,
+        socialTwitterUrl: siteSettingsDataFromHook.socialTwitterUrl || DEFAULT_SETTINGS_FORM.socialTwitterUrl,
+        socialLinkedinUrl: siteSettingsDataFromHook.socialLinkedinUrl || DEFAULT_SETTINGS_FORM.socialLinkedinUrl,
+        socialInstagramUrl: siteSettingsDataFromHook.socialInstagramUrl || DEFAULT_SETTINGS_FORM.socialInstagramUrl,
 
-        themeSidebarBackgroundLight: initialSettings.themeSidebarBackgroundLight || DEFAULT_SETTINGS_FORM.themeSidebarBackgroundLight,
-        themeSidebarForegroundLight: initialSettings.themeSidebarForegroundLight || DEFAULT_SETTINGS_FORM.themeSidebarForegroundLight,
-        themeSidebarPrimaryLight: initialSettings.themeSidebarPrimaryLight || DEFAULT_SETTINGS_FORM.themeSidebarPrimaryLight,
-        themeSidebarPrimaryForegroundLight: initialSettings.themeSidebarPrimaryForegroundLight || DEFAULT_SETTINGS_FORM.themeSidebarPrimaryForegroundLight,
-        themeSidebarAccentLight: initialSettings.themeSidebarAccentLight || DEFAULT_SETTINGS_FORM.themeSidebarAccentLight,
-        themeSidebarAccentForegroundLight: initialSettings.themeSidebarAccentForegroundLight || DEFAULT_SETTINGS_FORM.themeSidebarAccentForegroundLight,
-        themeSidebarBorderLight: initialSettings.themeSidebarBorderLight || DEFAULT_SETTINGS_FORM.themeSidebarBorderLight,
-        themeSidebarRingLight: initialSettings.themeSidebarRingLight || DEFAULT_SETTINGS_FORM.themeSidebarRingLight,
+        themeSidebarBackgroundLight: siteSettingsDataFromHook.themeSidebarBackgroundLight || DEFAULT_SETTINGS_FORM.themeSidebarBackgroundLight,
+        themeSidebarForegroundLight: siteSettingsDataFromHook.themeSidebarForegroundLight || DEFAULT_SETTINGS_FORM.themeSidebarForegroundLight,
+        themeSidebarPrimaryLight: siteSettingsDataFromHook.themeSidebarPrimaryLight || DEFAULT_SETTINGS_FORM.themeSidebarPrimaryLight,
+        themeSidebarPrimaryForegroundLight: siteSettingsDataFromHook.themeSidebarPrimaryForegroundLight || DEFAULT_SETTINGS_FORM.themeSidebarPrimaryForegroundLight,
+        themeSidebarAccentLight: siteSettingsDataFromHook.themeSidebarAccentLight || DEFAULT_SETTINGS_FORM.themeSidebarAccentLight,
+        themeSidebarAccentForegroundLight: siteSettingsDataFromHook.themeSidebarAccentForegroundLight || DEFAULT_SETTINGS_FORM.themeSidebarAccentForegroundLight,
+        themeSidebarBorderLight: siteSettingsDataFromHook.themeSidebarBorderLight || DEFAULT_SETTINGS_FORM.themeSidebarBorderLight,
+        themeSidebarRingLight: siteSettingsDataFromHook.themeSidebarRingLight || DEFAULT_SETTINGS_FORM.themeSidebarRingLight,
 
-        themeSidebarBackgroundDark: initialSettings.themeSidebarBackgroundDark || DEFAULT_SETTINGS_FORM.themeSidebarBackgroundDark,
-        themeSidebarForegroundDark: initialSettings.themeSidebarForegroundDark || DEFAULT_SETTINGS_FORM.themeSidebarForegroundDark,
-        themeSidebarPrimaryDark: initialSettings.themeSidebarPrimaryDark || DEFAULT_SETTINGS_FORM.themeSidebarPrimaryDark,
-        themeSidebarPrimaryForegroundDark: initialSettings.themeSidebarPrimaryForegroundDark || DEFAULT_SETTINGS_FORM.themeSidebarPrimaryForegroundDark,
-        themeSidebarAccentDark: initialSettings.themeSidebarAccentDark || DEFAULT_SETTINGS_FORM.themeSidebarAccentDark,
-        themeSidebarAccentForegroundDark: initialSettings.themeSidebarAccentForegroundDark || DEFAULT_SETTINGS_FORM.themeSidebarAccentForegroundDark,
-        themeSidebarBorderDark: initialSettings.themeSidebarBorderDark || DEFAULT_SETTINGS_FORM.themeSidebarBorderDark,
-        themeSidebarRingDark: initialSettings.themeSidebarRingDark || DEFAULT_SETTINGS_FORM.themeSidebarRingDark,
+        themeSidebarBackgroundDark: siteSettingsDataFromHook.themeSidebarBackgroundDark || DEFAULT_SETTINGS_FORM.themeSidebarBackgroundDark,
+        themeSidebarForegroundDark: siteSettingsDataFromHook.themeSidebarForegroundDark || DEFAULT_SETTINGS_FORM.themeSidebarForegroundDark,
+        themeSidebarPrimaryDark: siteSettingsDataFromHook.themeSidebarPrimaryDark || DEFAULT_SETTINGS_FORM.themeSidebarPrimaryDark,
+        themeSidebarPrimaryForegroundDark: siteSettingsDataFromHook.themeSidebarPrimaryForegroundDark || DEFAULT_SETTINGS_FORM.themeSidebarPrimaryForegroundDark,
+        themeSidebarAccentDark: siteSettingsDataFromHook.themeSidebarAccentDark || DEFAULT_SETTINGS_FORM.themeSidebarAccentDark,
+        themeSidebarAccentForegroundDark: siteSettingsDataFromHook.themeSidebarAccentForegroundDark || DEFAULT_SETTINGS_FORM.themeSidebarAccentForegroundDark,
+        themeSidebarBorderDark: siteSettingsDataFromHook.themeSidebarBorderDark || DEFAULT_SETTINGS_FORM.themeSidebarBorderDark,
+        themeSidebarRingDark: siteSettingsDataFromHook.themeSidebarRingDark || DEFAULT_SETTINGS_FORM.themeSidebarRingDark,
       });
     }
-  // Removed DEFAULT_SETTINGS_FORM from dependencies as it's now stable
-  }, [isFetchingSettings, initialSettings, reset]);
+  }, [siteSettingsDataFromHook, reset]);
 
 
   const handleSaveSettings = async (data: SettingsFormValues) => {
     try {
       const dataToSave: SiteSettings = {
-        ...DEFAULT_SETTINGS_FORM, // Start with all defaults to ensure all fields are present
-        ...data, // Override with form data
+        ...DEFAULT_SETTINGS_FORM, 
+        ...data, 
         portalName: data.portalName.trim() || DEFAULT_SETTINGS_FORM.portalName,
         adminEmail: data.adminEmail.trim() || DEFAULT_SETTINGS_FORM.adminEmail,
         maintenanceMode: data.maintenanceMode === undefined ? DEFAULT_SETTINGS_FORM.maintenanceMode : data.maintenanceMode,
@@ -522,15 +522,15 @@ export default function AdminSettingsPage() {
                     <CardHeader><CardTitle className="flex items-center gap-2"><Phone className="h-5 w-5" />معلومات الاتصال العامة</CardTitle></CardHeader>
                     <CardContent className="space-y-6">
                         <FormField control={control} name="publicEmail" render={({ field }) => (
-                            <FormItem><FormLabel className="flex items-center gap-1"><Mail className="h-4 w-4 text-muted-foreground" />البريد الإلكتروني العام (للتواصل)</FormLabel><FormControl><Input type="email" placeholder="contact@example.com" {...field} disabled={isSubmitting} /></FormControl><FormMessage /></FormItem>
+                            <FormItem><FormLabel className="flex items-center gap-1"><Mail className="h-4 w-4 text-muted-foreground" />البريد الإلكتروني العام (للتواصل)</FormLabel><FormControl><Input type="email" placeholder="contact@example.com" {...field} value={field.value || ""} disabled={isSubmitting} /></FormControl><FormMessage /></FormItem>
                           )}
                         />
                         <FormField control={control} name="companyPhone" render={({ field }) => (
-                            <FormItem><FormLabel className="flex items-center gap-1"><Phone className="h-4 w-4 text-muted-foreground" />رقم الهاتف</FormLabel><FormControl><Input placeholder="مثال: +201234567890" {...field} disabled={isSubmitting} /></FormControl><FormMessage /></FormItem>
+                            <FormItem><FormLabel className="flex items-center gap-1"><Phone className="h-4 w-4 text-muted-foreground" />رقم الهاتف</FormLabel><FormControl><Input placeholder="مثال: +201234567890" {...field} value={field.value || ""} disabled={isSubmitting} /></FormControl><FormMessage /></FormItem>
                           )}
                         />
                         <FormField control={control} name="companyAddress" render={({ field }) => (
-                            <FormItem><FormLabel className="flex items-center gap-1"><MapPin className="h-4 w-4 text-muted-foreground" />العنوان الفعلي</FormLabel><FormControl><Textarea placeholder="مثال: 123 شارع النصر، القاهرة، مصر" {...field} disabled={isSubmitting} rows={3} /></FormControl><FormMessage /></FormItem>
+                            <FormItem><FormLabel className="flex items-center gap-1"><MapPin className="h-4 w-4 text-muted-foreground" />العنوان الفعلي</FormLabel><FormControl><Textarea placeholder="مثال: 123 شارع النصر، القاهرة، مصر" {...field} value={field.value || ""} disabled={isSubmitting} rows={3} /></FormControl><FormMessage /></FormItem>
                           )}
                         />
                     </CardContent>
@@ -601,5 +601,4 @@ export default function AdminSettingsPage() {
     </div>
   );
 }
-
     
