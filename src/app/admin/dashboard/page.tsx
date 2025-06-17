@@ -1,4 +1,3 @@
-
 "use client";
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
@@ -171,8 +170,10 @@ export default function AdminDashboardPage() {
       <div className="grid grid-cols-1 lg:grid-cols-3 gap-6">
         <Card className="shadow-md lg:col-span-1">
           <CardHeader>
-            <div className="flex items-center gap-2">
-              <TrendingUp className="h-6 w-6 text-primary" />
+            <div className="flex items-center gap-3">
+              <div className="p-2 bg-primary/10 rounded-md">
+                <TrendingUp className="h-6 w-6 text-primary" />
+              </div>
               <CardTitle className="font-headline text-xl text-primary">إحصائيات سريعة</CardTitle>
             </div>
           </CardHeader>
@@ -210,8 +211,10 @@ export default function AdminDashboardPage() {
 
         <Card className="shadow-md lg:col-span-2">
           <CardHeader>
-            <div className="flex items-center gap-2">
-              <BarChart2 className="h-6 w-6 text-primary" />
+            <div className="flex items-center gap-3">
+               <div className="p-2 bg-primary/10 rounded-md">
+                <BarChart2 className="h-6 w-6 text-primary" />
+              </div>
               <CardTitle className="font-headline text-xl text-primary">نظرة عامة على طلبات الخدمة</CardTitle>
             </div>
             <CardDescription>توزيع طلبات الخدمة حسب الحالة.</CardDescription>
@@ -249,8 +252,10 @@ export default function AdminDashboardPage() {
       
       <Card className="shadow-md"> 
           <CardHeader>
-            <div className="flex items-center gap-2">
-              <Activity className="h-6 w-6 text-primary" />
+            <div className="flex items-center gap-3">
+              <div className="p-2 bg-primary/10 rounded-md">
+                <Activity className="h-6 w-6 text-primary" />
+              </div>
               <CardTitle className="font-headline text-xl text-primary">آخر الأنشطة</CardTitle>
             </div>
           </CardHeader>
@@ -281,4 +286,3 @@ export default function AdminDashboardPage() {
     </div>
   );
 }
-
