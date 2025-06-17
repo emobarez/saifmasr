@@ -100,7 +100,7 @@ const settingsSchema = z.object({
 
 type SettingsFormValues = z.infer<typeof settingsSchema>;
 
-// Moved outside the component
+// Moved outside the component for stable reference
 const DEFAULT_SETTINGS_FORM_OUTSIDE_COMPONENT: SettingsFormValues = {
   portalName: DEFAULT_SETTINGS.portalName,
   adminEmail: DEFAULT_SETTINGS.adminEmail,
@@ -540,4 +540,5 @@ export default function AdminSettingsPage() {
     
 
     
+
 
