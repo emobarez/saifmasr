@@ -4,7 +4,7 @@ import { Card, CardHeader, CardTitle, CardDescription, CardContent } from "@/com
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Switch } from "@/components/ui/switch";
-import { Save, Bell, ShieldCheck, Palette, Loader2, Settings as SettingsIcon, Phone, Mail, MapPin, Paintbrush, Link as LinkIcon, Facebook, Twitter, Linkedin, Instagram, Sun, Moon, Sidebar, Image as ImageIcon, Globe, RotateCcw } from "lucide-react";
+import { Save, Bell, ShieldCheck, Palette, Loader2, Settings as SettingsIcon, Phone, Mail, MapPin, Paintbrush, Link as LinkIcon, Facebook, Twitter, Linkedin, Instagram, Sun, Moon, Sidebar, Image as ImageIcon, Globe, RotateCcw, Edit3 } from "lucide-react";
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
 import { useState, useEffect } from "react";
 import { useToast } from "@/hooks/use-toast";
@@ -247,7 +247,7 @@ export default function AdminSettingsPage() {
 
   const form = useForm<SettingsFormValues>({
     resolver: zodResolver(settingsSchema),
-    defaultValues: DEFAULT_SETTINGS,
+    defaultValues: DEFAULT_SETTINGS, 
   });
   const { handleSubmit, control, reset, formState: {isSubmitting}, watch, setValue } = form;
 
@@ -525,7 +525,7 @@ export default function AdminSettingsPage() {
               <Tabs defaultValue="general" className="w-full" dir="rtl">
                 <TabsList className="grid w-full grid-cols-1 sm:grid-cols-3 mb-6">
                   <TabsTrigger value="general" className="flex items-center gap-2">
-                    <SettingsIcon className="h-5 w-5" /> عامة وهوية
+                    <Edit3 className="h-5 w-5" /> عامة وهوية
                   </TabsTrigger>
                   <TabsTrigger value="appearance" className="flex items-center gap-2">
                     <Paintbrush className="h-5 w-5" /> تخصيص المظهر
@@ -538,14 +538,31 @@ export default function AdminSettingsPage() {
                 <TabsContent value="general" className="space-y-6">
                   <Card>
                     <CardHeader>
-                        <CardTitle className="flex items-center gap-2"><SettingsIcon className="h-5 w-5" />الإعدادات العامة</CardTitle>
-                        <CardDescription>التحكم في الإعدادات الأساسية للبوابة مثل اسم الموقع، بريد المسؤول، وتفعيل وضع الصيانة.</CardDescription>
+                        <CardTitle className="flex items-center gap-2"><ImageIcon className="h-5 w-5" />الهوية الأساسية للبوابة</CardTitle>
+                        <CardDescription>تحديد اسم البوابة، شعارها، وأيقونتها لتعزيز الهوية.</CardDescription>
                     </CardHeader>
                     <CardContent className="space-y-6">
-                      <FormField control={control} name="portalName" render={({ field }) => (
+                       <FormField control={control} name="portalName" render={({ field }) => (
                           <FormItem><FormLabel>اسم البوابة</FormLabel><FormControl><Input {...field} disabled={isSubmitting} /></FormControl><FormMessage /></FormItem>
                         )}
                       />
+                      <FormField control={control} name="logoUrl" render={({ field }) => (
+                            <FormItem><FormLabel className="flex items-center gap-1"><ImageIcon className="h-4 w-4 text-muted-foreground" />رابط شعار البوابة (Logo)</FormLabel><FormControl><Input placeholder="https://example.com/logo.png" {...field} value={field.value || ""} disabled={isSubmitting} /></FormControl><FormMessage /></FormItem>
+                          )}
+                        />
+                        <FormField control={control} name="faviconUrl" render={({ field }) => (
+                            <FormItem><FormLabel className="flex items-center gap-1"><LinkIcon className="h-4 w-4 text-muted-foreground" />رابط أيقونة الموقع (Favicon)</FormLabel><FormControl><Input placeholder="https://example.com/favicon.ico" {...field} value={field.value || ""} disabled={isSubmitting} /></FormControl><FormMessage /></FormItem>
+                          )}
+                        />
+                    </CardContent>
+                  </Card>
+                  
+                  <Card>
+                    <CardHeader>
+                        <CardTitle className="flex items-center gap-2"><SettingsIcon className="h-5 w-5" />الإعدادات التشغيلية</CardTitle>
+                        <CardDescription>التحكم في بريد المسؤول الرئيسي وتفعيل وضع الصيانة.</CardDescription>
+                    </CardHeader>
+                    <CardContent className="space-y-6">
                       <FormField control={control} name="adminEmail" render={({ field }) => (
                           <FormItem><FormLabel>بريد المسؤول الرئيسي</FormLabel><FormControl><Input type="email" {...field} disabled={isSubmitting} /></FormControl><FormMessage /></FormItem>
                         )}
@@ -557,23 +574,6 @@ export default function AdminSettingsPage() {
                           </FormItem>
                         )}
                       />
-                    </CardContent>
-                  </Card>
-                  
-                  <Card>
-                    <CardHeader>
-                        <CardTitle className="flex items-center gap-2"><ImageIcon className="h-5 w-5" />إعدادات الهوية البصرية</CardTitle>
-                        <CardDescription>تخصيص شعار البوابة وأيقونة الموقع لتعزيز الهوية البصرية.</CardDescription>
-                    </CardHeader>
-                    <CardContent className="space-y-6">
-                        <FormField control={control} name="logoUrl" render={({ field }) => (
-                            <FormItem><FormLabel className="flex items-center gap-1"><ImageIcon className="h-4 w-4 text-muted-foreground" />رابط شعار البوابة (Logo)</FormLabel><FormControl><Input placeholder="https://example.com/logo.png" {...field} value={field.value || ""} disabled={isSubmitting} /></FormControl><FormMessage /></FormItem>
-                          )}
-                        />
-                        <FormField control={control} name="faviconUrl" render={({ field }) => (
-                            <FormItem><FormLabel className="flex items-center gap-1"><LinkIcon className="h-4 w-4 text-muted-foreground" />رابط أيقونة الموقع (Favicon)</FormLabel><FormControl><Input placeholder="https://example.com/favicon.ico" {...field} value={field.value || ""} disabled={isSubmitting} /></FormControl><FormMessage /></FormItem>
-                          )}
-                        />
                     </CardContent>
                   </Card>
 
@@ -679,5 +679,4 @@ export default function AdminSettingsPage() {
     </div>
   );
 }
-
     
