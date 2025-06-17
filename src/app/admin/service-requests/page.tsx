@@ -4,7 +4,7 @@ import { useState, useEffect, useCallback, useMemo } from "react";
 import { Card, CardHeader, CardTitle, CardDescription, CardContent } from "@/components/ui/card";
 import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from "@/components/ui/table";
 import { Badge } from "@/components/ui/badge";
-import { Loader2, AlertTriangle, Info, ThumbsUp, MinusCircle, Eye, Search, ClipboardList, Filter } from "lucide-react";
+import { Loader2, AlertTriangle, Info, ThumbsUp, MinusCircle, Eye, Search, ClipboardList, Filter, Paperclip } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { useToast } from "@/hooks/use-toast";
@@ -260,8 +260,10 @@ export default function AdminServiceRequestsPage() {
                               href={request.attachmentURL} 
                               target="_blank" 
                               rel="noopener noreferrer" 
-                              className="block text-xs text-primary hover:underline mt-1"
+                              className="block text-xs text-primary hover:underline mt-1 items-center gap-1"
+                              title={request.attachmentFilename || 'عرض المرفق'}
                             >
+                              <Paperclip className="h-3 w-3 inline me-0.5" />
                               ({request.attachmentFilename || 'مرفق'})
                             </a>
                           )}
