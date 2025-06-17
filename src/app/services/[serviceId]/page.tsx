@@ -187,12 +187,12 @@ export default function ServiceDetailPage() {
                       </h3>
                       <Accordion type="single" collapsible className="w-full space-y-2">
                         {service.faqs.map((faq, index) => (
-                          <AccordionItem value={`faq-${index}`} key={index} className="bg-card border rounded-md shadow-sm hover:shadow-md transition-shadow">
+                          <AccordionItem value={`faq-${index}`} key={index} className="bg-secondary/40 rounded-md shadow-sm hover:shadow-md transition-shadow">
                             <AccordionTrigger className="p-4 text-md font-medium text-start hover:no-underline text-foreground">
                               {faq.question}
                             </AccordionTrigger>
-                            <AccordionContent className="p-4 pt-0">
-                              <p className="text-sm text-muted-foreground whitespace-pre-wrap bg-secondary/30 p-3 rounded-sm">
+                            <AccordionContent className="p-3 pt-0">
+                              <p className="text-sm text-foreground/80 whitespace-pre-wrap bg-background/50 p-2 rounded-sm">
                                 {faq.answer}
                               </p>
                             </AccordionContent>
