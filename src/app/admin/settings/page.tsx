@@ -114,7 +114,7 @@ export default function AdminSettingsPage() {
 
   const form = useForm<SettingsFormValues>({
     resolver: zodResolver(settingsSchema),
-    defaultValues: DEFAULT_SETTINGS, // Use imported DEFAULT_SETTINGS
+    defaultValues: DEFAULT_SETTINGS,
   });
   const { handleSubmit, control, reset, formState: {isSubmitting}, watch } = form;
 
@@ -125,7 +125,7 @@ export default function AdminSettingsPage() {
 
     if (!isFetchingSettings && loadedSettings.portalName !== undefined) { 
       reset({
-        ...DEFAULT_SETTINGS, // Use imported DEFAULT_SETTINGS as base
+        ...DEFAULT_SETTINGS, 
         ...loadedSettings,       
         maintenanceMode: loadedSettings.maintenanceMode === undefined ? DEFAULT_SETTINGS.maintenanceMode : loadedSettings.maintenanceMode,
       });
@@ -293,7 +293,7 @@ export default function AdminSettingsPage() {
               <FormItem>
                 <FormLabel className="flex items-center gap-1"><Sun className="h-4 w-4" /> الوضع الفاتح</FormLabel>
                 <div className="flex items-center gap-2">
-                  <FormControl>
+                  <FormControl className="flex-grow">
                     <Input placeholder={item.placeholder} {...field} value={field.value || ""} disabled={isSubmitting} className="dir-ltr text-left" />
                   </FormControl>
                   {isValidHslForPreview(lightFieldValue) && (
@@ -312,16 +312,16 @@ export default function AdminSettingsPage() {
               <FormItem>
                 <FormLabel className="flex items-center gap-1"><Moon className="h-4 w-4" /> الوضع الداكن</FormLabel>
                 <div className="flex items-center gap-2">
-                <FormControl>
-                  <Input placeholder={item.placeholder} {...field} value={field.value || ""} disabled={isSubmitting} className="dir-ltr text-left" />
-                </FormControl>
-                {isValidHslForPreview(darkFieldValue) && (
-                    <div
-                      className="h-8 w-8 rounded-md border-2 border-border shadow-sm shrink-0"
-                      style={{ backgroundColor: `hsl(${darkFieldValue})` }}
-                      title={`Preview for ${darkFieldValue}`}
-                    />
-                  )}
+                  <FormControl className="flex-grow">
+                    <Input placeholder={item.placeholder} {...field} value={field.value || ""} disabled={isSubmitting} className="dir-ltr text-left" />
+                  </FormControl>
+                  {isValidHslForPreview(darkFieldValue) && (
+                      <div
+                        className="h-8 w-8 rounded-md border-2 border-border shadow-sm shrink-0"
+                        style={{ backgroundColor: `hsl(${darkFieldValue})` }}
+                        title={`Preview for ${darkFieldValue}`}
+                      />
+                    )}
                 </div>
                 <FormMessage />
               </FormItem>
@@ -483,4 +483,5 @@ export default function AdminSettingsPage() {
     
 
     
+
 
