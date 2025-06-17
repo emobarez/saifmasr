@@ -255,12 +255,17 @@ export default function AdminEmployeesPage() {
       }
 
       const employeeRef = doc(db, "employees", editingEmployee.id);
+      // Ensure employeeId is not overwritten from form data during edit.
+      // It should be read from editingEmployee.employeeId
+      const { employeeId, ...dataToUpdate } = data;
+
       await updateDoc(employeeRef, {
-        ...data, // name, employeeId, jobTitle, department, status, phone, email
+        ...dataToUpdate, // name, jobTitle, department, status, phone, email etc.
         nationalId: data.nationalId || undefined,
         address: data.address || undefined,
-        profileImageUrl: finalProfileImageUrl, // This is the crucial part
+        profileImageUrl: finalProfileImageUrl,
         joinDate: Timestamp.fromDate(data.joinDate),
+        employeeId: editingEmployee.employeeId, // Explicitly use the existing employeeId
       });
       toast({ title: "تم التعديل بنجاح", description: `تم تعديل بيانات الموظف ${data.name}.` });
 
@@ -270,7 +275,7 @@ export default function AdminEmployeesPage() {
           description: `Admin ${adminUser.displayName || adminUser.email} updated employee: ${data.name}.`,
           actor: { id: adminUser.uid, role: adminUser.role, name: adminUser.displayName },
           target: { id: editingEmployee.id, type: "employee", name: data.name },
-          details: { employeeId: data.employeeId, jobTitle: data.jobTitle }
+          details: { employeeId: editingEmployee.employeeId, jobTitle: data.jobTitle }
         });
          if (oldImageUrl !== finalProfileImageUrl) { 
             await logActivity({
@@ -327,9 +332,6 @@ export default function AdminEmployeesPage() {
       if (employeeToDelete?.profileImageUrl) {
          try {
             const imageHttpUrl = employeeToDelete.profileImageUrl;
-            // Attempt to derive storage path from URL. This is fragile and depends on URL structure.
-            // A more robust way is to store the storage path alongside the URL in Firestore.
-            // For GCS URLs like "https://storage.googleapis.com/BUCKET_NAME/PATH_TO_IMAGE"
             if (imageHttpUrl.startsWith("https://storage.googleapis.com/")) {
                 const bucketName = process.env.NEXT_PUBLIC_FIREBASE_STORAGE_BUCKET;
                 if (bucketName && imageHttpUrl.includes(bucketName)) {
@@ -441,7 +443,17 @@ export default function AdminEmployeesPage() {
           <FormItem><FormLabel>اسم الموظف</FormLabel><FormControl><Input placeholder="الاسم بالكامل" {...field} disabled={isUploadingImage} /></FormControl><FormMessage /></FormItem>
         )}/>
         <FormField control={formInstance.control} name="employeeId" render={({ field }) => (
-          <FormItem><FormLabel>الرقم الوظيفي</FormLabel><FormControl><Input placeholder="مثال: EMP001" {...field} disabled={isUploadingImage || (isEditing && editingEmployee?.employeeId !== undefined)} /></FormControl><FormMessage /></FormItem>
+          <FormItem>
+            <FormLabel>الرقم الوظيفي</FormLabel>
+            <FormControl>
+              <Input 
+                placeholder="مثال: EMP001" 
+                {...field} 
+                disabled={isUploadingImage || (isEditing && !!editingEmployee?.employeeId)} 
+              />
+            </FormControl>
+            <FormMessage />
+          </FormItem>
         )}/>
         <FormField control={formInstance.control} name="jobTitle" render={({ field }) => (
           <FormItem><FormLabel>المسمى الوظيفي</FormLabel><FormControl><Input placeholder="مثال: فرد أمن" {...field} disabled={isUploadingImage} /></FormControl><FormMessage /></FormItem>
