@@ -547,13 +547,43 @@ export default function AdminSettingsPage() {
                         )}
                       />
                       <FormField control={control} name="logoUrl" render={({ field }) => (
-                            <FormItem><FormLabel className="flex items-center gap-1"><ImageIcon className="h-4 w-4 text-muted-foreground" />رابط شعار البوابة (Logo)</FormLabel><FormControl><Input placeholder="https://example.com/logo.png" {...field} value={field.value || ""} disabled={isSubmitting} /></FormControl><FormMessage /></FormItem>
-                          )}
-                        />
-                        <FormField control={control} name="faviconUrl" render={({ field }) => (
-                            <FormItem><FormLabel className="flex items-center gap-1"><LinkIcon className="h-4 w-4 text-muted-foreground" />رابط أيقونة الموقع (Favicon)</FormLabel><FormControl><Input placeholder="https://example.com/favicon.ico" {...field} value={field.value || ""} disabled={isSubmitting} /></FormControl><FormMessage /></FormItem>
-                          )}
-                        />
+                          <FormItem>
+                            <FormLabel className="flex items-center gap-1"><ImageIcon className="h-4 w-4 text-muted-foreground" />رابط شعار البوابة (Logo)</FormLabel>
+                            <div className="flex items-end gap-2">
+                                <FormControl className="flex-grow">
+                                    <Input placeholder="https://example.com/logo.png" {...field} value={field.value || ""} disabled={isSubmitting} />
+                                </FormControl>
+                                {field.value && (
+                                    <img
+                                        src={field.value}
+                                        alt="Logo Preview"
+                                        className="h-10 w-auto max-w-[80px] object-contain border rounded bg-muted"
+                                    />
+                                )}
+                            </div>
+                            <FormMessage />
+                          </FormItem>
+                        )}
+                      />
+                      <FormField control={control} name="faviconUrl" render={({ field }) => (
+                          <FormItem>
+                            <FormLabel className="flex items-center gap-1"><LinkIcon className="h-4 w-4 text-muted-foreground" />رابط أيقونة الموقع (Favicon)</FormLabel>
+                             <div className="flex items-end gap-2">
+                                <FormControl className="flex-grow">
+                                    <Input placeholder="https://example.com/favicon.ico" {...field} value={field.value || ""} disabled={isSubmitting} />
+                                </FormControl>
+                                {field.value && (
+                                    <img
+                                        src={field.value}
+                                        alt="Favicon Preview"
+                                        className="h-10 w-10 object-contain border rounded bg-muted" // Favicons are often square
+                                    />
+                                )}
+                            </div>
+                            <FormMessage />
+                          </FormItem>
+                        )}
+                      />
                     </CardContent>
                   </Card>
                   
