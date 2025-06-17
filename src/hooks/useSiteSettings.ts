@@ -1,7 +1,7 @@
 
 "use client";
 
-import { useState, useEffect } from 'react';
+import { useState, useEffect, useMemo } from 'react'; // Added useMemo
 import { db } from '@/lib/firebase';
 import { doc, onSnapshot } from 'firebase/firestore';
 
@@ -80,22 +80,22 @@ export interface SiteSettings {
   themeSidebarRingDark?: string;
 }
 
-// PRD Aligned Default Settings
+// PRD Aligned Default Settings / Replit Elite Dark Theme
 const DEFAULT_SETTINGS: SiteSettings = {
   portalName: DEFAULT_PORTAL_NAME,
   maintenanceMode: false,
-  adminEmail: "admin@saifmasr.com", 
+  adminEmail: "admin@saifmasr.com",
   companyPhone: "",
   companyAddress: "",
   publicEmail: "",
 
   // Light Theme Defaults (PRD Aligned)
-  themeBackgroundLight: "240 11% 89%", 
-  themeForegroundLight: "238 10% 20%", 
-  themePrimaryLight: "238 52% 38%", 
-  themePrimaryForegroundLight: "0 0% 98%", 
-  themeAccentLight: "191 55% 41%", 
-  themeAccentForegroundLight: "0 0% 98%", 
+  themeBackgroundLight: "240 11% 89%",
+  themeForegroundLight: "238 10% 20%",
+  themePrimaryLight: "238 52% 38%",
+  themePrimaryForegroundLight: "0 0% 98%",
+  themeAccentLight: "191 55% 41%",
+  themeAccentForegroundLight: "0 0% 98%",
   themeCardLight: "0 0% 100% / 0.9",
   themeCardForegroundLight: "238 10% 20%",
   themePopoverLight: "0 0% 100% / 0.9",
@@ -106,31 +106,31 @@ const DEFAULT_SETTINGS: SiteSettings = {
   themeMutedForegroundLight: "240 10% 45%",
   themeBorderLight: "240 10% 78%",
   themeInputLight: "240 10% 92%",
-  themeRingLight: "191 55% 41%", 
+  themeRingLight: "191 55% 41%",
   themeDestructiveLight: "0 84.2% 60.2%",
   themeDestructiveForegroundLight: "0 0% 98%",
 
-  // Dark Theme Defaults (Derived from PRD Light)
-  themeBackgroundDark: "238 10% 12%", 
-  themeForegroundDark: "0 0% 90%", 
-  themePrimaryDark: "238 55% 65%", 
-  themePrimaryForegroundDark: "0 0% 98%", 
-  themeAccentDark: "191 58% 55%", 
-  themeAccentForegroundDark: "0 0% 98%", 
-  themeCardDark: "238 10% 18% / 0.9",
-  themeCardForegroundDark: "0 0% 90%",
-  themePopoverDark: "238 10% 18% / 0.9",
-  themePopoverForegroundDark: "0 0% 90%",
-  themeSecondaryDark: "238 10% 22%",
-  themeSecondaryForegroundDark: "0 0% 85%",
-  themeMutedDark: "238 10% 30%",
-  themeMutedForegroundDark: "0 0% 60%",
-  themeBorderDark: "238 10% 25%",
-  themeInputDark: "238 10% 25%",
-  themeRingDark: "191 58% 55%", 
-  themeDestructiveDark: "0 70% 50%",
+  // Dark Theme Defaults (Replit/Elite Inspired)
+  themeBackgroundDark: "222 84% 4.9%",    // Very dark blue/black
+  themeForegroundDark: "210 40% 98%",    // Light grayish blue (almost white)
+  themePrimaryDark: "217 91.2% 59.8%",  // Vibrant blue
+  themePrimaryForegroundDark: "210 40% 98%", // Light for contrast on primary
+  themeAccentDark: "188 92% 50%",     // Bright cyan/teal
+  themeAccentForegroundDark: "222 84% 4.9%",   // Dark for contrast on accent
+  themeCardDark: "222 80% 8%",       // Slightly lighter dark blue for cards
+  themeCardForegroundDark: "210 40% 96.1%",
+  themePopoverDark: "222 80% 8%",
+  themePopoverForegroundDark: "210 40% 96.1%",
+  themeSecondaryDark: "217.2 32.6% 17.5%", // Muted dark blue
+  themeSecondaryForegroundDark: "210 40% 98%",
+  themeMutedDark: "217.2 32.6% 17.5%",    // Same as secondary for muted
+  themeMutedForegroundDark: "215 20.2% 65.1%", // Lighter muted text
+  themeBorderDark: "217.2 32.6% 17.5%",    // Border same as secondary/muted background
+  themeInputDark: "217.2 32.6% 17.5%",     // Input same
+  themeRingDark: "217 91.2% 59.8%",    // Ring same as primary
+  themeDestructiveDark: "0 62.8% 30.6%",   // Darker red
   themeDestructiveForegroundDark: "0 0% 98%",
-  
+
   socialFacebookUrl: "",
   socialTwitterUrl: "",
   socialLinkedinUrl: "",
@@ -146,15 +146,15 @@ const DEFAULT_SETTINGS: SiteSettings = {
   themeSidebarBorderLight: "238 20% 88%",
   themeSidebarRingLight: "191 55% 41%",
 
-  // Sidebar Dark Theme Defaults
-  themeSidebarBackgroundDark: "238 12% 15% / 0.9",
-  themeSidebarForegroundDark: "0 0% 85%",
-  themeSidebarPrimaryDark: "238 55% 65%",
+  // Sidebar Dark Theme Defaults (Replit/Elite Inspired)
+  themeSidebarBackgroundDark: "222 80% 6.5% / 0.9", // Slightly lighter than main bg, with alpha
+  themeSidebarForegroundDark: "210 40% 90%",
+  themeSidebarPrimaryDark: "217 91.2% 59.8%",
   themeSidebarPrimaryForegroundDark: "0 0% 98%",
-  themeSidebarAccentDark: "191 58% 55%",
-  themeSidebarAccentForegroundDark: "0 0% 98%",
-  themeSidebarBorderDark: "238 10% 22%",
-  themeSidebarRingDark: "191 58% 55%",
+  themeSidebarAccentDark: "188 92% 50%",
+  themeSidebarAccentForegroundDark: "222 84% 4.9%",
+  themeSidebarBorderDark: "217.2 32.6% 14%", // Darker border for sidebar
+  themeSidebarRingDark: "217 91.2% 59.8%",
 };
 
 export function useSiteSettings() {
@@ -165,10 +165,10 @@ export function useSiteSettings() {
     setIsLoadingSiteSettings(true);
     const settingsDocRef = doc(db, "systemSettings", "general");
 
-    const unsubscribe = onSnapshot(settingsDocRef, 
+    const unsubscribe = onSnapshot(settingsDocRef,
       (docSnap) => {
         if (docSnap.exists()) {
-          const data = docSnap.data() as Partial<SiteSettings>; 
+          const data = docSnap.data() as Partial<SiteSettings>;
           setSiteSettings({
             portalName: data?.portalName?.trim() || DEFAULT_SETTINGS.portalName,
             maintenanceMode: data?.maintenanceMode === undefined ? DEFAULT_SETTINGS.maintenanceMode : data.maintenanceMode,
@@ -216,7 +216,7 @@ export function useSiteSettings() {
             themeRingDark: data?.themeRingDark?.trim() || DEFAULT_SETTINGS.themeRingDark,
             themeDestructiveDark: data?.themeDestructiveDark?.trim() || DEFAULT_SETTINGS.themeDestructiveDark,
             themeDestructiveForegroundDark: data?.themeDestructiveForegroundDark?.trim() || DEFAULT_SETTINGS.themeDestructiveForegroundDark,
-            
+
             socialFacebookUrl: data?.socialFacebookUrl || DEFAULT_SETTINGS.socialFacebookUrl,
             socialTwitterUrl: data?.socialTwitterUrl || DEFAULT_SETTINGS.socialTwitterUrl,
             socialLinkedinUrl: data?.socialLinkedinUrl || DEFAULT_SETTINGS.socialLinkedinUrl,
@@ -241,13 +241,13 @@ export function useSiteSettings() {
             themeSidebarRingDark: data?.themeSidebarRingDark?.trim() || DEFAULT_SETTINGS.themeSidebarRingDark,
           });
         } else {
-          setSiteSettings(DEFAULT_SETTINGS); 
+          setSiteSettings(DEFAULT_SETTINGS);
         }
         setIsLoadingSiteSettings(false);
-      }, 
+      },
       (error) => {
         console.error("Error fetching site settings with snapshot:", error);
-        setSiteSettings(DEFAULT_SETTINGS); 
+        setSiteSettings(DEFAULT_SETTINGS);
         setIsLoadingSiteSettings(false);
       }
     );
@@ -255,7 +255,8 @@ export function useSiteSettings() {
     return () => unsubscribe();
   }, []);
 
-  return { ...siteSettings, isLoadingSiteSettings };
+  return useMemo(() => ({
+    ...siteSettings,
+    isLoadingSiteSettings,
+  }), [siteSettings, isLoadingSiteSettings]);
 }
-
-    
