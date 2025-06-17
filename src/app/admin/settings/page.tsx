@@ -195,7 +195,6 @@ export default function AdminSettingsPage() {
   const settingsDocRef = doc(db, "systemSettings", "general");
   
   useEffect(() => {
-    // Use siteSettingsDataFromHook directly as a dependency
     if (!siteSettingsDataFromHook.isLoadingSiteSettings && siteSettingsDataFromHook.portalName !== undefined) {
       const { isLoadingSiteSettings: _, ...loadedSettings } = siteSettingsDataFromHook;
       reset({
@@ -523,7 +522,7 @@ export default function AdminSettingsPage() {
 
               <div className="mt-8 flex justify-end">
                 <Button type="submit" disabled={isSubmitting || siteSettingsDataFromHook.isLoadingSiteSettings}>
-                  {isSubmitting ? <Loader2 className="me-2 h-5 w-5 animate-spin" /> : <Save className="me-2 h-5 w-5" />}
+                  {(isSubmitting || siteSettingsDataFromHook.isLoadingSiteSettings) ? <Loader2 className="me-2 h-5 w-5 animate-spin" /> : <Save className="me-2 h-5 w-5" />}
                   حفظ الإعدادات
                 </Button>
               </div>
@@ -541,3 +540,4 @@ export default function AdminSettingsPage() {
     
 
     
+
