@@ -85,20 +85,24 @@ export default function PublicServicesPage() {
             <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-8">
               {services.map((service) => (
                 <Card key={service.id} className="shadow-lg hover:shadow-xl transition-shadow duration-300 flex flex-col overflow-hidden">
-                  <div className="relative h-56 w-full">
+                  <Link href={`/services/${service.id}`} className="block relative h-56 w-full group">
                     <Image
                       src={`https://placehold.co/600x400.png`}
                       alt={service.name}
                       fill
                       style={{objectFit: "cover"}}
-                      className="bg-muted"
+                      className="bg-muted group-hover:opacity-90 transition-opacity"
                       data-ai-hint={getServiceImageHint(service.category)}
                     />
-                  </div>
+                  </Link>
                   <CardHeader className="pb-3">
                     <div className="flex items-center gap-2 mb-2">
                       <Briefcase className="h-5 w-5 text-primary" />
-                      <CardTitle className="font-headline text-xl text-primary">{service.name}</CardTitle>
+                      <CardTitle className="font-headline text-xl text-primary">
+                        <Link href={`/services/${service.id}`} className="hover:underline">
+                          {service.name}
+                        </Link>
+                      </CardTitle>
                     </div>
                     <div className="flex flex-wrap gap-2 text-xs">
                         <Badge variant="secondary" className="flex items-center gap-1">
@@ -165,3 +169,4 @@ export default function PublicServicesPage() {
     </div>
   );
 }
+
