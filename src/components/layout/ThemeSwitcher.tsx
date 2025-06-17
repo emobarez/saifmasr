@@ -15,17 +15,21 @@ export function ThemeSwitcher({ className, ...props }: ThemeSwitcherProps) {
   const [theme, setTheme] = useState<"light" | "dark">("light");
 
   useEffect(() => {
-    setMounted(true);
+    // Determine initial theme
     const storedTheme = localStorage.getItem("theme") as "light" | "dark" | null;
-    // Ensure window is defined for matchMedia
-    const systemTheme = typeof window !== 'undefined' && window.matchMedia("(prefers-color-scheme: dark)").matches ? "dark" : "light";
+    // Ensure window is defined for matchMedia (it will be in useEffect)
+    const systemTheme = window.matchMedia("(prefers-color-scheme: dark)").matches ? "dark" : "light";
     const initialTheme = storedTheme || systemTheme;
     setTheme(initialTheme);
+
+    // Apply theme to HTML element
     if (initialTheme === "dark") {
       document.documentElement.classList.add("dark");
     } else {
       document.documentElement.classList.remove("dark");
     }
+    // Mark as mounted after initial theme setup
+    setMounted(true);
   }, []);
 
   const toggleTheme = () => {
@@ -44,7 +48,7 @@ export function ThemeSwitcher({ className, ...props }: ThemeSwitcherProps) {
   if (!mounted) {
     // Render a placeholder or null until the component is mounted
     // This helps avoid hydration mismatches with server-rendered HTML
-    return <div className="h-10 w-10" />; // Placeholder for button size
+    return <div className="h-10 w-10" />; // Placeholder for button size (assuming size="icon")
   }
 
   return (
@@ -60,3 +64,4 @@ export function ThemeSwitcher({ className, ...props }: ThemeSwitcherProps) {
     </Button>
   );
 }
+
