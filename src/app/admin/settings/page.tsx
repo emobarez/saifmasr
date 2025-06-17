@@ -101,7 +101,7 @@ const settingsSchema = z.object({
 type SettingsFormValues = z.infer<typeof settingsSchema>;
 
 // Moved outside the component for stable reference
-const DEFAULT_SETTINGS_FORM_OUTSIDE_COMPONENT: SettingsFormValues = {
+const DEFAULT_SETTINGS_FORM: SettingsFormValues = {
   portalName: DEFAULT_SETTINGS.portalName,
   adminEmail: DEFAULT_SETTINGS.adminEmail,
   maintenanceMode: DEFAULT_SETTINGS.maintenanceMode,
@@ -188,22 +188,20 @@ export default function AdminSettingsPage() {
 
   const form = useForm<SettingsFormValues>({
     resolver: zodResolver(settingsSchema),
-    defaultValues: DEFAULT_SETTINGS_FORM_OUTSIDE_COMPONENT, 
+    defaultValues: DEFAULT_SETTINGS_FORM, 
   });
   const { handleSubmit, control, reset, formState: {isSubmitting}, watch } = form;
 
   const settingsDocRef = doc(db, "systemSettings", "general");
   
   useEffect(() => {
-    // Use siteSettingsDataFromHook directly as a dependency
-    // Destructure inside the effect
-    const { isLoadingSiteSettings, ...loadedSettings } = siteSettingsDataFromHook;
+    const { isLoadingSiteSettings: isFetchingSettings, ...loadedSettings } = siteSettingsDataFromHook;
 
-    if (!isLoadingSiteSettings && loadedSettings.portalName !== undefined) { // Check if portalName is loaded
+    if (!isFetchingSettings && loadedSettings.portalName !== undefined) { 
       reset({
-        ...DEFAULT_SETTINGS_FORM_OUTSIDE_COMPONENT, 
+        ...DEFAULT_SETTINGS_FORM, 
         ...loadedSettings,       
-        maintenanceMode: loadedSettings.maintenanceMode === undefined ? DEFAULT_SETTINGS_FORM_OUTSIDE_COMPONENT.maintenanceMode : loadedSettings.maintenanceMode,
+        maintenanceMode: loadedSettings.maintenanceMode === undefined ? DEFAULT_SETTINGS_FORM.maintenanceMode : loadedSettings.maintenanceMode,
       });
     }
   }, [siteSettingsDataFromHook, reset]);
@@ -283,7 +281,7 @@ export default function AdminSettingsPage() {
         themeSidebarRingDark: data.themeSidebarRingDark?.trim() || DEFAULT_SETTINGS.themeSidebarRingDark,
       };
       
-      console.log("Data being sent to Firestore:", JSON.stringify(dataToSave, null, 2)); // Log data before saving
+      console.log("Data being sent to Firestore:", JSON.stringify(dataToSave, null, 2)); 
       await setDoc(settingsDocRef, dataToSave, { merge: true });
       
       toast({
@@ -299,7 +297,7 @@ export default function AdminSettingsPage() {
         });
       }
     } catch (error: any) {
-      console.error("Firestore Save Error Details:", error); // More detailed logging
+      console.error("Firestore Save Error Details:", error); 
       let description = "لم نتمكن من حفظ التغييرات. يرجى المحاولة مرة أخرى.";
       if (error.code === 'permission-denied') {
         description = "فشلت عملية الحفظ: ليس لديك الصلاحيات الكافية لتعديل الإعدادات. يرجى مراجعة قواعد أمان Firestore.";
@@ -310,7 +308,7 @@ export default function AdminSettingsPage() {
         title: "خطأ في حفظ الإعدادات",
         description: description,
         variant: "destructive",
-        duration: 9000, // Longer duration for error messages
+        duration: 9000, 
       });
     }
   };
@@ -555,5 +553,7 @@ export default function AdminSettingsPage() {
 
 
 
+
+    
 
     
