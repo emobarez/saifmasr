@@ -26,81 +26,6 @@ const optionalHslString = z.string().optional().refine(
 );
 const optionalUrl = z.string().url({ message: "الرابط غير صالح. تأكد من تضمين http:// أو https://" }).optional().or(z.literal(''));
 
-const settingsSchema = z.object({
-  portalName: z.string().min(3, { message: "اسم البوابة يجب أن لا يقل عن 3 أحرف." }),
-  adminEmail: z.string().email({ message: "البريد الإلكتروني للمسؤول غير صالح." }),
-  maintenanceMode: z.boolean(),
-  companyPhone: z.string().optional(),
-  companyAddress: z.string().max(250, { message: "العنوان يجب ألا يتجاوز 250 حرفًا."}).optional(),
-  publicEmail: z.string().email({ message: "البريد الإلكتروني العام غير صالح." }).optional().or(z.literal('')),
-  
-  themeBackgroundLight: optionalHslString,
-  themeForegroundLight: optionalHslString,
-  themePrimaryLight: optionalHslString,
-  themePrimaryForegroundLight: optionalHslString,
-  themeAccentLight: optionalHslString,
-  themeAccentForegroundLight: optionalHslString,
-  themeCardLight: optionalHslString,
-  themeCardForegroundLight: optionalHslString,
-  themePopoverLight: optionalHslString,
-  themePopoverForegroundLight: optionalHslString,
-  themeSecondaryLight: optionalHslString,
-  themeSecondaryForegroundLight: optionalHslString,
-  themeMutedLight: optionalHslString,
-  themeMutedForegroundLight: optionalHslString,
-  themeBorderLight: optionalHslString,
-  themeInputLight: optionalHslString,
-  themeRingLight: optionalHslString,
-  themeDestructiveLight: optionalHslString,
-  themeDestructiveForegroundLight: optionalHslString,
-
-  themeBackgroundDark: optionalHslString,
-  themeForegroundDark: optionalHslString,
-  themePrimaryDark: optionalHslString,
-  themePrimaryForegroundDark: optionalHslString,
-  themeAccentDark: optionalHslString,
-  themeAccentForegroundDark: optionalHslString,
-  themeCardDark: optionalHslString,
-  themeCardForegroundDark: optionalHslString,
-  themePopoverDark: optionalHslString,
-  themePopoverForegroundDark: optionalHslString,
-  themeSecondaryDark: optionalHslString,
-  themeSecondaryForegroundDark: optionalHslString,
-  themeMutedDark: optionalHslString,
-  themeMutedForegroundDark: optionalHslString,
-  themeBorderDark: optionalHslString,
-  themeInputDark: optionalHslString,
-  themeRingDark: optionalHslString,
-  themeDestructiveDark: optionalHslString,
-  themeDestructiveForegroundDark: optionalHslString,
-
-  socialFacebookUrl: optionalUrl,
-  socialTwitterUrl: optionalUrl,
-  socialLinkedinUrl: optionalUrl,
-  socialInstagramUrl: optionalUrl,
-
-  // Sidebar theme fields
-  themeSidebarBackgroundLight: optionalHslString,
-  themeSidebarForegroundLight: optionalHslString,
-  themeSidebarPrimaryLight: optionalHslString,
-  themeSidebarPrimaryForegroundLight: optionalHslString,
-  themeSidebarAccentLight: optionalHslString,
-  themeSidebarAccentForegroundLight: optionalHslString,
-  themeSidebarBorderLight: optionalHslString,
-  themeSidebarRingLight: optionalHslString,
-
-  themeSidebarBackgroundDark: optionalHslString,
-  themeSidebarForegroundDark: optionalHslString,
-  themeSidebarPrimaryDark: optionalHslString,
-  themeSidebarPrimaryForegroundDark: optionalHslString,
-  themeSidebarAccentDark: optionalHslString,
-  themeSidebarAccentForegroundDark: optionalHslString,
-  themeSidebarBorderDark: optionalHslString,
-  themeSidebarRingDark: optionalHslString,
-});
-
-type SettingsFormValues = z.infer<typeof settingsSchema>;
-
 const DEFAULT_SETTINGS_FORM: SettingsFormValues = {
   portalName: "سيف مصر الوطنية للأمن",
   adminEmail: "admin@saifmasr.com",
@@ -173,6 +98,81 @@ const DEFAULT_SETTINGS_FORM: SettingsFormValues = {
   themeSidebarRingDark: "217 91.2% 59.8%",
 };
 
+const settingsSchema = z.object({
+  portalName: z.string().min(3, { message: "اسم البوابة يجب أن لا يقل عن 3 أحرف." }),
+  adminEmail: z.string().email({ message: "البريد الإلكتروني للمسؤول غير صالح." }),
+  maintenanceMode: z.boolean(),
+  companyPhone: z.string().optional(),
+  companyAddress: z.string().max(250, { message: "العنوان يجب ألا يتجاوز 250 حرفًا."}).optional(),
+  publicEmail: z.string().email({ message: "البريد الإلكتروني العام غير صالح." }).optional().or(z.literal('')),
+  
+  themeBackgroundLight: optionalHslString,
+  themeForegroundLight: optionalHslString,
+  themePrimaryLight: optionalHslString,
+  themePrimaryForegroundLight: optionalHslString,
+  themeAccentLight: optionalHslString,
+  themeAccentForegroundLight: optionalHslString,
+  themeCardLight: optionalHslString,
+  themeCardForegroundLight: optionalHslString,
+  themePopoverLight: optionalHslString,
+  themePopoverForegroundLight: optionalHslString,
+  themeSecondaryLight: optionalHslString,
+  themeSecondaryForegroundLight: optionalHslString,
+  themeMutedLight: optionalHslString,
+  themeMutedForegroundLight: optionalHslString,
+  themeBorderLight: optionalHslString,
+  themeInputLight: optionalHslString,
+  themeRingLight: optionalHslString,
+  themeDestructiveLight: optionalHslString,
+  themeDestructiveForegroundLight: optionalHslString,
+
+  themeBackgroundDark: optionalHslString,
+  themeForegroundDark: optionalHslString,
+  themePrimaryDark: optionalHslString,
+  themePrimaryForegroundDark: optionalHslString,
+  themeAccentDark: optionalHslString,
+  themeAccentForegroundDark: optionalHslString,
+  themeCardDark: optionalHslString,
+  themeCardForegroundDark: optionalHslString,
+  themePopoverDark: optionalHslString,
+  themePopoverForegroundDark: optionalHslString,
+  themeSecondaryDark: optionalHslString,
+  themeSecondaryForegroundDark: optionalHslString,
+  themeMutedDark: optionalHslString,
+  themeMutedForegroundDark: optionalHslString,
+  themeBorderDark: optionalHslString,
+  themeInputDark: optionalHslString,
+  themeRingDark: optionalHslString,
+  themeDestructiveDark: optionalHslString,
+  themeDestructiveForegroundDark: optionalHslString,
+
+  socialFacebookUrl: optionalUrl,
+  socialTwitterUrl: optionalUrl,
+  socialLinkedinUrl: optionalUrl,
+  socialInstagramUrl: optionalUrl,
+
+  themeSidebarBackgroundLight: optionalHslString,
+  themeSidebarForegroundLight: optionalHslString,
+  themeSidebarPrimaryLight: optionalHslString,
+  themeSidebarPrimaryForegroundLight: optionalHslString,
+  themeSidebarAccentLight: optionalHslString,
+  themeSidebarAccentForegroundLight: optionalHslString,
+  themeSidebarBorderLight: optionalHslString,
+  themeSidebarRingLight: optionalHslString,
+
+  themeSidebarBackgroundDark: optionalHslString,
+  themeSidebarForegroundDark: optionalHslString,
+  themeSidebarPrimaryDark: optionalHslString,
+  themeSidebarPrimaryForegroundDark: optionalHslString,
+  themeSidebarAccentDark: optionalHslString,
+  themeSidebarAccentForegroundDark: optionalHslString,
+  themeSidebarBorderDark: optionalHslString,
+  themeSidebarRingDark: optionalHslString,
+});
+
+type SettingsFormValues = z.infer<typeof settingsSchema>;
+
+
 // Helper function for HSL preview
 const isValidHslForPreview = (value: string | undefined): boolean => {
   if (!value) return false;
@@ -193,78 +193,14 @@ export default function AdminSettingsPage() {
 
   const settingsDocRef = doc(db, "systemSettings", "general");
   
-  useEffect(() => {
+ useEffect(() => {
     if (!siteSettingsDataFromHook.isLoadingSiteSettings && siteSettingsDataFromHook.portalName !== undefined) {
+      const { isLoadingSiteSettings, ...loadedSettings } = siteSettingsDataFromHook;
       reset({
-        portalName: siteSettingsDataFromHook.portalName || DEFAULT_SETTINGS_FORM.portalName,
-        adminEmail: siteSettingsDataFromHook.adminEmail || DEFAULT_SETTINGS_FORM.adminEmail,
-        maintenanceMode: siteSettingsDataFromHook.maintenanceMode === undefined ? DEFAULT_SETTINGS_FORM.maintenanceMode : siteSettingsDataFromHook.maintenanceMode,
-        companyPhone: siteSettingsDataFromHook.companyPhone || DEFAULT_SETTINGS_FORM.companyPhone,
-        companyAddress: siteSettingsDataFromHook.companyAddress || DEFAULT_SETTINGS_FORM.companyAddress,
-        publicEmail: siteSettingsDataFromHook.publicEmail || DEFAULT_SETTINGS_FORM.publicEmail,
-        
-        themeBackgroundLight: siteSettingsDataFromHook.themeBackgroundLight || DEFAULT_SETTINGS_FORM.themeBackgroundLight,
-        themeForegroundLight: siteSettingsDataFromHook.themeForegroundLight || DEFAULT_SETTINGS_FORM.themeForegroundLight,
-        themePrimaryLight: siteSettingsDataFromHook.themePrimaryLight || DEFAULT_SETTINGS_FORM.themePrimaryLight,
-        themePrimaryForegroundLight: siteSettingsDataFromHook.themePrimaryForegroundLight || DEFAULT_SETTINGS_FORM.themePrimaryForegroundLight,
-        themeAccentLight: siteSettingsDataFromHook.themeAccentLight || DEFAULT_SETTINGS_FORM.themeAccentLight,
-        themeAccentForegroundLight: siteSettingsDataFromHook.themeAccentForegroundLight || DEFAULT_SETTINGS_FORM.themeAccentForegroundLight,
-        themeCardLight: siteSettingsDataFromHook.themeCardLight || DEFAULT_SETTINGS_FORM.themeCardLight,
-        themeCardForegroundLight: siteSettingsDataFromHook.themeCardForegroundLight || DEFAULT_SETTINGS_FORM.themeCardForegroundLight,
-        themePopoverLight: siteSettingsDataFromHook.themePopoverLight || DEFAULT_SETTINGS_FORM.themePopoverLight,
-        themePopoverForegroundLight: siteSettingsDataFromHook.themePopoverForegroundLight || DEFAULT_SETTINGS_FORM.themePopoverForegroundLight,
-        themeSecondaryLight: siteSettingsDataFromHook.themeSecondaryLight || DEFAULT_SETTINGS_FORM.themeSecondaryLight,
-        themeSecondaryForegroundLight: siteSettingsDataFromHook.themeSecondaryForegroundLight || DEFAULT_SETTINGS_FORM.themeSecondaryForegroundLight,
-        themeMutedLight: siteSettingsDataFromHook.themeMutedLight || DEFAULT_SETTINGS_FORM.themeMutedLight,
-        themeMutedForegroundLight: siteSettingsDataFromHook.themeMutedForegroundLight || DEFAULT_SETTINGS_FORM.themeMutedForegroundLight,
-        themeBorderLight: siteSettingsDataFromHook.themeBorderLight || DEFAULT_SETTINGS_FORM.themeBorderLight,
-        themeInputLight: siteSettingsDataFromHook.themeInputLight || DEFAULT_SETTINGS_FORM.themeInputLight,
-        themeRingLight: siteSettingsDataFromHook.themeRingLight || DEFAULT_SETTINGS_FORM.themeRingLight,
-        themeDestructiveLight: siteSettingsDataFromHook.themeDestructiveLight || DEFAULT_SETTINGS_FORM.themeDestructiveLight,
-        themeDestructiveForegroundLight: siteSettingsDataFromHook.themeDestructiveForegroundLight || DEFAULT_SETTINGS_FORM.themeDestructiveForegroundLight,
-
-        themeBackgroundDark: siteSettingsDataFromHook.themeBackgroundDark || DEFAULT_SETTINGS_FORM.themeBackgroundDark,
-        themeForegroundDark: siteSettingsDataFromHook.themeForegroundDark || DEFAULT_SETTINGS_FORM.themeForegroundDark,
-        themePrimaryDark: siteSettingsDataFromHook.themePrimaryDark || DEFAULT_SETTINGS_FORM.themePrimaryDark,
-        themePrimaryForegroundDark: siteSettingsDataFromHook.themePrimaryForegroundDark || DEFAULT_SETTINGS_FORM.themePrimaryForegroundDark,
-        themeAccentDark: siteSettingsDataFromHook.themeAccentDark || DEFAULT_SETTINGS_FORM.themeAccentDark,
-        themeAccentForegroundDark: siteSettingsDataFromHook.themeAccentForegroundDark || DEFAULT_SETTINGS_FORM.themeAccentForegroundDark,
-        themeCardDark: siteSettingsDataFromHook.themeCardDark || DEFAULT_SETTINGS_FORM.themeCardDark,
-        themeCardForegroundDark: siteSettingsDataFromHook.themeCardForegroundDark || DEFAULT_SETTINGS_FORM.themeCardForegroundDark,
-        themePopoverDark: siteSettingsDataFromHook.themePopoverDark || DEFAULT_SETTINGS_FORM.themePopoverDark,
-        themePopoverForegroundDark: siteSettingsDataFromHook.themePopoverForegroundDark || DEFAULT_SETTINGS_FORM.themePopoverForegroundDark,
-        themeSecondaryDark: siteSettingsDataFromHook.themeSecondaryDark || DEFAULT_SETTINGS_FORM.themeSecondaryDark,
-        themeSecondaryForegroundDark: siteSettingsDataFromHook.themeSecondaryForegroundDark || DEFAULT_SETTINGS_FORM.themeSecondaryForegroundDark,
-        themeMutedDark: siteSettingsDataFromHook.themeMutedDark || DEFAULT_SETTINGS_FORM.themeMutedDark,
-        themeMutedForegroundDark: siteSettingsDataFromHook.themeMutedForegroundDark || DEFAULT_SETTINGS_FORM.themeMutedForegroundDark,
-        themeBorderDark: siteSettingsDataFromHook.themeBorderDark || DEFAULT_SETTINGS_FORM.themeBorderDark,
-        themeInputDark: siteSettingsDataFromHook.themeInputDark || DEFAULT_SETTINGS_FORM.themeInputDark,
-        themeRingDark: siteSettingsDataFromHook.themeRingDark || DEFAULT_SETTINGS_FORM.themeRingDark,
-        themeDestructiveDark: siteSettingsDataFromHook.themeDestructiveDark || DEFAULT_SETTINGS_FORM.themeDestructiveDark,
-        themeDestructiveForegroundDark: siteSettingsDataFromHook.themeDestructiveForegroundDark || DEFAULT_SETTINGS_FORM.themeDestructiveForegroundDark,
-
-        socialFacebookUrl: siteSettingsDataFromHook.socialFacebookUrl || DEFAULT_SETTINGS_FORM.socialFacebookUrl,
-        socialTwitterUrl: siteSettingsDataFromHook.socialTwitterUrl || DEFAULT_SETTINGS_FORM.socialTwitterUrl,
-        socialLinkedinUrl: siteSettingsDataFromHook.socialLinkedinUrl || DEFAULT_SETTINGS_FORM.socialLinkedinUrl,
-        socialInstagramUrl: siteSettingsDataFromHook.socialInstagramUrl || DEFAULT_SETTINGS_FORM.socialInstagramUrl,
-
-        themeSidebarBackgroundLight: siteSettingsDataFromHook.themeSidebarBackgroundLight || DEFAULT_SETTINGS_FORM.themeSidebarBackgroundLight,
-        themeSidebarForegroundLight: siteSettingsDataFromHook.themeSidebarForegroundLight || DEFAULT_SETTINGS_FORM.themeSidebarForegroundLight,
-        themeSidebarPrimaryLight: siteSettingsDataFromHook.themeSidebarPrimaryLight || DEFAULT_SETTINGS_FORM.themeSidebarPrimaryLight,
-        themeSidebarPrimaryForegroundLight: siteSettingsDataFromHook.themeSidebarPrimaryForegroundLight || DEFAULT_SETTINGS_FORM.themeSidebarPrimaryForegroundLight,
-        themeSidebarAccentLight: siteSettingsDataFromHook.themeSidebarAccentLight || DEFAULT_SETTINGS_FORM.themeSidebarAccentLight,
-        themeSidebarAccentForegroundLight: siteSettingsDataFromHook.themeSidebarAccentForegroundLight || DEFAULT_SETTINGS_FORM.themeSidebarAccentForegroundLight,
-        themeSidebarBorderLight: siteSettingsDataFromHook.themeSidebarBorderLight || DEFAULT_SETTINGS_FORM.themeSidebarBorderLight,
-        themeSidebarRingLight: siteSettingsDataFromHook.themeSidebarRingLight || DEFAULT_SETTINGS_FORM.themeSidebarRingLight,
-
-        themeSidebarBackgroundDark: siteSettingsDataFromHook.themeSidebarBackgroundDark || DEFAULT_SETTINGS_FORM.themeSidebarBackgroundDark,
-        themeSidebarForegroundDark: siteSettingsDataFromHook.themeSidebarForegroundDark || DEFAULT_SETTINGS_FORM.themeSidebarForegroundDark,
-        themeSidebarPrimaryDark: siteSettingsDataFromHook.themeSidebarPrimaryDark || DEFAULT_SETTINGS_FORM.themeSidebarPrimaryDark,
-        themeSidebarPrimaryForegroundDark: siteSettingsDataFromHook.themeSidebarPrimaryForegroundDark || DEFAULT_SETTINGS_FORM.themeSidebarPrimaryForegroundDark,
-        themeSidebarAccentDark: siteSettingsDataFromHook.themeSidebarAccentDark || DEFAULT_SETTINGS_FORM.themeSidebarAccentDark,
-        themeSidebarAccentForegroundDark: siteSettingsDataFromHook.themeSidebarAccentForegroundDark || DEFAULT_SETTINGS_FORM.themeSidebarAccentForegroundDark,
-        themeSidebarBorderDark: siteSettingsDataFromHook.themeSidebarBorderDark || DEFAULT_SETTINGS_FORM.themeSidebarBorderDark,
-        themeSidebarRingDark: siteSettingsDataFromHook.themeSidebarRingDark || DEFAULT_SETTINGS_FORM.themeSidebarRingDark,
+        ...DEFAULT_SETTINGS_FORM, // Start with defaults
+        ...loadedSettings,       // Override with loaded settings
+        // Ensure specific handling for possibly undefined fields from loadedSettings if needed
+        maintenanceMode: loadedSettings.maintenanceMode === undefined ? DEFAULT_SETTINGS_FORM.maintenanceMode : loadedSettings.maintenanceMode,
       });
     }
   }, [siteSettingsDataFromHook, reset]);
@@ -599,6 +535,8 @@ export default function AdminSettingsPage() {
     </div>
   );
 }
+    
+
     
 
     
