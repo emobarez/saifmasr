@@ -195,8 +195,11 @@ export default function AdminSettingsPage() {
   const settingsDocRef = doc(db, "systemSettings", "general");
   
   useEffect(() => {
-    if (!siteSettingsDataFromHook.isLoadingSiteSettings && siteSettingsDataFromHook.portalName !== undefined) {
-      const { isLoadingSiteSettings: _, ...loadedSettings } = siteSettingsDataFromHook;
+    // Use siteSettingsDataFromHook directly as a dependency
+    // Destructure inside the effect
+    const { isLoadingSiteSettings, ...loadedSettings } = siteSettingsDataFromHook;
+
+    if (!isLoadingSiteSettings && loadedSettings.portalName !== undefined) { // Check if portalName is loaded
       reset({
         ...DEFAULT_SETTINGS_FORM_OUTSIDE_COMPONENT, 
         ...loadedSettings,       
@@ -279,8 +282,10 @@ export default function AdminSettingsPage() {
         themeSidebarBorderDark: data.themeSidebarBorderDark?.trim() || DEFAULT_SETTINGS.themeSidebarBorderDark,
         themeSidebarRingDark: data.themeSidebarRingDark?.trim() || DEFAULT_SETTINGS.themeSidebarRingDark,
       };
-
+      
+      console.log("Data being sent to Firestore:", JSON.stringify(dataToSave, null, 2)); // Log data before saving
       await setDoc(settingsDocRef, dataToSave, { merge: true });
+      
       toast({
         title: "تم الحفظ بنجاح",
         description: "تم تحديث إعدادات النظام.",
@@ -293,12 +298,19 @@ export default function AdminSettingsPage() {
           details: { portalName: dataToSave.portalName, maintenanceMode: dataToSave.maintenanceMode }, 
         });
       }
-    } catch (error) {
-      console.error("Error saving settings:", error);
+    } catch (error: any) {
+      console.error("Firestore Save Error Details:", error); // More detailed logging
+      let description = "لم نتمكن من حفظ التغييرات. يرجى المحاولة مرة أخرى.";
+      if (error.code === 'permission-denied') {
+        description = "فشلت عملية الحفظ: ليس لديك الصلاحيات الكافية لتعديل الإعدادات. يرجى مراجعة قواعد أمان Firestore.";
+      } else if (error.message) {
+        description = `فشل الحفظ: ${error.message}. راجع وحدة التحكم لمزيد من التفاصيل.`;
+      }
       toast({
         title: "خطأ في حفظ الإعدادات",
-        description: "لم نتمكن من حفظ التغييرات. يرجى المحاولة مرة أخرى.",
+        description: description,
         variant: "destructive",
+        duration: 9000, // Longer duration for error messages
       });
     }
   };
@@ -542,3 +554,6 @@ export default function AdminSettingsPage() {
     
 
 
+
+
+    
