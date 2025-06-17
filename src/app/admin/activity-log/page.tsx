@@ -25,7 +25,8 @@ import {
   CheckCircle2Icon,
   FilePlus2, 
   FileEditIcon, 
-  MessageSquarePlus
+  MessageSquarePlus,
+  ListFilter
 } from "lucide-react";
 import { useToast } from "@/hooks/use-toast";
 import { db } from "@/lib/firebase";
@@ -34,8 +35,9 @@ import type { ActivityLogEntry, ActivityActionType } from "@/lib/activityLogger"
 import { ScrollArea } from "@/components/ui/scroll-area";
 import { Tooltip, TooltipContent, TooltipProvider, TooltipTrigger } from "@/components/ui/tooltip";
 import { Button } from "@/components/ui/button";
+import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
+import { Label } from "@/components/ui/label";
 
-const ITEMS_PER_PAGE = 25;
 
 const translateActionType = (actionType: ActivityActionType): string => {
   switch (actionType) {
@@ -71,7 +73,7 @@ const translateActionType = (actionType: ActivityActionType): string => {
     case "CLIENT_PROFILE_INFO_UPDATED": return "تحديث معلومات الملف الشخصي (عميل)";
     case "CLIENT_PASSWORD_CHANGED": return "تغيير كلمة المرور (عميل)";
     case "UNKNOWN_ACTION": return "إجراء غير معروف";
-    default: return actionType; // Fallback to the original type if not mapped
+    default: return actionType; 
   }
 };
 
@@ -81,6 +83,7 @@ export default function AdminActivityLogPage() {
   const [isLoadingMore, setIsLoadingMore] = useState(false);
   const [lastVisibleDoc, setLastVisibleDoc] = useState<QueryDocumentSnapshot<DocumentData> | null>(null);
   const [hasMoreLogs, setHasMoreLogs] = useState(true);
+  const [itemsPerPage, setItemsPerPage] = useState<number>(25);
   const { toast } = useToast();
 
   const formatDate = (timestamp: Timestamp | Date | undefined): string => {
@@ -161,13 +164,13 @@ export default function AdminActivityLogPage() {
           collection(db, "activityLogs"), 
           orderBy("timestamp", "desc"),
           startAfter(lastVisibleDoc),
-          limit(ITEMS_PER_PAGE)
+          limit(itemsPerPage)
         );
       } else {
         q = query(
           collection(db, "activityLogs"), 
           orderBy("timestamp", "desc"),
-          limit(ITEMS_PER_PAGE)
+          limit(itemsPerPage)
         );
       }
       
@@ -182,7 +185,7 @@ export default function AdminActivityLogPage() {
 
       const lastDoc = querySnapshot.docs[querySnapshot.docs.length - 1];
       setLastVisibleDoc(lastDoc);
-      setHasMoreLogs(fetchedLogs.length === ITEMS_PER_PAGE);
+      setHasMoreLogs(fetchedLogs.length === itemsPerPage);
 
     } catch (error) {
       console.error("Error fetching activity logs:", error);
@@ -198,7 +201,8 @@ export default function AdminActivityLogPage() {
 
   useEffect(() => {
     fetchLogs();
-  }, []); 
+  // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [itemsPerPage]); 
 
   const handleLoadMore = () => {
     if (hasMoreLogs && !isLoadingMore) {
@@ -210,11 +214,33 @@ export default function AdminActivityLogPage() {
     <div className="space-y-6">
       <Card>
         <CardHeader>
-          <div className="flex items-center gap-2">
-            <HistoryIcon className="h-7 w-7 text-primary" />
-            <CardTitle className="font-headline text-xl text-primary">سجل الأنشطة</CardTitle>
+          <div className="flex flex-col sm:flex-row justify-between items-start sm:items-center gap-4">
+            <div className="flex-grow">
+                <div className="flex items-center gap-2">
+                    <HistoryIcon className="h-7 w-7 text-primary" />
+                    <CardTitle className="font-headline text-xl text-primary">سجل الأنشطة</CardTitle>
+                </div>
+                <CardDescription>عرض لآخر الأنشطة والأحداث التي تمت في النظام.</CardDescription>
+            </div>
+            <div className="flex items-center gap-2 self-start sm:self-center">
+                <Label htmlFor="itemsPerPageSelect" className="text-sm text-muted-foreground whitespace-nowrap">عرض:</Label>
+                <Select
+                    value={String(itemsPerPage)}
+                    onValueChange={(value) => setItemsPerPage(Number(value))}
+                    dir="rtl"
+                >
+                    <SelectTrigger id="itemsPerPageSelect" className="w-[80px] h-9 text-xs">
+                    <SelectValue placeholder="عدد السجلات" />
+                    </SelectTrigger>
+                    <SelectContent>
+                    <SelectItem value="25">25</SelectItem>
+                    <SelectItem value="50">50</SelectItem>
+                    <SelectItem value="100">100</SelectItem>
+                    </SelectContent>
+                </Select>
+                <span className="text-sm text-muted-foreground whitespace-nowrap">سجل/صفحة</span>
+            </div>
           </div>
-          <CardDescription>عرض لآخر الأنشطة والأحداث التي تمت في النظام.</CardDescription>
         </CardHeader>
         <CardContent>
           {isLoading && logs.length === 0 ? (
@@ -224,7 +250,7 @@ export default function AdminActivityLogPage() {
             </div>
           ) : logs.length > 0 ? (
             <>
-              <ScrollArea className="h-[calc(100vh-280px)] md:h-[calc(100vh-260px)] w-full rounded-md border">
+              <ScrollArea className="h-[calc(100vh-300px)] md:h-[calc(100vh-280px)] w-full rounded-md border">
                 <TooltipProvider>
                 <Table>
                   <TableHeader className="sticky top-0 bg-card z-10">
@@ -296,3 +322,4 @@ export default function AdminActivityLogPage() {
     </div>
   );
 }
+
