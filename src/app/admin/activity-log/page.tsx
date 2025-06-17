@@ -26,11 +26,13 @@ import {
   FilePlus2, 
   FileEditIcon, 
   MessageSquarePlus,
-  ListFilter
+  ListFilter,
+  Filter as FilterIcon,
+  RotateCcwIcon
 } from "lucide-react";
 import { useToast } from "@/hooks/use-toast";
 import { db } from "@/lib/firebase";
-import { collection, getDocs, query, orderBy, Timestamp, limit, startAfter, DocumentData, QueryDocumentSnapshot } from "firebase/firestore";
+import { collection, getDocs, query, orderBy, Timestamp, limit, startAfter, DocumentData, QueryDocumentSnapshot, where, QueryConstraint } from "firebase/firestore";
 import type { ActivityLogEntry, ActivityActionType } from "@/lib/activityLogger"; 
 import { ScrollArea } from "@/components/ui/scroll-area";
 import { Tooltip, TooltipContent, TooltipProvider, TooltipTrigger } from "@/components/ui/tooltip";
@@ -38,6 +40,20 @@ import { Button } from "@/components/ui/button";
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
 import { Label } from "@/components/ui/label";
 
+const ALL_ACTIVITY_ACTION_TYPES: ActivityActionType[] = [
+  "CLIENT_CREATED", "CLIENT_UPDATED", "CLIENT_DELETED",
+  "SERVICE_CREATED", "SERVICE_UPDATED", "SERVICE_DELETED",
+  "EMPLOYEE_CREATED", "EMPLOYEE_UPDATED", "EMPLOYEE_DELETED", "EMPLOYEE_PROFILE_PICTURE_UPDATED",
+  "INVOICE_CREATED", "INVOICE_UPDATED", "INVOICE_DELETED",
+  "REPORT_CREATED", "REPORT_UPDATED", "REPORT_DELETED",
+  "SERVICE_REQUEST_SUBMITTED", "SERVICE_REQUEST_STATUS_UPDATED",
+  "AI_REPORT_SUMMARY_GENERATED", "AI_REPORT_IMPROVEMENTS_SUGGESTED", "AI_REPORT_SECTION_GENERATED", "AI_REPORT_SECTION_APPENDED",
+  "AI_SERVICE_CATEGORY_SUGGESTED", "AI_SERVICE_FAQS_GENERATED",
+  "SETTINGS_UPDATED",
+  "USER_LOGIN", "USER_LOGOUT", "USER_REGISTERED",
+  "CLIENT_PROFILE_PICTURE_UPDATED", "CLIENT_PROFILE_INFO_UPDATED", "CLIENT_PASSWORD_CHANGED",
+  "UNKNOWN_ACTION"
+];
 
 const translateActionType = (actionType: ActivityActionType): string => {
   switch (actionType) {
@@ -77,6 +93,27 @@ const translateActionType = (actionType: ActivityActionType): string => {
   }
 };
 
+const actorRoleOptions = [
+  { value: "all", label: "الكل" },
+  { value: "admin", label: "مسؤول" },
+  { value: "client", label: "عميل" },
+  { value: "system", label: "نظام" },
+];
+
+const targetTypeOptions = [
+  { value: "all", label: "الكل" },
+  { value: "client", label: "عميل" },
+  { value: "service", label: "خدمة" },
+  { value: "report", label: "تقرير" },
+  { value: "reportSection", label: "قسم تقرير" },
+  { value: "employee", label: "موظف" },
+  { value: "invoice", label: "فاتورة" },
+  { value: "serviceRequest", label: "طلب خدمة" },
+  { value: "settings", label: "إعدادات" },
+  { value: "userProfile", label: "ملف شخصي" },
+];
+
+
 export default function AdminActivityLogPage() {
   const [logs, setLogs] = useState<ActivityLogEntry[]>([]);
   const [isLoading, setIsLoading] = useState(true);
@@ -85,6 +122,10 @@ export default function AdminActivityLogPage() {
   const [hasMoreLogs, setHasMoreLogs] = useState(true);
   const [itemsPerPage, setItemsPerPage] = useState<number>(25);
   const { toast } = useToast();
+
+  const [actionTypeFilter, setActionTypeFilter] = useState<string>("all");
+  const [actorRoleFilter, setActorRoleFilter] = useState<string>("all");
+  const [targetTypeFilter, setTargetTypeFilter] = useState<string>("all");
 
   const formatDate = (timestamp: Timestamp | Date | undefined): string => {
     if (!timestamp) return "غير متوفر";
@@ -158,21 +199,25 @@ export default function AdminActivityLogPage() {
     }
 
     try {
-      let q;
-      if (loadMore && lastVisibleDoc) {
-        q = query(
-          collection(db, "activityLogs"), 
-          orderBy("timestamp", "desc"),
-          startAfter(lastVisibleDoc),
-          limit(itemsPerPage)
-        );
-      } else {
-        q = query(
-          collection(db, "activityLogs"), 
-          orderBy("timestamp", "desc"),
-          limit(itemsPerPage)
-        );
+      const queryConstraints: QueryConstraint[] = [];
+      queryConstraints.push(orderBy("timestamp", "desc"));
+
+      if (actionTypeFilter !== "all") {
+        queryConstraints.push(where("actionType", "==", actionTypeFilter));
       }
+      if (actorRoleFilter !== "all") {
+        queryConstraints.push(where("actor.role", "==", actorRoleFilter));
+      }
+      if (targetTypeFilter !== "all") {
+        queryConstraints.push(where("target.type", "==", targetTypeFilter));
+      }
+      
+      if (loadMore && lastVisibleDoc) {
+        queryConstraints.push(startAfter(lastVisibleDoc));
+      }
+      queryConstraints.push(limit(itemsPerPage));
+      
+      const q = query(collection(db, "activityLogs"), ...queryConstraints);
       
       const querySnapshot = await getDocs(q);
       const fetchedLogs = querySnapshot.docs.map(doc => ({ id: doc.id, ...doc.data() } as ActivityLogEntry));
@@ -189,7 +234,7 @@ export default function AdminActivityLogPage() {
 
     } catch (error) {
       console.error("Error fetching activity logs:", error);
-      toast({ title: "خطأ", description: "لم نتمكن من تحميل سجل الأنشطة.", variant: "destructive" });
+      toast({ title: "خطأ", description: "لم نتمكن من تحميل سجل الأنشطة. قد تحتاج إلى إضافة فهارس مركبة في Firestore.", variant: "destructive", duration: 7000 });
     } finally {
       if (loadMore) {
         setIsLoadingMore(false);
@@ -202,13 +247,24 @@ export default function AdminActivityLogPage() {
   useEffect(() => {
     fetchLogs();
   // eslint-disable-next-line react-hooks/exhaustive-deps
-  }, [itemsPerPage]); 
+  }, [itemsPerPage, actionTypeFilter, actorRoleFilter, targetTypeFilter]); 
 
   const handleLoadMore = () => {
     if (hasMoreLogs && !isLoadingMore) {
       fetchLogs(true);
     }
   };
+
+  const resetFilters = () => {
+    setActionTypeFilter("all");
+    setActorRoleFilter("all");
+    setTargetTypeFilter("all");
+  };
+
+  const actionTypeSelectOptions = ALL_ACTIVITY_ACTION_TYPES.map(type => ({
+    value: type,
+    label: translateActionType(type)
+  })).sort((a, b) => a.label.localeCompare(b.label, 'ar'));
 
   return (
     <div className="space-y-6">
@@ -220,7 +276,7 @@ export default function AdminActivityLogPage() {
                     <HistoryIcon className="h-7 w-7 text-primary" />
                     <CardTitle className="font-headline text-xl text-primary">سجل الأنشطة</CardTitle>
                 </div>
-                <CardDescription>عرض لآخر الأنشطة والأحداث التي تمت في النظام.</CardDescription>
+                <CardDescription>عرض لآخر الأنشطة والأحداث التي تمت في النظام مع إمكانية التصفية.</CardDescription>
             </div>
             <div className="flex items-center gap-2 self-start sm:self-center">
                 <Label htmlFor="itemsPerPageSelect" className="text-sm text-muted-foreground whitespace-nowrap">عرض:</Label>
@@ -228,6 +284,7 @@ export default function AdminActivityLogPage() {
                     value={String(itemsPerPage)}
                     onValueChange={(value) => setItemsPerPage(Number(value))}
                     dir="rtl"
+                    disabled={isLoading || isLoadingMore}
                 >
                     <SelectTrigger id="itemsPerPageSelect" className="w-[80px] h-9 text-xs">
                     <SelectValue placeholder="عدد السجلات" />
@@ -243,6 +300,59 @@ export default function AdminActivityLogPage() {
           </div>
         </CardHeader>
         <CardContent>
+          <div className="mb-6 p-4 border rounded-lg bg-card shadow">
+            <div className="flex items-center gap-2 mb-3">
+                <FilterIcon className="h-5 w-5 text-primary" />
+                <h3 className="text-md font-semibold text-primary">تصفية السجلات</h3>
+            </div>
+            <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-4">
+                <div>
+                    <Label htmlFor="actionTypeFilter" className="text-xs text-muted-foreground">نوع الإجراء</Label>
+                    <Select value={actionTypeFilter} onValueChange={setActionTypeFilter} dir="rtl" disabled={isLoading || isLoadingMore}>
+                        <SelectTrigger id="actionTypeFilter" className="text-xs h-9">
+                            <SelectValue placeholder="اختر نوع الإجراء" />
+                        </SelectTrigger>
+                        <SelectContent>
+                            <SelectItem value="all">الكل</SelectItem>
+                            {actionTypeSelectOptions.map(opt => <SelectItem key={opt.value} value={opt.value}>{opt.label}</SelectItem>)}
+                        </SelectContent>
+                    </Select>
+                </div>
+                 <div>
+                    <Label htmlFor="actorRoleFilter" className="text-xs text-muted-foreground">دور الفاعل</Label>
+                    <Select value={actorRoleFilter} onValueChange={setActorRoleFilter} dir="rtl" disabled={isLoading || isLoadingMore}>
+                        <SelectTrigger id="actorRoleFilter" className="text-xs h-9">
+                            <SelectValue placeholder="اختر دور الفاعل" />
+                        </SelectTrigger>
+                        <SelectContent>
+                            {actorRoleOptions.map(opt => <SelectItem key={opt.value} value={opt.value}>{opt.label}</SelectItem>)}
+                        </SelectContent>
+                    </Select>
+                </div>
+                <div>
+                    <Label htmlFor="targetTypeFilter" className="text-xs text-muted-foreground">نوع الهدف</Label>
+                     <Select value={targetTypeFilter} onValueChange={setTargetTypeFilter} dir="rtl" disabled={isLoading || isLoadingMore}>
+                        <SelectTrigger id="targetTypeFilter" className="text-xs h-9">
+                            <SelectValue placeholder="اختر نوع الهدف" />
+                        </SelectTrigger>
+                        <SelectContent>
+                           {targetTypeOptions.map(opt => <SelectItem key={opt.value} value={opt.value}>{opt.label}</SelectItem>)}
+                        </SelectContent>
+                    </Select>
+                </div>
+                <Button 
+                    variant="outline" 
+                    size="sm" 
+                    onClick={resetFilters} 
+                    className="self-end h-9 text-xs"
+                    disabled={isLoading || isLoadingMore || (actionTypeFilter === "all" && actorRoleFilter === "all" && targetTypeFilter === "all")}
+                >
+                    <RotateCcwIcon className="me-1.5 h-3.5 w-3.5" />
+                    إعادة تعيين الفلاتر
+                </Button>
+            </div>
+          </div>
+
           {isLoading && logs.length === 0 ? (
             <div className="flex justify-center items-center py-12">
               <Loader2 className="h-10 w-10 animate-spin text-primary" />
@@ -250,7 +360,7 @@ export default function AdminActivityLogPage() {
             </div>
           ) : logs.length > 0 ? (
             <>
-              <ScrollArea className="h-[calc(100vh-300px)] md:h-[calc(100vh-280px)] w-full rounded-md border">
+              <ScrollArea className="h-[calc(100vh-420px)] md:h-[calc(100vh-380px)] w-full rounded-md border">
                 <TooltipProvider>
                 <Table>
                   <TableHeader className="sticky top-0 bg-card z-10">
@@ -308,18 +418,22 @@ export default function AdminActivityLogPage() {
               </ScrollArea>
               {hasMoreLogs && (
                 <div className="flex justify-center mt-6">
-                  <Button onClick={handleLoadMore} disabled={isLoadingMore}>
+                  <Button onClick={handleLoadMore} disabled={isLoadingMore || isLoading}>
                     {isLoadingMore ? <Loader2 className="me-2 h-5 w-5 animate-spin" /> : "تحميل المزيد"}
                   </Button>
                 </div>
               )}
             </>
           ) : (
-            <p className="text-muted-foreground text-center py-10">لا توجد سجلات أنشطة لعرضها حالياً.</p>
+            <p className="text-muted-foreground text-center py-10">
+              {actionTypeFilter !== "all" || actorRoleFilter !== "all" || targetTypeFilter !== "all"
+                ? "لا توجد سجلات تطابق معايير التصفية الحالية."
+                : "لا توجد سجلات أنشطة لعرضها حالياً."
+              }
+            </p>
           )}
         </CardContent>
       </Card>
     </div>
   );
 }
-
