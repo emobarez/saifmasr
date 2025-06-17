@@ -6,6 +6,7 @@ import { Input } from "@/components/ui/input";
 import { Switch } from "@/components/ui/switch";
 import { Save, Bell, ShieldCheck, Palette, Loader2, Settings as SettingsIcon, Phone, Mail, MapPin, Paintbrush, Link as LinkIcon, Facebook, Twitter, Linkedin, Instagram, Sun, Moon, Sidebar, Image as ImageIcon, Globe, RotateCcw, Edit3 } from "lucide-react";
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
+import { Accordion, AccordionContent, AccordionItem, AccordionTrigger } from "@/components/ui/accordion";
 import { useState, useEffect } from "react";
 import { useToast } from "@/hooks/use-toast";
 import { db } from "@/lib/firebase";
@@ -434,7 +435,7 @@ export default function AdminSettingsPage() {
                     />
                     <FormControl className="flex-grow">
                         <Input 
-                            placeholder={DEFAULT_SETTINGS[lightFieldName] as string || item.placeholder} 
+                            placeholder={(DEFAULT_SETTINGS[lightFieldName] as string) || item.placeholder} 
                             {...field} 
                             value={field.value || ""} 
                             disabled={isSubmitting} 
@@ -465,7 +466,7 @@ export default function AdminSettingsPage() {
                     />
                     <FormControl className="flex-grow">
                         <Input 
-                            placeholder={DEFAULT_SETTINGS[darkFieldName] as string || item.placeholder} 
+                            placeholder={(DEFAULT_SETTINGS[darkFieldName] as string) || item.placeholder} 
                             {...field} 
                             value={field.value || ""} 
                             disabled={isSubmitting} 
@@ -554,9 +555,11 @@ export default function AdminSettingsPage() {
                                     <Input placeholder="https://example.com/logo.png" {...field} value={field.value || ""} disabled={isSubmitting} />
                                 </FormControl>
                                 {field.value && (
-                                    <img
+                                    <Image
                                         src={field.value}
                                         alt="Logo Preview"
+                                        width={80}
+                                        height={40}
                                         className="h-10 w-auto max-w-[80px] object-contain border rounded bg-muted"
                                     />
                                 )}
@@ -573,10 +576,12 @@ export default function AdminSettingsPage() {
                                     <Input placeholder="https://example.com/favicon.ico" {...field} value={field.value || ""} disabled={isSubmitting} />
                                 </FormControl>
                                 {field.value && (
-                                    <img
+                                    <Image
                                         src={field.value}
                                         alt="Favicon Preview"
-                                        className="h-10 w-10 object-contain border rounded bg-muted" // Favicons are often square
+                                        width={40}
+                                        height={40}
+                                        className="h-10 w-10 object-contain border rounded bg-muted" 
                                     />
                                 )}
                             </div>
@@ -652,21 +657,28 @@ export default function AdminSettingsPage() {
                   <Card>
                     <CardHeader>
                         <CardTitle className="flex items-center gap-2"><Paintbrush className="h-5 w-5" />ألوان الواجهة الرئيسية (HSL)</CardTitle>
-                        <CardDescription>
+                         <CardDescription>
                             استخدم منتقي الألوان أو أدخل قيم HSL مباشرة. اترك الحقل فارغًا لاستخدام القيمة الافتراضية. 
-                            يجب أن تكون القيم بتنسيق HSL بدون الأقواس، مثال: <code className="dir-ltr text-xs p-1 bg-muted rounded">240 10% 15%</code>.
+                            يجب أن تكون القيم بتنسيق HSL بدون الأقواس، مثال: <code className="dir-ltr text-xs p-1 bg-muted rounded">240 10% 15%</code>. انقر على العنوان أدناه للتوسيع.
                         </CardDescription>
                     </CardHeader>
-                    <CardContent className="space-y-6">
-                      {renderColorFields(mainThemeColorFields)}
-                      <div className="flex flex-col sm:flex-row gap-2 pt-4 border-t">
-                        <Button type="button" variant="outline" onClick={() => handleResetColorSection(mainThemeColorFields, 'Light', 'الواجهة الرئيسية')} disabled={isSubmitting}>
-                          <RotateCcw className="me-2 h-4 w-4" /> استعادة الألوان الفاتحة الافتراضية
-                        </Button>
-                        <Button type="button" variant="outline" onClick={() => handleResetColorSection(mainThemeColorFields, 'Dark', 'الواجهة الرئيسية')} disabled={isSubmitting}>
-                          <RotateCcw className="me-2 h-4 w-4" /> استعادة الألوان الداكنة الافتراضية
-                        </Button>
-                      </div>
+                    <CardContent>
+                        <Accordion type="single" collapsible className="w-full">
+                            <AccordionItem value="main-interface-colors">
+                                <AccordionTrigger className="text-lg font-medium hover:no-underline">تخصيص ألوان الواجهة الرئيسية</AccordionTrigger>
+                                <AccordionContent className="pt-4 space-y-6">
+                                    {renderColorFields(mainThemeColorFields)}
+                                    <div className="flex flex-col sm:flex-row gap-2 pt-4 border-t">
+                                        <Button type="button" variant="outline" onClick={() => handleResetColorSection(mainThemeColorFields, 'Light', 'الواجهة الرئيسية')} disabled={isSubmitting}>
+                                        <RotateCcw className="me-2 h-4 w-4" /> استعادة الألوان الفاتحة الافتراضية
+                                        </Button>
+                                        <Button type="button" variant="outline" onClick={() => handleResetColorSection(mainThemeColorFields, 'Dark', 'الواجهة الرئيسية')} disabled={isSubmitting}>
+                                        <RotateCcw className="me-2 h-4 w-4" /> استعادة الألوان الداكنة الافتراضية
+                                        </Button>
+                                    </div>
+                                </AccordionContent>
+                            </AccordionItem>
+                        </Accordion>
                     </CardContent>
                   </Card>
                   
@@ -674,19 +686,26 @@ export default function AdminSettingsPage() {
                     <CardHeader>
                         <CardTitle className="flex items-center gap-2"><Sidebar className="h-5 w-5" />ألوان الشريط الجانبي (HSL)</CardTitle>
                         <CardDescription>
-                            خصص ألوان الشريط الجانبي والقائمة المتنقلة. اترك فارغًا للقيم الافتراضية.
+                            خصص ألوان الشريط الجانبي والقائمة المتنقلة. اترك فارغًا للقيم الافتراضية. انقر على العنوان أدناه للتوسيع.
                         </CardDescription>
                     </CardHeader>
-                    <CardContent className="space-y-6">
-                      {renderColorFields(sidebarThemeColorFields)}
-                       <div className="flex flex-col sm:flex-row gap-2 pt-4 border-t">
-                        <Button type="button" variant="outline" onClick={() => handleResetColorSection(sidebarThemeColorFields, 'Light', 'الشريط الجانبي')} disabled={isSubmitting}>
-                          <RotateCcw className="me-2 h-4 w-4" /> استعادة الألوان الفاتحة الافتراضية
-                        </Button>
-                        <Button type="button" variant="outline" onClick={() => handleResetColorSection(sidebarThemeColorFields, 'Dark', 'الشريط الجانبي')} disabled={isSubmitting}>
-                          <RotateCcw className="me-2 h-4 w-4" /> استعادة الألوان الداكنة الافتراضية
-                        </Button>
-                      </div>
+                    <CardContent>
+                       <Accordion type="single" collapsible className="w-full">
+                            <AccordionItem value="sidebar-colors">
+                                <AccordionTrigger className="text-lg font-medium hover:no-underline">تخصيص ألوان الشريط الجانبي</AccordionTrigger>
+                                <AccordionContent className="pt-4 space-y-6">
+                                    {renderColorFields(sidebarThemeColorFields)}
+                                    <div className="flex flex-col sm:flex-row gap-2 pt-4 border-t">
+                                        <Button type="button" variant="outline" onClick={() => handleResetColorSection(sidebarThemeColorFields, 'Light', 'الشريط الجانبي')} disabled={isSubmitting}>
+                                        <RotateCcw className="me-2 h-4 w-4" /> استعادة الألوان الفاتحة الافتراضية
+                                        </Button>
+                                        <Button type="button" variant="outline" onClick={() => handleResetColorSection(sidebarThemeColorFields, 'Dark', 'الشريط الجانبي')} disabled={isSubmitting}>
+                                        <RotateCcw className="me-2 h-4 w-4" /> استعادة الألوان الداكنة الافتراضية
+                                        </Button>
+                                    </div>
+                                </AccordionContent>
+                            </AccordionItem>
+                        </Accordion>
                     </CardContent>
                   </Card>
                 </TabsContent>
@@ -710,3 +729,4 @@ export default function AdminSettingsPage() {
   );
 }
     
+
