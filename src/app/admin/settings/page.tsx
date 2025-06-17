@@ -19,7 +19,73 @@ import { logActivity } from "@/lib/activityLogger";
 import { Textarea } from "@/components/ui/textarea";
 import { useSiteSettings, type SiteSettings, DEFAULT_SETTINGS } from '@/hooks/useSiteSettings';
 
+// Color Conversion Utilities & Regex
 const hslFormatRegex = /^\s*\d{1,3}\s+\d{1,3}%\s+\d{1,3}%\s*$/;
+
+const isValidHslForPreview = (value: string | undefined): boolean => {
+  if (!value) return false;
+  return hslFormatRegex.test(value.trim());
+};
+
+function parseHslString(hslStr?: string | null): { h: number; s: number; l: number } | null {
+  if (!hslStr || typeof hslStr !== 'string') return null;
+  const match = hslStr.match(/(\d+)\s+(\d+)%\s+(\d+)%/);
+  if (match) {
+    return { h: parseInt(match[1]), s: parseInt(match[2]), l: parseInt(match[3]) };
+  }
+  return null;
+}
+
+function formatHslString(h: number, s: number, l: number): string {
+  return `${Math.round(h)} ${Math.round(s)}% ${Math.round(l)}%`;
+}
+
+function hslToRgb(h: number, s: number, l: number): [number, number, number] {
+  s /= 100;
+  l /= 100;
+  const k = (n: number) => (n + h / 30) % 12;
+  const a = s * Math.min(l, 1 - l);
+  const f = (n: number) =>
+    l - a * Math.max(-1, Math.min(k(n) - 3, Math.min(9 - k(n), 1)));
+  return [
+    Math.round(255 * f(0)),
+    Math.round(255 * f(8)),
+    Math.round(255 * f(4)),
+  ];
+}
+
+function rgbToHex(r: number, g: number, b: number): string {
+  return "#" + ((1 << 24) + (r << 16) + (g << 8) + b).toString(16).slice(1).toUpperCase();
+}
+
+function hexToRgb(hex: string): { r: number; g: number; b: number } | null {
+  const result = /^#?([a-f\d]{2})([a-f\d]{2})([a-f\d]{2})$/i.exec(hex);
+  return result ? {
+    r: parseInt(result[1], 16),
+    g: parseInt(result[2], 16),
+    b: parseInt(result[3], 16)
+  } : null;
+}
+
+function rgbToHsl(r: number, g: number, b: number): { h: number; s: number; l: number } {
+  r /= 255; g /= 255; b /= 255;
+  const max = Math.max(r, g, b), min = Math.min(r, g, b);
+  let h = 0, s = 0, l = (max + min) / 2;
+
+  if (max !== min) {
+    const d = max - min;
+    s = l > 0.5 ? d / (2 - max - min) : d / (max + min);
+    switch (max) {
+      case r: h = (g - b) / d + (g < b ? 6 : 0); break;
+      case g: h = (b - r) / d + 2; break;
+      case b: h = (r - g) / d + 4; break;
+    }
+    h /= 6;
+  }
+  return { h: h * 360, s: s * 100, l: l * 100 };
+}
+// End Color Conversion Utilities
+
 const optionalHslString = z.string().optional().refine(
   (val) => !val || val.trim() === '' || hslFormatRegex.test(val),
   { message: "تنسيق HSL غير صالح. يجب أن يكون مثل '240 10% 15%'" }
@@ -102,10 +168,76 @@ const settingsSchema = z.object({
 
 type SettingsFormValues = z.infer<typeof settingsSchema>;
 
-const isValidHslForPreview = (value: string | undefined): boolean => {
-  if (!value) return false;
-  return hslFormatRegex.test(value.trim());
+
+// Sub-component for the HTML color picker itself
+const HtmlColorPicker = ({ formFieldName, watch, setValue, disabled }: {
+  formFieldName: keyof SettingsFormValues;
+  watch: (name: keyof SettingsFormValues) => string | undefined;
+  setValue: (name: keyof SettingsFormValues, value: string, options?: { shouldValidate?: boolean; shouldDirty?: boolean }) => void;
+  disabled?: boolean;
+}) => {
+  const hslValueFromForm = watch(formFieldName) || "";
+
+  const [pickerHex, setPickerHex] = useState(() => {
+    const hslParts = parseHslString(hslValueFromForm);
+    if (hslParts) {
+      const [r, g, b] = hslToRgb(hslParts.h, hslParts.s, hslParts.l);
+      return rgbToHex(r, g, b);
+    }
+    const defaultHslForField = DEFAULT_SETTINGS[formFieldName] as string | undefined;
+    const defaultHslParts = parseHslString(defaultHslForField || "0 0% 0%");
+    if (defaultHslParts) {
+        const [r,g,b] = hslToRgb(defaultHslParts.h, defaultHslParts.s, defaultHslParts.l);
+        return rgbToHex(r,g,b);
+    }
+    return '#000000';
+  });
+
+  useEffect(() => {
+    const hslParts = parseHslString(hslValueFromForm);
+    let newHex = pickerHex; // Keep current picker hex if HSL is invalid
+
+    if (hslParts) {
+      const [r, g, b] = hslToRgb(hslParts.h, hslParts.s, hslParts.l);
+      newHex = rgbToHex(r, g, b);
+    } else if (hslValueFromForm === "") { // HSL field was cleared
+        const defaultHslForField = DEFAULT_SETTINGS[formFieldName] as string | undefined;
+        const defaultHslParts = parseHslString(defaultHslForField || "0 0% 0%");
+        if (defaultHslParts) {
+            const [r,g,b] = hslToRgb(defaultHslParts.h, defaultHslParts.s, defaultHslParts.l);
+            newHex = rgbToHex(r,g,b);
+        } else {
+            newHex = '#FFFFFF'; // Fallback if default is also invalid
+        }
+    }
+    // Only update if the newHex is different to avoid re-renders / infinite loops.
+    if (newHex.toUpperCase() !== pickerHex.toUpperCase()) {
+      setPickerHex(newHex);
+    }
+  }, [hslValueFromForm, formFieldName, pickerHex, setValue]);
+
+
+  const handleColorChange = (event: React.ChangeEvent<HTMLInputElement>) => {
+    const newHex = event.target.value;
+    setPickerHex(newHex);
+    const rgb = hexToRgb(newHex);
+    if (rgb) {
+      const { h, s, l } = rgbToHsl(rgb.r, rgb.g, rgb.b);
+      setValue(formFieldName, formatHslString(h, s, l), { shouldValidate: true, shouldDirty: true });
+    }
+  };
+
+  return (
+    <input
+      type="color"
+      value={pickerHex}
+      onChange={handleColorChange}
+      disabled={disabled}
+      className="h-10 w-10 p-1 border rounded-md cursor-pointer disabled:cursor-not-allowed disabled:opacity-50 shrink-0"
+    />
+  );
 };
+
 
 export default function AdminSettingsPage() {
   const { toast } = useToast();
@@ -242,36 +374,36 @@ export default function AdminSettingsPage() {
   };
 
   const mainThemeColorFields: Array<{nameBase: string, label: string, placeholder: string}> = [
-    { nameBase: "themeBackground", label: "لون الخلفية", placeholder: "مثال: 240 10% 15%" },
-    { nameBase: "themeForeground", label: "لون النص", placeholder: "مثال: 0 0% 98%" },
-    { nameBase: "themePrimary", label: "اللون الأساسي", placeholder: "مثال: 238 60% 55%" },
-    { nameBase: "themePrimaryForeground", label: "لون النص على الأساسي", placeholder: "مثال: 0 0% 98%" },
-    { nameBase: "themeAccent", label: "اللون الثانوي/المميز", placeholder: "مثال: 191 60% 50%" },
-    { nameBase: "themeAccentForeground", label: "لون النص على الثانوي", placeholder: "مثال: 0 0% 98%" },
-    { nameBase: "themeCard", label: "لون خلفية البطاقات", placeholder: "مثال: 238 10% 20% / 0.85" },
-    { nameBase: "themeCardForeground", label: "لون نص البطاقات", placeholder: "مثال: 0 0% 95%" },
-    { nameBase: "themePopover", label: "لون خلفية العناصر المنبثقة", placeholder: "مثال: 238 10% 20% / 0.85" },
-    { nameBase: "themePopoverForeground", label: "لون نص العناصر المنبثقة", placeholder: "مثال: 0 0% 95%" },
-    { nameBase: "themeSecondary", label: "اللون الفرعي (للخلفيات الثانوية)", placeholder: "مثال: 240 10% 94%" },
-    { nameBase: "themeSecondaryForeground", label: "لون النص على الفرعي", placeholder: "مثال: 238 10% 25%" },
-    { nameBase: "themeMuted", label: "اللون الخافت (للخلفيات المحايدة)", placeholder: "مثال: 240 10% 75%" },
-    { nameBase: "themeMutedForeground", label: "لون النص الخافت", placeholder: "مثال: 240 10% 45%" },
-    { nameBase: "themeBorder", label: "لون الحدود", placeholder: "مثال: 238 10% 30%" },
-    { nameBase: "themeInput", label: "لون حقول الإدخال", placeholder: "مثال: 238 10% 30%" },
-    { nameBase: "themeRing", label: "لون حلقة التركيز (Ring)", placeholder: "مثال: 191 60% 50%" },
-    { nameBase: "themeDestructive", label: "لون التنبيهات (خطأ/حذف)", placeholder: "0 84.2% 60.2%" },
-    { nameBase: "themeDestructiveForeground", label: "لون نص التنبيهات", placeholder: "0 0% 98%" },
+    { nameBase: "Background", label: "لون الخلفية", placeholder: "مثال: 240 10% 15%" },
+    { nameBase: "Foreground", label: "لون النص", placeholder: "مثال: 0 0% 98%" },
+    { nameBase: "Primary", label: "اللون الأساسي", placeholder: "مثال: 238 60% 55%" },
+    { nameBase: "PrimaryForeground", label: "لون النص على الأساسي", placeholder: "مثال: 0 0% 98%" },
+    { nameBase: "Accent", label: "اللون الثانوي/المميز", placeholder: "مثال: 191 60% 50%" },
+    { nameBase: "AccentForeground", label: "لون النص على الثانوي", placeholder: "مثال: 0 0% 98%" },
+    { nameBase: "Card", label: "لون خلفية البطاقات", placeholder: "مثال: 238 10% 20% / 0.85" },
+    { nameBase: "CardForeground", label: "لون نص البطاقات", placeholder: "مثال: 0 0% 95%" },
+    { nameBase: "Popover", label: "لون خلفية العناصر المنبثقة", placeholder: "مثال: 238 10% 20% / 0.85" },
+    { nameBase: "PopoverForeground", label: "لون نص العناصر المنبثقة", placeholder: "مثال: 0 0% 95%" },
+    { nameBase: "Secondary", label: "اللون الفرعي (للخلفيات الثانوية)", placeholder: "مثال: 240 10% 94%" },
+    { nameBase: "SecondaryForeground", label: "لون النص على الفرعي", placeholder: "مثال: 238 10% 25%" },
+    { nameBase: "Muted", label: "اللون الخافت (للخلفيات المحايدة)", placeholder: "مثال: 240 10% 75%" },
+    { nameBase: "MutedForeground", label: "لون النص الخافت", placeholder: "مثال: 240 10% 45%" },
+    { nameBase: "Border", label: "لون الحدود", placeholder: "مثال: 238 10% 30%" },
+    { nameBase: "Input", label: "لون حقول الإدخال", placeholder: "مثال: 238 10% 30%" },
+    { nameBase: "Ring", label: "لون حلقة التركيز (Ring)", placeholder: "مثال: 191 60% 50%" },
+    { nameBase: "Destructive", label: "لون التنبيهات (خطأ/حذف)", placeholder: "0 84.2% 60.2%" },
+    { nameBase: "DestructiveForeground", label: "لون نص التنبيهات", placeholder: "0 0% 98%" },
   ];
 
   const sidebarThemeColorFields: Array<{nameBase: string, label: string, placeholder: string}> = [
-    { nameBase: "themeSidebarBackground", label: "خلفية الشريط الجانبي", placeholder: "مثال: 238 40% 96% / 0.9" },
-    { nameBase: "themeSidebarForeground", label: "نص الشريط الجانبي", placeholder: "مثال: 238 15% 30%" },
-    { nameBase: "themeSidebarPrimary", label: "أساسي الشريط الجانبي (للنشط)", placeholder: "مثال: 238 52% 38%" },
-    { nameBase: "themeSidebarPrimaryForeground", label: "نص أساسي الشريط الجانبي", placeholder: "مثال: 0 0% 98%" },
-    { nameBase: "themeSidebarAccent", label: "مميز الشريط الجانبي (للتمرير)", placeholder: "مثال: 191 55% 41%" },
-    { nameBase: "themeSidebarAccentForeground", label: "نص مميز الشريط الجانبي", placeholder: "مثال: 0 0% 98%" },
-    { nameBase: "themeSidebarBorder", label: "حدود الشريط الجانبي", placeholder: "مثال: 238 20% 88%" },
-    { nameBase: "themeSidebarRing", label: "حلقة تركيز الشريط الجانبي", placeholder: "مثال: 191 55% 41%" },
+    { nameBase: "SidebarBackground", label: "خلفية الشريط الجانبي", placeholder: "مثال: 238 40% 96% / 0.9" },
+    { nameBase: "SidebarForeground", label: "نص الشريط الجانبي", placeholder: "مثال: 238 15% 30%" },
+    { nameBase: "SidebarPrimary", label: "أساسي الشريط الجانبي (للنشط)", placeholder: "مثال: 238 52% 38%" },
+    { nameBase: "SidebarPrimaryForeground", label: "نص أساسي الشريط الجانبي", placeholder: "مثال: 0 0% 98%" },
+    { nameBase: "SidebarAccent", label: "مميز الشريط الجانبي (للتمرير)", placeholder: "مثال: 191 55% 41%" },
+    { nameBase: "SidebarAccentForeground", label: "نص مميز الشريط الجانبي", placeholder: "مثال: 0 0% 98%" },
+    { nameBase: "SidebarBorder", label: "حدود الشريط الجانبي", placeholder: "مثال: 238 20% 88%" },
+    { nameBase: "SidebarRing", label: "حلقة تركيز الشريط الجانبي", placeholder: "مثال: 191 55% 41%" },
   ];
 
   const socialMediaFields: Array<{name: keyof SettingsFormValues, label: string, placeholder: string, icon: React.ElementType}> = [
@@ -285,26 +417,37 @@ export default function AdminSettingsPage() {
     return fields.map(item => {
       const lightFieldName = `theme${item.nameBase}Light` as keyof SettingsFormValues;
       const darkFieldName = `theme${item.nameBase}Dark` as keyof SettingsFormValues;
-      const lightFieldValue = watch(lightFieldName);
-      const darkFieldValue = watch(darkFieldName);
-
+      
       return (
         <div key={item.nameBase} className="grid grid-cols-1 md:grid-cols-2 gap-x-6 gap-y-4 border-b pb-4 last:border-b-0 last:pb-0">
           <h4 className="col-span-1 md:col-span-2 text-md font-medium text-muted-foreground mb-1">{item.label}</h4>
+          
           <FormField control={control} name={lightFieldName} render={({ field }) => (
               <FormItem>
                 <FormLabel className="flex items-center gap-1"><Sun className="h-4 w-4" /> الوضع الفاتح</FormLabel>
                 <div className="flex items-center gap-2">
-                  <FormControl className="flex-grow">
-                    <Input placeholder={item.placeholder} {...field} value={field.value || ""} disabled={isSubmitting} className="dir-ltr text-left" />
-                  </FormControl>
-                  {isValidHslForPreview(lightFieldValue) && (
-                    <div
-                      className="h-8 w-8 rounded-md border-2 border-border shadow-sm shrink-0"
-                      style={{ backgroundColor: `hsl(${lightFieldValue})` }}
-                      title={`Preview for ${lightFieldValue}`}
+                    <HtmlColorPicker
+                        formFieldName={lightFieldName}
+                        watch={watch}
+                        setValue={setValue}
+                        disabled={isSubmitting}
                     />
-                  )}
+                    <FormControl className="flex-grow">
+                        <Input 
+                            placeholder={item.placeholder} 
+                            {...field} 
+                            value={field.value || ""} 
+                            disabled={isSubmitting} 
+                            className="dir-ltr text-left" 
+                        />
+                    </FormControl>
+                    {isValidHslForPreview(field.value) && (
+                        <div
+                        className="h-8 w-8 rounded-md border-2 border-border shadow-sm shrink-0"
+                        style={{ backgroundColor: `hsl(${field.value})` }}
+                        title={`Preview for ${field.value}`}
+                        />
+                    )}
                 </div>
                 <FormMessage />
               </FormItem>
@@ -313,16 +456,28 @@ export default function AdminSettingsPage() {
           <FormField control={control} name={darkFieldName} render={({ field }) => (
               <FormItem>
                 <FormLabel className="flex items-center gap-1"><Moon className="h-4 w-4" /> الوضع الداكن</FormLabel>
-                <div className="flex items-center gap-2">
-                  <FormControl className="flex-grow">
-                    <Input placeholder={item.placeholder} {...field} value={field.value || ""} disabled={isSubmitting} className="dir-ltr text-left" />
-                  </FormControl>
-                  {isValidHslForPreview(darkFieldValue) && (
-                      <div
-                        className="h-8 w-8 rounded-md border-2 border-border shadow-sm shrink-0"
-                        style={{ backgroundColor: `hsl(${darkFieldValue})` }}
-                        title={`Preview for ${darkFieldValue}`}
-                      />
+                 <div className="flex items-center gap-2">
+                    <HtmlColorPicker
+                        formFieldName={darkFieldName}
+                        watch={watch}
+                        setValue={setValue}
+                        disabled={isSubmitting}
+                    />
+                    <FormControl className="flex-grow">
+                        <Input 
+                            placeholder={item.placeholder} 
+                            {...field} 
+                            value={field.value || ""} 
+                            disabled={isSubmitting} 
+                            className="dir-ltr text-left" 
+                        />
+                    </FormControl>
+                    {isValidHslForPreview(field.value) && (
+                        <div
+                            className="h-8 w-8 rounded-md border-2 border-border shadow-sm shrink-0"
+                            style={{ backgroundColor: `hsl(${field.value})` }}
+                            title={`Preview for ${field.value}`}
+                        />
                     )}
                 </div>
                 <FormMessage />
@@ -339,10 +494,10 @@ export default function AdminSettingsPage() {
     mode: 'Light' | 'Dark',
     sectionName: string // For toast message
   ) => {
-    colorFields.forEach(field => {
-      const fieldName = `theme${field.nameBase}${mode}` as keyof SettingsFormValues;
-      const defaultSettingKey = `theme${field.nameBase}${mode}` as keyof SiteSettings;
-      setValue(fieldName, DEFAULT_SETTINGS[defaultSettingKey] || "");
+    colorFields.forEach(fieldInfo => {
+      const fieldName = `theme${fieldInfo.nameBase}${mode}` as keyof SettingsFormValues;
+      const defaultSettingKey = `theme${fieldInfo.nameBase}${mode}` as keyof SiteSettings;
+      setValue(fieldName, DEFAULT_SETTINGS[defaultSettingKey] || "", {shouldDirty: true, shouldValidate: true});
     });
     toast({ title: "تمت الاستعادة", description: `تمت استعادة ألوان ${sectionName} (${mode === 'Light' ? 'الفاتحة' : 'الداكنة'}) إلى الافتراضي. اضغط 'حفظ الإعدادات' للتطبيق.` });
   };
@@ -459,7 +614,7 @@ export default function AdminSettingsPage() {
                     <CardHeader>
                         <CardTitle className="flex items-center gap-2"><Paintbrush className="h-5 w-5" />ألوان الواجهة الرئيسية (HSL)</CardTitle>
                         <CardDescription>
-                            اترك الحقل فارغًا لاستخدام القيمة الافتراضية. 
+                            استخدم منتقي الألوان أو أدخل قيم HSL مباشرة. اترك الحقل فارغًا لاستخدام القيمة الافتراضية. 
                             يجب أن تكون القيم بتنسيق HSL بدون الأقواس، مثال: <code className="dir-ltr text-xs p-1 bg-muted rounded">240 10% 15%</code>.
                         </CardDescription>
                     </CardHeader>
