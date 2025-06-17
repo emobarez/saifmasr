@@ -210,11 +210,10 @@ const HtmlColorPicker = ({ formFieldName, watch, setValue, disabled }: {
             newHex = '#FFFFFF'; // Fallback if default is also invalid
         }
     }
-    // Only update if the newHex is different to avoid re-renders / infinite loops.
     if (newHex.toUpperCase() !== pickerHex.toUpperCase()) {
       setPickerHex(newHex);
     }
-  }, [hslValueFromForm, formFieldName, pickerHex, setValue]);
+  }, [hslValueFromForm, formFieldName, pickerHex]);
 
 
   const handleColorChange = (event: React.ChangeEvent<HTMLInputElement>) => {
@@ -434,7 +433,7 @@ export default function AdminSettingsPage() {
                     />
                     <FormControl className="flex-grow">
                         <Input 
-                            placeholder={item.placeholder} 
+                            placeholder={DEFAULT_SETTINGS[lightFieldName] as string || item.placeholder} 
                             {...field} 
                             value={field.value || ""} 
                             disabled={isSubmitting} 
@@ -465,7 +464,7 @@ export default function AdminSettingsPage() {
                     />
                     <FormControl className="flex-grow">
                         <Input 
-                            placeholder={item.placeholder} 
+                            placeholder={DEFAULT_SETTINGS[darkFieldName] as string || item.placeholder} 
                             {...field} 
                             value={field.value || ""} 
                             disabled={isSubmitting} 
