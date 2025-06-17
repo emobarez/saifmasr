@@ -1,6 +1,6 @@
 
 "use client";
-import { useState, useEffect, useMemo } from "react";
+import { useState, useEffect, useMemo, useRef } from "react";
 import { Card, CardHeader, CardTitle, CardDescription, CardContent } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
@@ -20,9 +20,9 @@ import { Calendar } from "@/components/ui/calendar";
 import { format as formatDateFn } from "date-fns";
 import { arSA } from "date-fns/locale";
 import { useToast } from "@/hooks/use-toast";
-import { db, storage } from "@/lib/firebase"; // Added storage
+import { db, storage } from "@/lib/firebase"; 
 import { collection, addDoc, getDocs, serverTimestamp, Timestamp, query, orderBy, deleteDoc, doc, updateDoc } from "firebase/firestore";
-import { ref, uploadBytesResumable, getDownloadURL, deleteObject } from "firebase/storage"; // Added storage functions
+import { ref, uploadBytesResumable, getDownloadURL, deleteObject } from "firebase/storage"; 
 import { cn } from "@/lib/utils";
 import { useAuth } from "@/context/AuthContext";
 import { logActivity } from "@/lib/activityLogger";
@@ -83,6 +83,9 @@ export default function AdminEmployeesPage() {
   const [selectedImageFile, setSelectedImageFile] = useState<File | null>(null);
   const [imagePreviewUrl, setImagePreviewUrl] = useState<string | null>(null);
   const [isUploadingImage, setIsUploadingImage] = useState(false);
+  const addFormProfileImageInputRef = useRef<HTMLInputElement>(null);
+  const editFormProfileImageInputRef = useRef<HTMLInputElement>(null);
+
 
   const fetchEmployees = async () => {
     setIsLoadingEmployees(true);
@@ -116,28 +119,32 @@ export default function AdminEmployeesPage() {
     resolver: zodResolver(employeeSchema),
   });
   
-  const handleImageFileChange = (event: React.ChangeEvent<HTMLInputElement>) => {
+  const handleImageFileChange = (event: React.ChangeEvent<HTMLInputElement>, formInstance: typeof addEmployeeForm | typeof editEmployeeForm) => {
     const file = event.target.files?.[0];
     if (file) {
       if (file.size > MAX_FILE_SIZE_EMPLOYEE) {
         toast({ title: "خطأ في الملف", description: `حجم الصورة يجب أن لا يتجاوز ${MAX_FILE_SIZE_EMPLOYEE / 1024 / 1024} ميجا بايت.`, variant: "destructive" });
         setSelectedImageFile(null);
-        setImagePreviewUrl(editingEmployee?.profileImageUrl || null); // Revert to original if edit, or null if add
-        event.target.value = ""; // Clear the file input
+        setImagePreviewUrl(editingEmployee?.profileImageUrl || null);
+        if (event.target) event.target.value = "";
+        formInstance.setValue("profileImageUrl", editingEmployee?.profileImageUrl || "");
         return;
       }
       if (!ALLOWED_IMAGE_TYPES_EMPLOYEE.includes(file.type)) {
         toast({ title: "خطأ في الملف", description: "نوع الصورة غير مدعوم. الأنواع المسموح بها: JPG, PNG, GIF, WEBP.", variant: "destructive" });
         setSelectedImageFile(null);
         setImagePreviewUrl(editingEmployee?.profileImageUrl || null);
-        event.target.value = "";
+        if (event.target) event.target.value = "";
+        formInstance.setValue("profileImageUrl", editingEmployee?.profileImageUrl || "");
         return;
       }
       setSelectedImageFile(file);
       setImagePreviewUrl(URL.createObjectURL(file));
+      formInstance.setValue("profileImageUrl", "", { shouldValidate: false }); // Clear text URL if file is chosen
     } else {
       setSelectedImageFile(null);
       setImagePreviewUrl(editingEmployee?.profileImageUrl || null);
+      // Don't reset formInstance.profileImageUrl here, user might want to keep existing URL if they cancel file selection
     }
   };
 
@@ -171,25 +178,27 @@ export default function AdminEmployeesPage() {
 
 
   const handleAddEmployeeSubmit = async (data: EmployeeFormValues) => {
-    let finalProfileImageUrl = data.profileImageUrl || null;
+    let finalProfileImageUrl: string | null = null;
     let docRefId: string | null = null;
 
     try {
-      // Create employee document first (without image URL if new image is being uploaded)
-      const employeeData: Omit<Employee, 'id' | 'profileImageUrl'> & { profileImageUrl?: string | null, joinDate: Timestamp, createdAt: Timestamp} = {
+      const employeeDocData: Omit<Employee, 'id' | 'profileImageUrl' | 'createdAt'> & { joinDate: Timestamp, createdAt: Timestamp, profileImageUrl?: string } = {
         ...data,
         nationalId: data.nationalId || undefined,
         address: data.address || undefined,
         joinDate: Timestamp.fromDate(data.joinDate),
         createdAt: serverTimestamp() as Timestamp,
       };
-      // Temporarily remove profileImageUrl if a new file is selected, it will be updated later
+
       if (selectedImageFile) {
-          delete employeeData.profileImageUrl;
+        // Image will be uploaded and URL set after doc creation
+      } else if (data.profileImageUrl && data.profileImageUrl.trim() !== "") {
+        employeeDocData.profileImageUrl = data.profileImageUrl;
+        finalProfileImageUrl = data.profileImageUrl;
       }
 
 
-      const docRef = await addDoc(collection(db, "employees"), employeeData);
+      const docRef = await addDoc(collection(db, "employees"), employeeDocData);
       docRefId = docRef.id;
 
       if (selectedImageFile) {
@@ -207,12 +216,13 @@ export default function AdminEmployeesPage() {
           target: { id: docRefId, type: "employee", name: data.name },
           details: { employeeId: data.employeeId, jobTitle: data.jobTitle, hasProfileImage: !!finalProfileImageUrl }
         });
-        if (selectedImageFile) {
+        if (finalProfileImageUrl) { // Log if an image was set, either by upload or URL
             await logActivity({
                 actionType: "EMPLOYEE_PROFILE_PICTURE_UPDATED",
                 description: `Admin ${adminUser.displayName || adminUser.email} set profile picture for new employee: ${data.name}.`,
                 actor: { id: adminUser.uid, role: adminUser.role, name: adminUser.displayName },
                 target: { id: docRefId, type: "employee", name: data.name },
+                details: { newImageUrl: finalProfileImageUrl }
             });
         }
       }
@@ -220,38 +230,36 @@ export default function AdminEmployeesPage() {
       addEmployeeForm.reset();
       setSelectedImageFile(null);
       setImagePreviewUrl(null);
+      if(addFormProfileImageInputRef.current) addFormProfileImageInputRef.current.value = "";
       setIsAddEmployeeDialogOpen(false);
       fetchEmployees(); 
     } catch (error) {
       console.error("Error adding employee:", error);
       toast({ title: "خطأ", description: "حدث خطأ أثناء إضافة الموظف.", variant: "destructive" });
-      setIsUploadingImage(false); // Ensure uploader is reset on error
+      setIsUploadingImage(false); 
     }
   };
 
   const handleEditEmployeeSubmit = async (data: EmployeeFormValues) => {
     if (!editingEmployee) return;
-    let finalProfileImageUrl = data.profileImageUrl || null; // Start with URL from form (text input)
+    let finalProfileImageUrl: string | null = null;
+    const oldImageUrl = editingEmployee.profileImageUrl;
 
     try {
       if (selectedImageFile) {
         finalProfileImageUrl = await uploadProfileImage(selectedImageFile, editingEmployee.id);
-      }
-      // If no new file, and data.profileImageUrl (from text input) is empty, this means clear the image.
-      // If data.profileImageUrl is a URL, and no new file, that URL will be used.
-      else if (data.profileImageUrl === '') {
+      } else if (data.profileImageUrl === '') { // Explicit removal via empty text field or "Remove" button
           finalProfileImageUrl = null; 
-          // Optionally delete old image from storage here if finalProfileImageUrl becomes null
-          // and editingEmployee.profileImageUrl existed. This is complex and skipped for now.
+      } else { // Use URL from text input if present, otherwise keep existing (or it remains null if it was null)
+          finalProfileImageUrl = data.profileImageUrl || oldImageUrl || null;
       }
-
 
       const employeeRef = doc(db, "employees", editingEmployee.id);
       await updateDoc(employeeRef, {
-        ...data,
+        ...data, // name, employeeId, jobTitle, department, status, phone, email
         nationalId: data.nationalId || undefined,
         address: data.address || undefined,
-        profileImageUrl: finalProfileImageUrl,
+        profileImageUrl: finalProfileImageUrl, // This is the crucial part
         joinDate: Timestamp.fromDate(data.joinDate),
       });
       toast({ title: "تم التعديل بنجاح", description: `تم تعديل بيانات الموظف ${data.name}.` });
@@ -264,18 +272,20 @@ export default function AdminEmployeesPage() {
           target: { id: editingEmployee.id, type: "employee", name: data.name },
           details: { employeeId: data.employeeId, jobTitle: data.jobTitle }
         });
-         if (selectedImageFile || (data.profileImageUrl !== editingEmployee.profileImageUrl)) { // Log if image changed
+         if (oldImageUrl !== finalProfileImageUrl) { 
             await logActivity({
                 actionType: "EMPLOYEE_PROFILE_PICTURE_UPDATED",
-                description: `Admin ${adminUser.displayName || adminUser.email} updated profile picture for employee: ${data.name}.`,
+                description: `Admin ${adminUser.displayName || adminUser.email} ${finalProfileImageUrl ? 'updated' : 'removed'} profile picture for employee: ${data.name}.`,
                 actor: { id: adminUser.uid, role: adminUser.role, name: adminUser.displayName },
                 target: { id: editingEmployee.id, type: "employee", name: data.name },
+                details: { oldImageUrl: oldImageUrl || "none", newImageUrl: finalProfileImageUrl || "none" }
             });
         }
       }
 
       setSelectedImageFile(null);
       setImagePreviewUrl(null);
+      if(editFormProfileImageInputRef.current) editFormProfileImageInputRef.current.value = "";
       setIsEditEmployeeDialogOpen(false);
       setEditingEmployee(null);
       fetchEmployees();
@@ -290,6 +300,7 @@ export default function AdminEmployeesPage() {
     setEditingEmployee(employee);
     setSelectedImageFile(null);
     setImagePreviewUrl(employee.profileImageUrl || null);
+    if(editFormProfileImageInputRef.current) editFormProfileImageInputRef.current.value = "";
     editEmployeeForm.reset({
       ...employee,
       joinDate: employee.joinDate instanceof Timestamp ? employee.joinDate.toDate() : new Date(employee.joinDate),
@@ -304,6 +315,7 @@ export default function AdminEmployeesPage() {
     addEmployeeForm.reset({ name: "", employeeId: "", jobTitle: "", department: "", joinDate: new Date(), status: "نشط", phone: "", email: "", nationalId: "", address: "", profileImageUrl: "" });
     setSelectedImageFile(null);
     setImagePreviewUrl(null);
+    if(addFormProfileImageInputRef.current) addFormProfileImageInputRef.current.value = "";
     setIsAddEmployeeDialogOpen(true);
   }
 
@@ -311,11 +323,30 @@ export default function AdminEmployeesPage() {
   const handleDeleteEmployee = async (employeeId: string, employeeName: string) => {
     if (!window.confirm(`هل أنت متأكد أنك تريد حذف الموظف ${employeeName}؟\nهذا الإجراء لا يمكن التراجع عنه.`)) return;
     try {
-      // Note: Deleting the profile image from storage should ideally happen here too.
-      // This requires knowing the storage path, which depends on the filename/extension.
-      // For simplicity, this step is omitted, but in production, you'd want to avoid orphaned files.
-      // Example: const imageRef = ref(storage, `employee-profile-pictures/${employeeId}/profile.jpg`); await deleteObject(imageRef);
-      // This requires storing the full path or deriving it if the filename pattern is fixed.
+      const employeeToDelete = employees.find(emp => emp.id === employeeId);
+      if (employeeToDelete?.profileImageUrl) {
+         try {
+            const imageHttpUrl = employeeToDelete.profileImageUrl;
+            // Attempt to derive storage path from URL. This is fragile and depends on URL structure.
+            // A more robust way is to store the storage path alongside the URL in Firestore.
+            // For GCS URLs like "https://storage.googleapis.com/BUCKET_NAME/PATH_TO_IMAGE"
+            if (imageHttpUrl.startsWith("https://storage.googleapis.com/")) {
+                const bucketName = process.env.NEXT_PUBLIC_FIREBASE_STORAGE_BUCKET;
+                if (bucketName && imageHttpUrl.includes(bucketName)) {
+                    const pathStartIndex = imageHttpUrl.indexOf(bucketName) + bucketName.length + 1;
+                    const imageStoragePath = decodeURIComponent(imageHttpUrl.substring(pathStartIndex).split('?')[0]);
+                    if (imageStoragePath) {
+                        const imageRefToDelete = ref(storage, imageStoragePath);
+                        await deleteObject(imageRefToDelete);
+                        toast({ title: "تم حذف الصورة", description: "تم حذف صورة الملف الشخصي للموظف من المخزن.", variant: "default" });
+                    }
+                }
+            }
+        } catch (storageError) {
+            console.error("Error deleting profile image from storage, continuing with Firestore delete:", storageError);
+            toast({ title: "تنبيه", description: "تم حذف بيانات الموظف، ولكن حدث خطأ أثناء محاولة حذف الصورة من المخزن. قد تحتاج لمراجعة المخزن يدوياً.", variant: "destructive", duration: 7000 });
+        }
+      }
       
       await deleteDoc(doc(db, "employees", employeeId));
       toast({ title: "تم الحذف", description: `تم حذف الموظف ${employeeName} بنجاح.` });
@@ -365,7 +396,10 @@ export default function AdminEmployeesPage() {
   }, [employees, searchTerm]);
 
 
-  const renderEmployeeFormFields = (formInstance: typeof addEmployeeForm | typeof editEmployeeForm, isEditing = false) => (
+  const renderEmployeeFormFields = (formInstance: typeof addEmployeeForm | typeof editEmployeeForm, isEditing = false) => {
+    const currentProfileImageInputRef = isEditing ? editFormProfileImageInputRef : addFormProfileImageInputRef;
+    
+    return (
     <>
         <div className="mb-4 flex flex-col items-center">
           <Avatar className="h-24 w-24 mb-2">
@@ -373,20 +407,41 @@ export default function AdminEmployeesPage() {
             <AvatarFallback><UserSquare2 className="h-12 w-12 text-muted-foreground" /></AvatarFallback>
           </Avatar>
           <Input 
-            id="profileImageUpload"
+            id={isEditing ? "editProfileImageUpload" : "addProfileImageUpload"}
+            ref={currentProfileImageInputRef}
             type="file" 
             accept="image/*" 
-            onChange={handleImageFileChange} 
+            onChange={(e) => handleImageFileChange(e, formInstance)}
             className="text-xs max-w-xs"
             disabled={isUploadingImage || formInstance.formState.isSubmitting}
           />
-          <FormMessage>{/* For potential file input errors not caught by zod on profileImageUrl string field */}</FormMessage>
+           {isEditing && (imagePreviewUrl || (editingEmployee?.profileImageUrl && !selectedImageFile)) && (
+            <Button
+              type="button"
+              variant="link"
+              size="sm"
+              className="mt-1 text-xs text-destructive hover:text-destructive/80 p-0 h-auto"
+              onClick={() => {
+                setImagePreviewUrl(null);
+                setSelectedImageFile(null);
+                formInstance.setValue("profileImageUrl", "", { shouldValidate: true });
+                if (currentProfileImageInputRef.current) {
+                  currentProfileImageInputRef.current.value = "";
+                }
+              }}
+              disabled={isUploadingImage || formInstance.formState.isSubmitting}
+            >
+              <Trash2 className="me-1 h-3 w-3" />
+              إزالة الصورة الحالية
+            </Button>
+          )}
+          <FormMessage>{formInstance.formState.errors.profileImageUrl?.message /* For potential zod errors on the string field if URL is manually entered badly */}</FormMessage>
         </div>
        <FormField control={formInstance.control} name="name" render={({ field }) => (
           <FormItem><FormLabel>اسم الموظف</FormLabel><FormControl><Input placeholder="الاسم بالكامل" {...field} disabled={isUploadingImage} /></FormControl><FormMessage /></FormItem>
         )}/>
         <FormField control={formInstance.control} name="employeeId" render={({ field }) => (
-          <FormItem><FormLabel>الرقم الوظيفي</FormLabel><FormControl><Input placeholder="مثال: EMP001" {...field} disabled={isUploadingImage} /></FormControl><FormMessage /></FormItem>
+          <FormItem><FormLabel>الرقم الوظيفي</FormLabel><FormControl><Input placeholder="مثال: EMP001" {...field} disabled={isUploadingImage || (isEditing && editingEmployee?.employeeId !== undefined)} /></FormControl><FormMessage /></FormItem>
         )}/>
         <FormField control={formInstance.control} name="jobTitle" render={({ field }) => (
           <FormItem><FormLabel>المسمى الوظيفي</FormLabel><FormControl><Input placeholder="مثال: فرد أمن" {...field} disabled={isUploadingImage} /></FormControl><FormMessage /></FormItem>
@@ -438,13 +493,14 @@ export default function AdminEmployeesPage() {
         )}/>
         <FormField control={formInstance.control} name="profileImageUrl" render={({ field }) => (
             <FormItem>
-                <FormLabel className="flex items-center gap-1"><Camera className="h-4 w-4 text-muted-foreground" />رابط صورة الملف الشخصي (أو ارفع صورة أعلاه)</FormLabel>
-                <FormControl><Input placeholder="https://example.com/image.png" {...field} disabled={isUploadingImage} /></FormControl>
+                <FormLabel className="flex items-center gap-1"><Camera className="h-4 w-4 text-muted-foreground" />رابط صورة الملف الشخصي (أو ارفع أعلاه)</FormLabel>
+                <FormControl><Input placeholder="https://example.com/image.png" {...field} value={field.value || ""} disabled={isUploadingImage || !!selectedImageFile} /></FormControl>
                 <FormMessage />
             </FormItem>
         )}/>
     </>
-  );
+    )
+  };
 
 
   return (
@@ -576,4 +632,3 @@ export default function AdminEmployeesPage() {
   );
 }
     
-
