@@ -1,4 +1,3 @@
-
 "use client";
 
 import type { ReactNode, ElementType } from "react";
@@ -39,6 +38,7 @@ import { Avatar, AvatarFallback, AvatarImage } from "@/components/ui/avatar";
 import { useSiteSettings } from '@/hooks/useSiteSettings'; 
 import type { NavItemConfig } from '@/config/dashboardNavs';
 import { ThemeSwitcher } from "./ThemeSwitcher"; 
+import Image from "next/image";
 
 const iconMap: { [key: string]: ElementType } = {
   LayoutDashboard,
@@ -67,7 +67,7 @@ export function DashboardLayout({ children, navItems }: DashboardLayoutProps) {
   const pathname = usePathname();
   const { user, signOut, loading: authLoading } = useAuth();
   const router = useRouter();
-  const { portalName, isLoadingSiteSettings } = useSiteSettings(); 
+  const { portalName, logoUrl, isLoadingSiteSettings } = useSiteSettings(); 
 
   const getInitials = (name?: string | null) => {
     if (!name) return "SM";
@@ -100,7 +100,11 @@ export function DashboardLayout({ children, navItems }: DashboardLayoutProps) {
           <SidebarHeader className="p-4 border-b border-sidebar-border">
             <div className="flex items-center gap-3">
               <Link href="/" className="flex items-center gap-2 text-lg font-semibold text-sidebar-primary font-headline">
-                <ShieldHalf className="h-7 w-7" />
+                {logoUrl ? (
+                  <Image src={logoUrl} alt={`${displaySidebarPortalName} Logo`} width={32} height={32} className="h-8 w-auto object-contain"/>
+                ) : (
+                  <ShieldHalf className="h-7 w-7" />
+                )}
                 <span className="group-data-[collapsible=icon]:hidden">{displaySidebarPortalName}</span>
               </Link>
             </div>

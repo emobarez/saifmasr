@@ -1,10 +1,9 @@
-
 "use client";
 import { Card, CardHeader, CardTitle, CardDescription, CardContent } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Switch } from "@/components/ui/switch";
-import { Save, Bell, ShieldCheck, Palette, Loader2, Settings as SettingsIcon, Phone, Mail, MapPin, Paintbrush, Link as LinkIcon, Facebook, Twitter, Linkedin, Instagram, Sun, Moon, Sidebar } from "lucide-react";
+import { Save, Bell, ShieldCheck, Palette, Loader2, Settings as SettingsIcon, Phone, Mail, MapPin, Paintbrush, Link as LinkIcon, Facebook, Twitter, Linkedin, Instagram, Sun, Moon, Sidebar, Image as ImageIcon, Globe } from "lucide-react";
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
 import { useState, useEffect } from "react";
 import { useToast } from "@/hooks/use-toast";
@@ -33,6 +32,8 @@ const settingsSchema = z.object({
   companyPhone: z.string().optional(),
   companyAddress: z.string().max(250, { message: "العنوان يجب ألا يتجاوز 250 حرفًا."}).optional(),
   publicEmail: z.string().email({ message: "البريد الإلكتروني العام غير صالح." }).optional().or(z.literal('')),
+  logoUrl: optionalUrl,
+  faviconUrl: optionalUrl,
   
   themeBackgroundLight: optionalHslString,
   themeForegroundLight: optionalHslString,
@@ -114,7 +115,7 @@ export default function AdminSettingsPage() {
 
   const form = useForm<SettingsFormValues>({
     resolver: zodResolver(settingsSchema),
-    defaultValues: DEFAULT_SETTINGS,
+    defaultValues: DEFAULT_SETTINGS, // Use imported DEFAULT_SETTINGS
   });
   const { handleSubmit, control, reset, formState: {isSubmitting}, watch } = form;
 
@@ -125,7 +126,7 @@ export default function AdminSettingsPage() {
 
     if (!isFetchingSettings && loadedSettings.portalName !== undefined) { 
       reset({
-        ...DEFAULT_SETTINGS, 
+        ...DEFAULT_SETTINGS, // Base with imported DEFAULT_SETTINGS
         ...loadedSettings,       
         maintenanceMode: loadedSettings.maintenanceMode === undefined ? DEFAULT_SETTINGS.maintenanceMode : loadedSettings.maintenanceMode,
       });
@@ -142,6 +143,8 @@ export default function AdminSettingsPage() {
         companyPhone: data.companyPhone?.trim() || DEFAULT_SETTINGS.companyPhone,
         companyAddress: data.companyAddress?.trim() || DEFAULT_SETTINGS.companyAddress,
         publicEmail: data.publicEmail?.trim() || DEFAULT_SETTINGS.publicEmail,
+        logoUrl: data.logoUrl?.trim() || DEFAULT_SETTINGS.logoUrl,
+        faviconUrl: data.faviconUrl?.trim() || DEFAULT_SETTINGS.faviconUrl,
         
         themeBackgroundLight: data.themeBackgroundLight?.trim() || DEFAULT_SETTINGS.themeBackgroundLight,
         themeForegroundLight: data.themeForegroundLight?.trim() || DEFAULT_SETTINGS.themeForegroundLight,
@@ -355,7 +358,7 @@ export default function AdminSettingsPage() {
               <Tabs defaultValue="general" className="w-full" dir="rtl">
                 <TabsList className="grid w-full grid-cols-1 sm:grid-cols-3 mb-6">
                   <TabsTrigger value="general" className="flex items-center gap-2">
-                    <SettingsIcon className="h-5 w-5" /> عامة واتصال
+                    <SettingsIcon className="h-5 w-5" /> عامة وهوية
                   </TabsTrigger>
                   <TabsTrigger value="appearance" className="flex items-center gap-2">
                     <Paintbrush className="h-5 w-5" /> تخصيص المظهر
@@ -386,6 +389,21 @@ export default function AdminSettingsPage() {
                       />
                     </CardContent>
                   </Card>
+                  
+                  <Card>
+                    <CardHeader><CardTitle className="flex items-center gap-2"><ImageIcon className="h-5 w-5" />إعدادات الهوية البصرية</CardTitle></CardHeader>
+                    <CardContent className="space-y-6">
+                        <FormField control={control} name="logoUrl" render={({ field }) => (
+                            <FormItem><FormLabel className="flex items-center gap-1"><ImageIcon className="h-4 w-4 text-muted-foreground" />رابط شعار البوابة (Logo)</FormLabel><FormControl><Input placeholder="https://example.com/logo.png" {...field} value={field.value || ""} disabled={isSubmitting} /></FormControl><FormMessage /></FormItem>
+                          )}
+                        />
+                        <FormField control={control} name="faviconUrl" render={({ field }) => (
+                            <FormItem><FormLabel className="flex items-center gap-1"><LinkIcon className="h-4 w-4 text-muted-foreground" />رابط أيقونة الموقع (Favicon)</FormLabel><FormControl><Input placeholder="https://example.com/favicon.ico" {...field} value={field.value || ""} disabled={isSubmitting} /></FormControl><FormMessage /></FormItem>
+                          )}
+                        />
+                    </CardContent>
+                  </Card>
+
                   <Card>
                     <CardHeader><CardTitle className="flex items-center gap-2"><Phone className="h-5 w-5" />معلومات الاتصال العامة</CardTitle></CardHeader>
                     <CardContent className="space-y-6">
@@ -469,19 +487,3 @@ export default function AdminSettingsPage() {
     </div>
   );
 }
-    
-
-    
-
-    
-
-    
-
-
-
-
-    
-
-    
-
-

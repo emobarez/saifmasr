@@ -1,4 +1,3 @@
-
 "use client";
 import Link from "next/link";
 import { Button } from "@/components/ui/button";
@@ -9,6 +8,7 @@ import { useRouter } from "next/navigation";
 import { useSiteSettings } from '@/hooks/useSiteSettings'; 
 import { useState, useEffect } from "react"; 
 import { ThemeSwitcher } from "./ThemeSwitcher";
+import Image from "next/image";
 
 const navLinks = [
   { href: "/services", label: "الخدمات" }, 
@@ -19,7 +19,7 @@ const navLinks = [
 export function Header() {
   const { user, signOut, loading: authLoading } = useAuth();
   const router = useRouter();
-  const { portalName, isLoadingSiteSettings } = useSiteSettings(); 
+  const { portalName, logoUrl, isLoadingSiteSettings } = useSiteSettings(); 
   const [isMobileMenuOpen, setIsMobileMenuOpen] = useState(false); 
 
   const handleAuthAction = () => {
@@ -49,7 +49,11 @@ export function Header() {
     <header className="sticky top-0 z-50 w-full border-b border-border/40 bg-background/95 backdrop-blur supports-[backdrop-filter]:bg-background/60">
       <div className="container flex h-16 max-w-screen-2xl items-center justify-between">
         <Link href="/" className="flex items-center gap-2 font-headline text-lg font-semibold text-primary">
-          <ShieldHalf className="h-7 w-7 text-primary" />
+          {logoUrl ? (
+            <Image src={logoUrl} alt={`${displayPortalName} Logo`} width={32} height={32} className="h-8 w-auto object-contain"/>
+          ) : (
+            <ShieldHalf className="h-7 w-7 text-primary" />
+          )}
           <span>{displayPortalName}</span>
         </Link>
 
@@ -84,7 +88,11 @@ export function Header() {
               <SheetTitle className="sr-only">القائمة</SheetTitle>
               <nav className="grid gap-6 text-lg font-medium mt-8">
                 <Link href="/" className="flex items-center gap-2 text-lg font-semibold text-primary mb-4" onClick={handleMobileLinkClick}>
-                   <ShieldHalf className="h-6 w-6 text-primary" />
+                   {logoUrl ? (
+                      <Image src={logoUrl} alt={`${displayPortalName} Logo`} width={28} height={28} className="h-7 w-auto object-contain"/>
+                    ) : (
+                      <ShieldHalf className="h-6 w-6 text-primary" />
+                    )}
                    <span>{displayPortalName}</span>
                 </Link>
                 {navLinks.map((link) => (

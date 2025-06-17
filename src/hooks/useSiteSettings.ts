@@ -1,4 +1,3 @@
-
 "use client";
 
 import { useState, useEffect, useMemo } from 'react'; // Added useMemo
@@ -14,6 +13,8 @@ export interface SiteSettings {
   companyPhone?: string;
   companyAddress?: string;
   publicEmail?: string;
+  logoUrl?: string; // Added for portal logo
+  faviconUrl?: string; // Added for favicon
 
   themeBackgroundLight?: string;
   themeForegroundLight?: string;
@@ -88,6 +89,8 @@ export const DEFAULT_SETTINGS: SiteSettings = {
   companyPhone: "",
   companyAddress: "",
   publicEmail: "",
+  logoUrl: "", // Default empty
+  faviconUrl: "", // Default empty
 
   // Light Theme Defaults (PRD Aligned)
   themeBackgroundLight: "240 11% 89%",
@@ -176,6 +179,8 @@ export function useSiteSettings() {
             companyPhone: data?.companyPhone || DEFAULT_SETTINGS.companyPhone,
             companyAddress: data?.companyAddress || DEFAULT_SETTINGS.companyAddress,
             publicEmail: data?.publicEmail || DEFAULT_SETTINGS.publicEmail,
+            logoUrl: data?.logoUrl || DEFAULT_SETTINGS.logoUrl, // Added logoUrl
+            faviconUrl: data?.faviconUrl || DEFAULT_SETTINGS.faviconUrl, // Added faviconUrl
 
             themeBackgroundLight: data?.themeBackgroundLight?.trim() || DEFAULT_SETTINGS.themeBackgroundLight,
             themeForegroundLight: data?.themeForegroundLight?.trim() || DEFAULT_SETTINGS.themeForegroundLight,
@@ -260,4 +265,3 @@ export function useSiteSettings() {
     isLoadingSiteSettings,
   }), [siteSettings, isLoadingSiteSettings]);
 }
-
