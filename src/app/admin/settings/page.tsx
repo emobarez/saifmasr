@@ -4,7 +4,7 @@ import { Card, CardHeader, CardTitle, CardDescription, CardContent } from "@/com
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Switch } from "@/components/ui/switch";
-import { Save, Bell, ShieldCheck, Palette, Loader2, Settings as SettingsIcon, Phone, Mail, MapPin, Paintbrush, Link as LinkIcon, Facebook, Twitter, Linkedin, Instagram, Sun, Moon, Sidebar, Image as ImageIcon, Globe } from "lucide-react";
+import { Save, Bell, ShieldCheck, Palette, Loader2, Settings as SettingsIcon, Phone, Mail, MapPin, Paintbrush, Link as LinkIcon, Facebook, Twitter, Linkedin, Instagram, Sun, Moon, Sidebar, Image as ImageIcon, Globe, RotateCcw } from "lucide-react";
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
 import { useState, useEffect } from "react";
 import { useToast } from "@/hooks/use-toast";
@@ -102,7 +102,6 @@ const settingsSchema = z.object({
 
 type SettingsFormValues = z.infer<typeof settingsSchema>;
 
-// Helper function for HSL preview
 const isValidHslForPreview = (value: string | undefined): boolean => {
   if (!value) return false;
   return hslFormatRegex.test(value.trim());
@@ -118,7 +117,7 @@ export default function AdminSettingsPage() {
     resolver: zodResolver(settingsSchema),
     defaultValues: DEFAULT_SETTINGS,
   });
-  const { handleSubmit, control, reset, formState: {isSubmitting}, watch } = form;
+  const { handleSubmit, control, reset, formState: {isSubmitting}, watch, setValue } = form;
 
   const settingsDocRef = doc(db, "systemSettings", "general");
   
@@ -211,7 +210,6 @@ export default function AdminSettingsPage() {
         themeSidebarRingDark: data.themeSidebarRingDark?.trim() || DEFAULT_SETTINGS.themeSidebarRingDark,
       };
       
-      console.log("Data being sent to Firestore:", JSON.stringify(dataToSave, null, 2)); 
       await setDoc(settingsDocRef, dataToSave, { merge: true });
       
       toast({
@@ -285,8 +283,8 @@ export default function AdminSettingsPage() {
 
   const renderColorFields = (fields: Array<{nameBase: string, label: string, placeholder: string}>) => {
     return fields.map(item => {
-      const lightFieldName = `${item.nameBase}Light` as keyof SettingsFormValues;
-      const darkFieldName = `${item.nameBase}Dark` as keyof SettingsFormValues;
+      const lightFieldName = `theme${item.nameBase}Light` as keyof SettingsFormValues;
+      const darkFieldName = `theme${item.nameBase}Dark` as keyof SettingsFormValues;
       const lightFieldValue = watch(lightFieldName);
       const darkFieldValue = watch(darkFieldName);
 
@@ -334,6 +332,19 @@ export default function AdminSettingsPage() {
         </div>
       );
     });
+  };
+
+  const handleResetColorSection = (
+    colorFields: Array<{nameBase: string}>, 
+    mode: 'Light' | 'Dark',
+    sectionName: string // For toast message
+  ) => {
+    colorFields.forEach(field => {
+      const fieldName = `theme${field.nameBase}${mode}` as keyof SettingsFormValues;
+      const defaultSettingKey = `theme${field.nameBase}${mode}` as keyof SiteSettings;
+      setValue(fieldName, DEFAULT_SETTINGS[defaultSettingKey] || "");
+    });
+    toast({ title: "تمت الاستعادة", description: `تمت استعادة ألوان ${sectionName} (${mode === 'Light' ? 'الفاتحة' : 'الداكنة'}) إلى الافتراضي. اضغط 'حفظ الإعدادات' للتطبيق.` });
   };
 
 
@@ -454,6 +465,14 @@ export default function AdminSettingsPage() {
                     </CardHeader>
                     <CardContent className="space-y-6">
                       {renderColorFields(mainThemeColorFields)}
+                      <div className="flex flex-col sm:flex-row gap-2 pt-4 border-t">
+                        <Button type="button" variant="outline" onClick={() => handleResetColorSection(mainThemeColorFields, 'Light', 'الواجهة الرئيسية')} disabled={isSubmitting}>
+                          <RotateCcw className="me-2 h-4 w-4" /> استعادة الألوان الفاتحة الافتراضية
+                        </Button>
+                        <Button type="button" variant="outline" onClick={() => handleResetColorSection(mainThemeColorFields, 'Dark', 'الواجهة الرئيسية')} disabled={isSubmitting}>
+                          <RotateCcw className="me-2 h-4 w-4" /> استعادة الألوان الداكنة الافتراضية
+                        </Button>
+                      </div>
                     </CardContent>
                   </Card>
                   
@@ -466,6 +485,14 @@ export default function AdminSettingsPage() {
                     </CardHeader>
                     <CardContent className="space-y-6">
                       {renderColorFields(sidebarThemeColorFields)}
+                       <div className="flex flex-col sm:flex-row gap-2 pt-4 border-t">
+                        <Button type="button" variant="outline" onClick={() => handleResetColorSection(sidebarThemeColorFields, 'Light', 'الشريط الجانبي')} disabled={isSubmitting}>
+                          <RotateCcw className="me-2 h-4 w-4" /> استعادة الألوان الفاتحة الافتراضية
+                        </Button>
+                        <Button type="button" variant="outline" onClick={() => handleResetColorSection(sidebarThemeColorFields, 'Dark', 'الشريط الجانبي')} disabled={isSubmitting}>
+                          <RotateCcw className="me-2 h-4 w-4" /> استعادة الألوان الداكنة الافتراضية
+                        </Button>
+                      </div>
                     </CardContent>
                   </Card>
                 </TabsContent>

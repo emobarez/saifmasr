@@ -9,35 +9,35 @@ body {
 
 @layer base {
   :root {
-    /* Main Light Theme HSL values */
-    --default-background-light: 240 11% 89%; 
-    --default-foreground-light: 238 10% 20%; 
-    --default-card-light: 0 0% 100% / 0.9; 
+    /* Main Light Theme HSL values (PRD Aligned) */
+    --default-background-light: 240 11% 89%; /* Light Gray */
+    --default-foreground-light: 238 10% 20%; /* Dark text for light gray background */
+    --default-card-light: 0 0% 100% / 0.9; /* White card */
     --default-card-foreground-light: 238 10% 20%;
     --default-popover-light: 0 0% 100% / 0.9;
     --default-popover-foreground-light: 238 10% 20%;
-    --default-primary-light: 238 52% 38%; 
-    --default-primary-foreground-light: 0 0% 98%; 
-    --default-secondary-light: 240 10% 94%; 
-    --default-secondary-foreground-light: 238 10% 25%; 
-    --default-muted-light: 240 10% 75%; 
+    --default-primary-light: 238 52% 38%; /* Dark Blue */
+    --default-primary-foreground-light: 0 0% 98%; /* Light text for dark blue */
+    --default-secondary-light: 240 10% 94%; /* Lighter gray for secondary elements */
+    --default-secondary-foreground-light: 238 10% 25%;
+    --default-muted-light: 240 10% 80%; /* Muted gray, slightly darker than background */
     --default-muted-foreground-light: 240 10% 45%;
-    --default-accent-light: 191 55% 41%; 
-    --default-accent-foreground-light: 0 0% 98%; 
+    --default-accent-light: 191 55% 41%; /* Teal */
+    --default-accent-foreground-light: 0 0% 98%; /* Light text for teal */
     --default-destructive-light: 0 84.2% 60.2%;
     --default-destructive-foreground-light: 0 0% 98%;
-    --default-border-light: 240 10% 78%; 
-    --default-input-light: 240 10% 92%; 
-    --default-ring-light: 191 55% 41%; 
+    --default-border-light: 240 10% 78%; /* Slightly darker gray for borders */
+    --default-input-light: 0 0% 100%; /* White inputs */
+    --default-ring-light: 191 55% 41%; /* Teal for focus rings */
 
-    /* Sidebar Light Theme HSL values */
-    --default-sidebar-background-light: 238 40% 96% / 0.9; 
+    /* Sidebar Light Theme HSL values (PRD Aligned) */
+    --default-sidebar-background-light: 238 30% 95% / 0.9; /* Very Light Blue/Gray, slightly distinct from main bg */
     --default-sidebar-foreground-light: 238 15% 30%; 
-    --default-sidebar-primary-light: 238 52% 38%; 
+    --default-sidebar-primary-light: 238 52% 38%; /* Dark Blue - consistent with main */
     --default-sidebar-primary-foreground-light: 0 0% 98%; 
-    --default-sidebar-accent-light: 191 55% 41%; 
+    --default-sidebar-accent-light: 191 55% 41%; /* Teal - consistent with main */
     --default-sidebar-accent-foreground-light: 0 0% 98%; 
-    --default-sidebar-border-light: 238 20% 88%; 
+    --default-sidebar-border-light: 240 10% 85%; /* Border for sidebar, slightly darker than its bg */
     --default-sidebar-ring-light: 191 55% 41%; 
 
     /* Main CSS variables using custom properties from ThemeApplicator, with fallbacks */
@@ -80,36 +80,36 @@ body {
   }
 
   .dark {
-    /* Main Dark Theme HSL values */
-    --default-background-dark: 238 10% 12%; 
-    --default-foreground-dark: 0 0% 90%; 
-    --default-card-dark: 238 10% 18% / 0.9; 
-    --default-card-foreground-dark: 0 0% 90%;
-    --default-popover-dark: 238 10% 18% / 0.9;
-    --default-popover-foreground-dark: 0 0% 90%;
-    --default-primary-dark: 238 55% 65%; 
-    --default-primary-foreground-dark: 0 0% 98%; 
-    --default-secondary-dark: 238 10% 22%; 
-    --default-secondary-foreground-dark: 0 0% 85%; 
-    --default-muted-dark: 238 10% 30%; 
-    --default-muted-foreground-dark: 0 0% 60%;
-    --default-accent-dark: 191 58% 55%; 
-    --default-accent-foreground-dark: 0 0% 98%; 
-    --default-destructive-dark: 0 70% 50%;
+    /* Main Dark Theme HSL values (Replit Elite Dark Inspired) */
+    --default-background-dark: 222 84% 4.9%; 
+    --default-foreground-dark: 210 40% 98%; 
+    --default-card-dark: 222 80% 8%; 
+    --default-card-foreground-dark: 210 40% 96.1%;
+    --default-popover-dark: 222 80% 8%;
+    --default-popover-foreground-dark: 210 40% 96.1%;
+    --default-primary-dark: 217 91.2% 59.8%; 
+    --default-primary-foreground-dark: 210 40% 98%; 
+    --default-secondary-dark: 217.2 32.6% 17.5%; 
+    --default-secondary-foreground-dark: 210 40% 98%; 
+    --default-muted-dark: 217.2 32.6% 17.5%; 
+    --default-muted-foreground-dark: 215 20.2% 65.1%;
+    --default-accent-dark: 188 92% 50%; 
+    --default-accent-foreground-dark: 222 84% 4.9%; 
+    --default-destructive-dark: 0 62.8% 30.6%;
     --default-destructive-foreground-dark: 0 0% 98%;
-    --default-border-dark: 238 10% 25%; 
-    --default-input-dark: 238 10% 25%; 
-    --default-ring-dark: 191 58% 55%; 
+    --default-border-dark: 217.2 32.6% 17.5%; 
+    --default-input-dark: 217.2 32.6% 17.5%; 
+    --default-ring-dark: 217 91.2% 59.8%; 
 
-    /* Sidebar Dark Theme HSL values */
-    --default-sidebar-background-dark: 238 12% 15% / 0.9; 
-    --default-sidebar-foreground-dark: 0 0% 85%; 
-    --default-sidebar-primary-dark: 238 55% 65%; 
+    /* Sidebar Dark Theme HSL values (Replit Elite Dark Inspired) */
+    --default-sidebar-background-dark: 222 80% 6.5% / 0.9; 
+    --default-sidebar-foreground-dark: 210 40% 90%; 
+    --default-sidebar-primary-dark: 217 91.2% 59.8%; 
     --default-sidebar-primary-foreground-dark: 0 0% 98%;
-    --default-sidebar-accent-dark: 191 58% 55%; 
-    --default-sidebar-accent-foreground-dark: 0 0% 98%;
-    --default-sidebar-border-dark: 238 10% 22%;
-    --default-sidebar-ring-dark: 191 58% 55%;
+    --default-sidebar-accent-dark: 188 92% 50%; 
+    --default-sidebar-accent-foreground-dark: 222 84% 4.9%;
+    --default-sidebar-border-dark: 217.2 32.6% 14%;
+    --default-sidebar-ring-dark: 217 91.2% 59.8%;
 
     /* Main CSS variables using custom properties from ThemeApplicator, with fallbacks for dark mode */
     --background: var(--custom-background-dark, var(--default-background-dark));
