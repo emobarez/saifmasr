@@ -221,7 +221,7 @@ export default function AiReportToolPage() {
         return;
       }
       const currentContent = reportSnap.data()?.content || "";
-      const sectionTitleForContent = sectionTopic.trim(); // Already validated not to be empty
+      const sectionTitleForContent = sectionTopic.trim(); 
       const newSectionContent = `\n\n---\n\n## ${sectionTitleForContent}\n\n${generatedSection.generatedSectionText}`;
       const updatedContent = currentContent + newSectionContent;
       
@@ -388,12 +388,7 @@ export default function AiReportToolPage() {
               {isLoadingSection ? <Loader2 className="me-2 h-5 w-5 animate-spin" /> : <FileText className="me-2 h-5 w-5" />}
               إنشاء قسم التقرير
             </Button>
-            <div className="flex-grow">
-                {selectedReportId && generatedSection && sectionTopic.trim() && !isSavingSection && (
-                    <p className="text-sm text-foreground mt-1 mb-2">
-                        سيتم إضافة هذا القسم بعنوان "<strong className="text-primary">{sectionTopic.trim()}</strong>" إلى التقرير: <strong className="text-primary">{reports.find(r => r.id === selectedReportId)?.title || '...'}</strong>
-                    </p>
-                )}
+            <div className="flex-grow space-y-2">
                 <Button 
                     onClick={handleSaveSectionToReport} 
                     disabled={!selectedReportId || !generatedSection || !sectionTopic.trim() || isLoadingReportContent || isLoadingSummary || isLoadingImprovements || isLoadingSection || isSavingSection} 
@@ -401,14 +396,16 @@ export default function AiReportToolPage() {
                     className="w-full sm:w-auto"
                 >
                 {isSavingSection ? <Loader2 className="me-2 h-5 w-5 animate-spin" /> : <Save className="me-2 h-5 w-5" />}
-                حفظ القسم في التقرير المحدد (أعلاه)
+                حفظ القسم في التقرير المحدد
                 </Button>
+                {selectedReportId && generatedSection && sectionTopic.trim() && !isSavingSection && (
+                    <p className="text-sm text-foreground">
+                        سيتم إضافة هذا القسم بعنوان "<strong className="text-primary">{sectionTopic.trim()}</strong>" إلى التقرير المحدد: <strong className="text-primary">{reports.find(r => r.id === selectedReportId)?.title || '...'}</strong>
+                    </p>
+                )}
                  {generatedSection && (!selectedReportId || !sectionTopic.trim()) && !isSavingSection && (
-                <p className="text-sm text-destructive mt-2">
-                    ملاحظة: لحفظ هذا القسم، يرجى { !selectedReportId ? "تحديد تقرير من القائمة في أعلى الصفحة" : ""}
-                    { !selectedReportId && !sectionTopic.trim() ? " و" : ""}
-                    { !sectionTopic.trim() ? "إدخال موضوع للقسم" : ""}
-                    {" "}أولاً.
+                <p className="text-sm text-destructive">
+                    ملاحظة: لحفظ هذا القسم، يجب تحديد تقرير من القائمة أعلاه وإدخال موضوع للقسم.
                 </p>
                 )}
             </div>
