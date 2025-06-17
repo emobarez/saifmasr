@@ -1,3 +1,4 @@
+
 "use client";
 import { Card, CardHeader, CardTitle, CardDescription, CardContent } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
@@ -115,7 +116,7 @@ export default function AdminSettingsPage() {
 
   const form = useForm<SettingsFormValues>({
     resolver: zodResolver(settingsSchema),
-    defaultValues: DEFAULT_SETTINGS, // Use imported DEFAULT_SETTINGS
+    defaultValues: DEFAULT_SETTINGS,
   });
   const { handleSubmit, control, reset, formState: {isSubmitting}, watch } = form;
 
@@ -126,7 +127,7 @@ export default function AdminSettingsPage() {
 
     if (!isFetchingSettings && loadedSettings.portalName !== undefined) { 
       reset({
-        ...DEFAULT_SETTINGS, // Base with imported DEFAULT_SETTINGS
+        ...DEFAULT_SETTINGS, 
         ...loadedSettings,       
         maintenanceMode: loadedSettings.maintenanceMode === undefined ? DEFAULT_SETTINGS.maintenanceMode : loadedSettings.maintenanceMode,
       });
@@ -487,3 +488,5 @@ export default function AdminSettingsPage() {
     </div>
   );
 }
+
+    
