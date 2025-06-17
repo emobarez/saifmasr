@@ -1,3 +1,4 @@
+
 "use client";
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
@@ -169,13 +170,11 @@ export default function AdminDashboardPage() {
 
       <div className="grid grid-cols-1 lg:grid-cols-3 gap-6">
         <Card className="shadow-md lg:col-span-1">
-          <CardHeader>
-            <div className="flex items-center gap-3">
-              <div className="p-2 bg-primary/10 rounded-md">
-                <TrendingUp className="h-6 w-6 text-primary" />
-              </div>
-              <CardTitle className="font-headline text-xl text-primary">إحصائيات سريعة</CardTitle>
+          <CardHeader className="flex flex-row items-center gap-3">
+            <div className="p-2 bg-primary/10 rounded-md">
+              <TrendingUp className="h-6 w-6 text-primary" />
             </div>
+            <CardTitle className="font-headline text-xl text-primary">إحصائيات سريعة</CardTitle>
           </CardHeader>
           <CardContent className="space-y-3">
             {isLoadingStats ? (
@@ -210,14 +209,14 @@ export default function AdminDashboardPage() {
         </Card>
 
         <Card className="shadow-md lg:col-span-2">
-          <CardHeader>
-            <div className="flex items-center gap-3">
-               <div className="p-2 bg-primary/10 rounded-md">
+          <CardHeader className="flex flex-row items-center gap-3">
+             <div className="p-2 bg-primary/10 rounded-md">
                 <BarChart2 className="h-6 w-6 text-primary" />
               </div>
+            <div>
               <CardTitle className="font-headline text-xl text-primary">نظرة عامة على طلبات الخدمة</CardTitle>
+              <CardDescription>توزيع طلبات الخدمة حسب الحالة.</CardDescription>
             </div>
-            <CardDescription>توزيع طلبات الخدمة حسب الحالة.</CardDescription>
           </CardHeader>
           <CardContent>
             {isLoadingStats ? (
@@ -251,13 +250,11 @@ export default function AdminDashboardPage() {
       </div>
       
       <Card className="shadow-md"> 
-          <CardHeader>
-            <div className="flex items-center gap-3">
-              <div className="p-2 bg-primary/10 rounded-md">
+          <CardHeader className="flex flex-row items-center gap-3">
+            <div className="p-2 bg-primary/10 rounded-md">
                 <Activity className="h-6 w-6 text-primary" />
-              </div>
-              <CardTitle className="font-headline text-xl text-primary">آخر الأنشطة</CardTitle>
             </div>
+            <CardTitle className="font-headline text-xl text-primary">آخر الأنشطة</CardTitle>
           </CardHeader>
           <CardContent>
             {isLoadingActivities ? (
