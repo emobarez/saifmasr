@@ -27,9 +27,9 @@ if (!apiKey || !authDomain || !projectId) {
   if (!apiKey) console.error("  - NEXT_PUBLIC_FIREBASE_API_KEY is missing.");
   if (!authDomain) console.error("  - NEXT_PUBLIC_FIREBASE_AUTH_DOMAIN is missing.");
   if (!projectId) console.error("  - NEXT_PUBLIC_FIREBASE_PROJECT_ID is missing.");
-  console.error("Firebase SDK will NOT be initialized.");
+  console.error("Firebase SDK will NOT be initialized. Authentication and other Firebase services will FAIL.");
   console.error("This will likely cause 'auth/invalid-api-key' or other Firebase-related errors during build or runtime if your application attempts to use Firebase services.");
-  console.error("Please ensure these environment variables are correctly set in your Netlify (or other hosting provider) build environment settings.");
+  console.error("Please ensure these environment variables are correctly set in your Netlify (or other hosting provider) build environment settings, or in your local .env file.");
   console.error("--------------------------------------------------------------------");
   // If building for production and critical keys are missing, it's better to hard fail if Firebase is essential.
   // However, for now, we'll let it proceed, and subsequent code using Firebase will fail.
@@ -63,3 +63,4 @@ if (!apiKey || !authDomain || !projectId) {
 }
 
 export { app, authInstance as auth, dbInstance as db, storageInstance as storage };
+
