@@ -22,17 +22,14 @@ let storageInstance: FirebaseStorage | undefined = undefined;
 
 if (!apiKey || !authDomain || !projectId) {
   console.error("--------------------------------------------------------------------");
-  console.error("CRITICAL FIREBASE CONFIG ERROR:");
-  console.error("One or more essential Firebase environment variables are missing:");
-  if (!apiKey) console.error("  - NEXT_PUBLIC_FIREBASE_API_KEY is missing.");
-  if (!authDomain) console.error("  - NEXT_PUBLIC_FIREBASE_AUTH_DOMAIN is missing.");
-  if (!projectId) console.error("  - NEXT_PUBLIC_FIREBASE_PROJECT_ID is missing.");
-  console.error("Firebase SDK will NOT be initialized. Authentication and other Firebase services will FAIL.");
-  console.error("This will likely cause 'auth/invalid-api-key' or other Firebase-related errors during build or runtime if your application attempts to use Firebase services.");
-  console.error("Please ensure these environment variables are correctly set in your Netlify (or other hosting provider) build environment settings, or in your local .env file.");
+  console.error("CRITICAL FIREBASE CONFIG ERROR (firebase.ts):");
+  console.error("One or more essential Firebase environment variables are missing from process.env:");
+  if (!apiKey) console.error("  - NEXT_PUBLIC_FIREBASE_API_KEY is missing or undefined.");
+  if (!authDomain) console.error("  - NEXT_PUBLIC_FIREBASE_AUTH_DOMAIN is missing or undefined.");
+  if (!projectId) console.error("  - NEXT_PUBLIC_FIREBASE_PROJECT_ID is missing or undefined.");
+  console.error("Firebase SDK will NOT be initialized properly. Authentication, Firestore, and Storage will FAIL.");
+  console.error("Ensure these environment variables are correctly set in your runtime environment (e.g., Netlify, Vercel, or Firebase Studio Preview settings if applicable, or .env.local for local dev).");
   console.error("--------------------------------------------------------------------");
-  // If building for production and critical keys are missing, it's better to hard fail if Firebase is essential.
-  // However, for now, we'll let it proceed, and subsequent code using Firebase will fail.
 } else {
   const firebaseConfig: FirebaseOptions = {
     apiKey: apiKey,
@@ -45,20 +42,35 @@ if (!apiKey || !authDomain || !projectId) {
   };
 
   try {
-    app = !getApps().length ? initializeApp(firebaseConfig) : getApp();
-    authInstance = getAuth(app);
-    dbInstance = getFirestore(app);
-    storageInstance = getStorage(app);
+    if (getApps().length === 0) {
+      app = initializeApp(firebaseConfig);
+    } else {
+      app = getApp();
+    }
+
+    if (app) {
+      authInstance = getAuth(app);
+      dbInstance = getFirestore(app);
+      storageInstance = getStorage(app);
+    } else {
+      // This case should ideally not be hit if initializeApp or getApp was called and didn't throw,
+      // but as a safeguard.
+      console.error("Firebase app object is undefined after initialization/getApp. SDK services will not be available.");
+      authInstance = undefined;
+      dbInstance = undefined;
+      storageInstance = undefined;
+    }
   } catch (error) {
     console.error("--------------------------------------------------------------------");
     console.error("Firebase SDK initialization failed directly in firebase.ts.");
-    console.error("This is a critical error, likely due to invalid Firebase config values even if the environment variables were present.");
+    console.error("This is a critical error, likely due to invalid Firebase config values even if the environment variables were present, or a runtime issue with Firebase SDK itself.");
     console.error("Error details:", error);
     console.error("--------------------------------------------------------------------");
-    // Re-throw the error to ensure the build process fails clearly if Firebase is essential.
-    if (process.env.NODE_ENV === 'production') {
-      throw error;
-    }
+    // Explicitly set all instances to undefined on any initialization error
+    app = undefined;
+    authInstance = undefined;
+    dbInstance = undefined;
+    storageInstance = undefined;
   }
 }
 
