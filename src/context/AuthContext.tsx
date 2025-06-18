@@ -21,7 +21,7 @@ interface User {
   email: string | null;
   displayName: string | null;
   role?: "client" | "admin"; 
-  photoURL?: string | null; // Added photoURL
+  photoURL?: string | null; 
 }
 
 interface AppSettings {
@@ -37,7 +37,7 @@ interface AuthContextType {
   signIn: (email: string, pass: string) => Promise<FirebaseUser>;
   signUp: (name: string, email: string, pass: string) => Promise<FirebaseUser>;
   signOut: () => Promise<void>;
-  setUser: (user: User | null) => void; // Added setUser for profile updates
+  setUser: (user: User | null) => void; 
 }
 
 const AuthContext = createContext<AuthContextType | undefined>(undefined);
@@ -72,6 +72,15 @@ export const AuthProvider = ({ children }: { children: ReactNode }) => {
   }, []);
 
   useEffect(() => {
+    // Check if auth instance is available from firebase.ts
+    if (!auth) {
+      console.error("AuthContext: Firebase auth instance is not available. Firebase might not be configured correctly.");
+      setLoading(false);
+      // Potentially set user to null explicitly or handle error state
+      setUser(null);
+      return;
+    }
+
     const unsubscribe = onAuthStateChanged(auth, (firebaseUser: FirebaseUser | null) => {
       if (firebaseUser) {
         const appUser: User = {
@@ -79,7 +88,7 @@ export const AuthProvider = ({ children }: { children: ReactNode }) => {
           email: firebaseUser.email,
           displayName: firebaseUser.displayName,
           role: firebaseUser.email?.includes("admin@saifmasr.com") || firebaseUser.email?.includes("admin@example.com") ? "admin" : "client",
-          photoURL: firebaseUser.photoURL, // Include photoURL
+          photoURL: firebaseUser.photoURL, 
         };
         setUser(appUser);
       } else {
@@ -89,9 +98,10 @@ export const AuthProvider = ({ children }: { children: ReactNode }) => {
     });
 
     return () => unsubscribe();
-  }, []);
+  }, []); // Removed 'auth' from dependency array as its availability is checked above.
 
   const signIn = async (email: string, pass: string): Promise<FirebaseUser> => {
+    if (!auth) throw new Error("Firebase auth is not initialized.");
     const userCredential = await signInWithEmailAndPassword(auth, email, pass);
     const firebaseUser = userCredential.user;
     const appUserRole = firebaseUser.email?.includes("admin@saifmasr.com") || firebaseUser.email?.includes("admin@example.com") ? "admin" : "client";
@@ -102,8 +112,7 @@ export const AuthProvider = ({ children }: { children: ReactNode }) => {
         role: appUserRole,
         photoURL: firebaseUser.photoURL,
     };
-    // setUser(appUser); // Already handled by onAuthStateChanged
-
+    
     await logActivity({
       actionType: "USER_LOGIN",
       description: `User ${appUser.email} logged in. Role: ${appUser.role}.`,
@@ -113,6 +122,7 @@ export const AuthProvider = ({ children }: { children: ReactNode }) => {
   };
 
   const signUp = async (name: string, email: string, pass: string): Promise<FirebaseUser> => {
+    if (!auth) throw new Error("Firebase auth is not initialized.");
     const userCredential = await createUserWithEmailAndPassword(auth, email, pass);
     const firebaseUser = userCredential.user;
     await updateProfile(firebaseUser, { displayName: name });
@@ -124,8 +134,7 @@ export const AuthProvider = ({ children }: { children: ReactNode }) => {
         role: 'client', 
         photoURL: firebaseUser.photoURL,
     };
-    // setUser(appUser); // Already handled by onAuthStateChanged
-
+    
     await logActivity({
       actionType: "USER_REGISTERED",
       description: `New user registered: ${appUser.email}. Name: ${appUser.displayName}.`,
@@ -136,6 +145,12 @@ export const AuthProvider = ({ children }: { children: ReactNode }) => {
   };
   
   const signOut = async () => {
+    if (!auth) {
+      console.warn("Firebase auth not initialized, cannot sign out properly through Firebase.");
+      setUser(null); // Clear user state locally
+      router.push("/auth/login");
+      return;
+    }
     if (user) { 
       await logActivity({
         actionType: "USER_LOGOUT",
@@ -144,7 +159,6 @@ export const AuthProvider = ({ children }: { children: ReactNode }) => {
       });
     }
     await firebaseSignOut(auth);
-    // setUser(null); // Handled by onAuthStateChanged
     router.push("/auth/login");
   };
 
@@ -153,7 +167,7 @@ export const AuthProvider = ({ children }: { children: ReactNode }) => {
 
     const publicPaths = ["/", "/auth/login", "/auth/register", "/services"];
     const maintenancePath = "/maintenance";
-    const isPublicPath = publicPaths.some(p => pathname === p || (p === "/" && pathname.startsWith("/#")));
+    const isPublicPath = publicPaths.some(p => pathname === p || (p === "/" && pathname.startsWith("/#")) || pathname.startsWith("/services/")); // Allow /services/[serviceId]
     const isMaintenancePath = pathname === maintenancePath;
 
     if (settings?.maintenanceMode) {
@@ -195,4 +209,3 @@ export const useAuth = (): AuthContextType => {
   }
   return context;
 };
-

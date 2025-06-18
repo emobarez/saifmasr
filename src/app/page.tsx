@@ -122,12 +122,12 @@ export default function LandingPage() {
               </div>
               <div>
                 <Image
-                  src="https://storage.googleapis.com/project-spark-b3f51.appspot.com/generated_images/aa3ff2c4-22e8-43b9-87a6-84b0f4d170ba.png"
+                  src="https://placehold.co/800x600.png"
                   alt="About Saif Masr - Operations Center"
                   width={800}
                   height={600}
                   className="rounded-lg shadow-xl object-cover"
-                  data-ai-hint="operations center"
+                  data-ai-hint="operations center team"
                 />
               </div>
             </div>
