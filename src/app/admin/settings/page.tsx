@@ -21,8 +21,9 @@ import { Textarea } from "@/components/ui/textarea";
 import { useSiteSettings, type SiteSettings, DEFAULT_SETTINGS } from '@/hooks/useSiteSettings';
 import Image from "next/image";
 
-// Color Conversion Utilities & Regex
-const hslFormatRegex = /^\s*\d{1,3}\s+\d{1,3}%\s+\d{1,3}%\s*$/;
+// Regex to validate HSL strings like "H S% L%" (e.g., "240 10% 15%"), allowing for optional decimal points in H, S, and L.
+const hslFormatRegex = /^\s*\d{1,3}(?:\.\d+)?\s+\d{1,3}(?:\.\d+)?%\s+\d{1,3}(?:\.\d+)?%\s*$/;
+
 
 const isValidHslForPreview = (value: string | undefined): boolean => {
   if (!value) return false;
@@ -31,9 +32,16 @@ const isValidHslForPreview = (value: string | undefined): boolean => {
 
 function parseHslString(hslStr?: string | null): { h: number; s: number; l: number } | null {
   if (!hslStr || typeof hslStr !== 'string') return null;
-  const match = hslStr.match(/(\d+)\s+(\d+)%\s+(\d+)%/);
+  // This simpler regex is fine for parsing once validated by hslFormatRegex if needed,
+  // but the main Zod validation uses the more precise hslFormatRegex.
+  // Using parseFloat to handle potential decimals if the string contains them.
+  const match = hslStr.match(/(\d{1,3}(?:\.\d+)?)\s+(\d{1,3}(?:\.\d+)?%)\s+(\d{1,3}(?:\.\d+)?%)/);
   if (match) {
-    return { h: parseInt(match[1]), s: parseInt(match[2]), l: parseInt(match[3]) };
+    return { 
+      h: parseFloat(match[1]), 
+      s: parseFloat(match[2].replace('%','')), 
+      l: parseFloat(match[3].replace('%','')) 
+    };
   }
   return null;
 }
@@ -90,7 +98,7 @@ function rgbToHsl(r: number, g: number, b: number): { h: number; s: number; l: n
 
 const optionalHslString = z.string().optional().refine(
   (val) => !val || val.trim() === '' || hslFormatRegex.test(val),
-  { message: "تنسيق HSL غير صالح. يجب أن يكون مثل '240 10% 15%'" }
+  { message: "تنسيق HSL غير صالح. يجب أن يكون مثل '240 10% 15%' ويمكن أن يحتوي على أرقام عشرية." }
 );
 const optionalUrl = z.string().url({ message: "الرابط غير صالح. تأكد من تضمين http:// أو https://" }).optional().or(z.literal(''));
 
@@ -283,6 +291,7 @@ export default function AdminSettingsPage() {
               } else if (typeof valueFromForm === 'boolean') {
                   (dataToSavePrepared as any)[siteSettingsKey] = valueFromForm;
               } else if (valueFromForm === undefined) {
+                  // If form field is undefined (e.g. optional and cleared), use default
                   (dataToSavePrepared as any)[siteSettingsKey] = DEFAULT_SETTINGS[siteSettingsKey];
               }
           }
@@ -337,9 +346,9 @@ export default function AdminSettingsPage() {
     { nameBase: "PrimaryForeground", label: "لون النص على الأساسي", placeholder: "مثال: 0 0% 98%" },
     { nameBase: "Accent", label: "اللون الثانوي/المميز", placeholder: "مثال: 191 60% 50%" },
     { nameBase: "AccentForeground", label: "لون النص على الثانوي", placeholder: "مثال: 0 0% 98%" },
-    { nameBase: "Card", label: "لون خلفية البطاقات", placeholder: "مثال: 238 10% 20% / 0.85" },
+    { nameBase: "Card", label: "لون خلفية البطاقات", placeholder: "مثال: 238 10% 20%" },
     { nameBase: "CardForeground", label: "لون نص البطاقات", placeholder: "مثال: 0 0% 95%" },
-    { nameBase: "Popover", label: "لون خلفية العناصر المنبثقة", placeholder: "مثال: 238 10% 20% / 0.85" },
+    { nameBase: "Popover", label: "لون خلفية العناصر المنبثقة", placeholder: "مثال: 238 10% 20%" },
     { nameBase: "PopoverForeground", label: "لون نص العناصر المنبثقة", placeholder: "مثال: 0 0% 95%" },
     { nameBase: "Secondary", label: "اللون الفرعي (للخلفيات الثانوية)", placeholder: "مثال: 240 10% 94%" },
     { nameBase: "SecondaryForeground", label: "لون النص على الفرعي", placeholder: "مثال: 238 10% 25%" },
@@ -353,7 +362,7 @@ export default function AdminSettingsPage() {
   ];
 
   const sidebarThemeColorFields: Array<{nameBase: string, label: string, placeholder: string}> = [
-    { nameBase: "SidebarBackground", label: "خلفية الشريط الجانبي", placeholder: "مثال: 238 40% 96% / 0.9" },
+    { nameBase: "SidebarBackground", label: "خلفية الشريط الجانبي", placeholder: "مثال: 238 40% 96%" },
     { nameBase: "SidebarForeground", label: "نص الشريط الجانبي", placeholder: "مثال: 238 15% 30%" },
     { nameBase: "SidebarPrimary", label: "أساسي الشريط الجانبي (للنشط)", placeholder: "مثال: 238 52% 38%" },
     { nameBase: "SidebarPrimaryForeground", label: "نص أساسي الشريط الجانبي", placeholder: "مثال: 0 0% 98%" },
