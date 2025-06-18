@@ -91,16 +91,16 @@ export const DEFAULT_SETTINGS: SiteSettings = {
   logoUrl: "", 
   faviconUrl: "", 
 
-  // Light Theme Defaults (PRD Aligned)
+  // Light Theme Defaults (PRD Aligned - Alpha removed to match regex)
   themeBackgroundLight: "240 11% 89%", 
   themeForegroundLight: "238 10% 20%", 
   themePrimaryLight: "238 52% 38%", 
   themePrimaryForegroundLight: "0 0% 98%", 
   themeAccentLight: "191 55% 41%", 
   themeAccentForegroundLight: "0 0% 98%", 
-  themeCardLight: "0 0% 100% / 0.9", 
+  themeCardLight: "0 0% 100%", // Was "0 0% 100% / 0.9"
   themeCardForegroundLight: "238 10% 20%",
-  themePopoverLight: "0 0% 100% / 0.9",
+  themePopoverLight: "0 0% 100%", // Was "0 0% 100% / 0.9"
   themePopoverForegroundLight: "238 10% 20%",
   themeSecondaryLight: "240 10% 94%", 
   themeSecondaryForegroundLight: "238 10% 25%", 
@@ -112,7 +112,7 @@ export const DEFAULT_SETTINGS: SiteSettings = {
   themeDestructiveLight: "0 84.2% 60.2%",
   themeDestructiveForegroundLight: "0 0% 98%",
 
-  // Dark Theme Defaults (Replit/Elite Inspired)
+  // Dark Theme Defaults (Replit/Elite Inspired - Alpha removed)
   themeBackgroundDark: "222 84% 4.9%",    
   themeForegroundDark: "210 40% 98%",    
   themePrimaryDark: "217 91.2% 59.8%",  
@@ -138,8 +138,8 @@ export const DEFAULT_SETTINGS: SiteSettings = {
   socialLinkedinUrl: "",
   socialInstagramUrl: "",
 
-  // Sidebar Light Theme Defaults (PRD Aligned)
-  themeSidebarBackgroundLight: "238 30% 95% / 0.9",
+  // Sidebar Light Theme Defaults (PRD Aligned - Alpha removed)
+  themeSidebarBackgroundLight: "238 30% 95%", // Was "238 30% 95% / 0.9"
   themeSidebarForegroundLight: "238 15% 30%",
   themeSidebarPrimaryLight: "238 52% 38%",
   themeSidebarPrimaryForegroundLight: "0 0% 98%",
@@ -148,8 +148,8 @@ export const DEFAULT_SETTINGS: SiteSettings = {
   themeSidebarBorderLight: "240 10% 85%",
   themeSidebarRingLight: "191 55% 41%",
 
-  // Sidebar Dark Theme Defaults (Replit/Elite Inspired)
-  themeSidebarBackgroundDark: "222 80% 6.5% / 0.9", 
+  // Sidebar Dark Theme Defaults (Replit/Elite Inspired - Alpha removed)
+  themeSidebarBackgroundDark: "222 80% 6.5%", // Was "222 80% 6.5% / 0.9"
   themeSidebarForegroundDark: "210 40% 90%",
   themeSidebarPrimaryDark: "217 91.2% 59.8%",
   themeSidebarPrimaryForegroundDark: "0 0% 98%",
@@ -166,14 +166,12 @@ export function useSiteSettings() {
   useEffect(() => {
     setIsLoadingSiteSettings(true);
 
-    const apiKey = typeof window !== 'undefined' ? process.env.NEXT_PUBLIC_FIREBASE_API_KEY : undefined;
-    const projectId = typeof window !== 'undefined' ? process.env.NEXT_PUBLIC_FIREBASE_PROJECT_ID : undefined;
-
-    if (!apiKey || !projectId || !db) { // Check if db instance is available
+    // Check if db instance is available before trying to use it
+    if (!db) {
         console.warn(
-            "Firebase API Key, Project ID, or Firestore instance is missing/undefined. " +
+            "Firestore instance (db) is not available in useSiteSettings. " +
             "Site settings will use defaults and Firestore will not be connected for settings. " +
-            "Ensure NEXT_PUBLIC_FIREBASE_API_KEY and NEXT_PUBLIC_FIREBASE_PROJECT_ID are set, and Firebase initializes correctly."
+            "This might be due to Firebase initialization issues (e.g., missing environment variables in the preview environment)."
         );
         setSiteSettings(DEFAULT_SETTINGS);
         setIsLoadingSiteSettings(false);
@@ -201,10 +199,11 @@ export function useSiteSettings() {
     );
 
     return () => unsubscribe();
-  }, []); // db is stable after initialization, so not strictly needed in deps if it's guaranteed to be set or unset consistently.
+  }, []); // db is stable after initialization
 
   return useMemo(() => ({
     ...siteSettings,
     isLoadingSiteSettings,
   }), [siteSettings, isLoadingSiteSettings]);
 }
+
