@@ -165,6 +165,23 @@ export function useSiteSettings() {
 
   useEffect(() => {
     setIsLoadingSiteSettings(true);
+
+    // Check for essential Firebase config keys needed for Firestore to initialize
+    // These checks rely on how NEXT_PUBLIC_ variables are exposed to the browser by Next.js
+    const apiKey = typeof window !== 'undefined' ? process.env.NEXT_PUBLIC_FIREBASE_API_KEY : undefined;
+    const projectId = typeof window !== 'undefined' ? process.env.NEXT_PUBLIC_FIREBASE_PROJECT_ID : undefined;
+
+    if (!apiKey || !projectId) {
+        console.warn(
+            "Firebase API Key or Project ID is missing from environment variables. " +
+            "Site settings will use defaults and Firestore will not be connected for settings. " +
+            "Ensure NEXT_PUBLIC_FIREBASE_API_KEY and NEXT_PUBLIC_FIREBASE_PROJECT_ID are set."
+        );
+        setSiteSettings(DEFAULT_SETTINGS);
+        setIsLoadingSiteSettings(false);
+        return; // Do not attempt to connect to Firestore
+    }
+
     const settingsDocRef = doc(db, "systemSettings", "general");
 
     const unsubscribe = onSnapshot(settingsDocRef,
