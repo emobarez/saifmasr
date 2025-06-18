@@ -11,7 +11,7 @@ import { useState, useEffect } from "react";
 import { useToast } from "@/hooks/use-toast";
 import { db } from "@/lib/firebase";
 import { doc, getDoc, setDoc } from "firebase/firestore";
-import { useForm } from "react-hook-form";
+import { useForm, type FieldErrors } from "react-hook-form";
 import { zodResolver } from "@hookform/resolvers/zod";
 import * as z from "zod";
 import { Form, FormControl, FormField, FormItem, FormLabel, FormMessage } from "@/components/ui/form";
@@ -251,7 +251,7 @@ export default function AdminSettingsPage() {
     resolver: zodResolver(settingsSchema),
     defaultValues: DEFAULT_SETTINGS, 
   });
-  const { handleSubmit, control, reset, formState: {isSubmitting}, watch, setValue } = form;
+  const { handleSubmit, control, reset, formState: {isSubmitting, errors}, watch, setValue } = form;
 
   const settingsDocRef = doc(db, "systemSettings", "general");
   
@@ -269,13 +269,13 @@ export default function AdminSettingsPage() {
 
 
   const handleSaveSettings = async (data: SettingsFormValues) => {
+    console.log("handleSaveSettings triggered. Data:", data);
     try {
-      // Prepare the data to save, ensuring all keys from SiteSettings are present and using defaults if form values are empty/undefined for optional fields.
-      const dataToSavePrepared: SiteSettings = { ...DEFAULT_SETTINGS }; // Start with all defaults
+      const dataToSavePrepared: SiteSettings = { ...DEFAULT_SETTINGS }; 
 
       (Object.keys(data) as Array<keyof SettingsFormValues>).forEach(formKey => {
-          const siteSettingsKey = formKey as keyof SiteSettings; // Assuming keys generally match
-          if (siteSettingsKey in dataToSavePrepared) { // Check if the key exists in our target SiteSettings interface
+          const siteSettingsKey = formKey as keyof SiteSettings; 
+          if (siteSettingsKey in dataToSavePrepared) { 
               const valueFromForm = data[formKey];
               
               if (typeof valueFromForm === 'string') {
@@ -283,7 +283,6 @@ export default function AdminSettingsPage() {
               } else if (typeof valueFromForm === 'boolean') {
                   (dataToSavePrepared as any)[siteSettingsKey] = valueFromForm;
               } else if (valueFromForm === undefined) {
-                  // If the form value is undefined, the default from dataToSavePrepared (spread from DEFAULT_SETTINGS) remains.
                   (dataToSavePrepared as any)[siteSettingsKey] = DEFAULT_SETTINGS[siteSettingsKey];
               }
           }
@@ -294,7 +293,7 @@ export default function AdminSettingsPage() {
       toast({
         title: "تم الحفظ بنجاح",
         description: "تم تحديث إعدادات النظام.",
-        duration: 2000, // Display for 2 seconds
+        duration: 2000, 
       });
        if (adminUser) {
         await logActivity({
@@ -319,6 +318,16 @@ export default function AdminSettingsPage() {
         duration: 9000, 
       });
     }
+  };
+
+  const handleInvalidSubmit = (errors: FieldErrors<SettingsFormValues>) => {
+    console.error("Form validation failed:", errors);
+    toast({
+      title: "خطأ في الإدخال",
+      description: "يرجى مراجعة الحقول والتأكد من صحة البيانات المدخلة. بعض القيم قد تكون غير صالحة أو حقول مطلوبة فارغة.",
+      variant: "destructive",
+      duration: 7000,
+    });
   };
 
   const mainThemeColorFields: Array<{nameBase: string, label: string, placeholder: string}> = [
@@ -469,7 +478,7 @@ export default function AdminSettingsPage() {
         </CardHeader>
         <CardContent>
           <Form {...form}>
-            <form onSubmit={handleSubmit(handleSaveSettings)} className="space-y-8">
+            <form onSubmit={handleSubmit(handleSaveSettings, handleInvalidSubmit)} className="space-y-8">
               <Tabs defaultValue="general" className="w-full" dir="rtl">
                 <TabsList className="grid w-full grid-cols-1 sm:grid-cols-3 mb-6">
                   <TabsTrigger value="general" className="flex items-center gap-2">
@@ -676,3 +685,4 @@ export default function AdminSettingsPage() {
   );
 }
     
+
