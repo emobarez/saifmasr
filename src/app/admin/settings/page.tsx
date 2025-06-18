@@ -270,93 +270,38 @@ export default function AdminSettingsPage() {
 
   const handleSaveSettings = async (data: SettingsFormValues) => {
     try {
-      const dataToSave: SiteSettings = {
-        portalName: typeof data.portalName === 'string' ? data.portalName.trim() : DEFAULT_SETTINGS.portalName,
-        adminEmail: typeof data.adminEmail === 'string' ? data.adminEmail.trim() : DEFAULT_SETTINGS.adminEmail,
-        maintenanceMode: data.maintenanceMode === undefined ? DEFAULT_SETTINGS.maintenanceMode : data.maintenanceMode,
-        
-        companyPhone: typeof data.companyPhone === 'string' ? data.companyPhone.trim() : DEFAULT_SETTINGS.companyPhone,
-        companyAddress: typeof data.companyAddress === 'string' ? data.companyAddress.trim() : DEFAULT_SETTINGS.companyAddress,
-        publicEmail: typeof data.publicEmail === 'string' ? data.publicEmail.trim() : DEFAULT_SETTINGS.publicEmail,
-        logoUrl: typeof data.logoUrl === 'string' ? data.logoUrl.trim() : DEFAULT_SETTINGS.logoUrl,
-        faviconUrl: typeof data.faviconUrl === 'string' ? data.faviconUrl.trim() : DEFAULT_SETTINGS.faviconUrl,
-        
-        themeBackgroundLight: data.themeBackgroundLight?.trim() ?? DEFAULT_SETTINGS.themeBackgroundLight,
-        themeForegroundLight: data.themeForegroundLight?.trim() ?? DEFAULT_SETTINGS.themeForegroundLight,
-        themePrimaryLight: data.themePrimaryLight?.trim() ?? DEFAULT_SETTINGS.themePrimaryLight,
-        themePrimaryForegroundLight: data.themePrimaryForegroundLight?.trim() ?? DEFAULT_SETTINGS.themePrimaryForegroundLight,
-        themeAccentLight: data.themeAccentLight?.trim() ?? DEFAULT_SETTINGS.themeAccentLight,
-        themeAccentForegroundLight: data.themeAccentForegroundLight?.trim() ?? DEFAULT_SETTINGS.themeAccentForegroundLight,
-        themeCardLight: data.themeCardLight?.trim() ?? DEFAULT_SETTINGS.themeCardLight,
-        themeCardForegroundLight: data.themeCardForegroundLight?.trim() ?? DEFAULT_SETTINGS.themeCardForegroundLight,
-        themePopoverLight: data.themePopoverLight?.trim() ?? DEFAULT_SETTINGS.themePopoverLight,
-        themePopoverForegroundLight: data.themePopoverForegroundLight?.trim() ?? DEFAULT_SETTINGS.themePopoverForegroundLight,
-        themeSecondaryLight: data.themeSecondaryLight?.trim() ?? DEFAULT_SETTINGS.themeSecondaryLight,
-        themeSecondaryForegroundLight: data.themeSecondaryForegroundLight?.trim() ?? DEFAULT_SETTINGS.themeSecondaryForegroundLight,
-        themeMutedLight: data.themeMutedLight?.trim() ?? DEFAULT_SETTINGS.themeMutedLight,
-        themeMutedForegroundLight: data.themeMutedForegroundLight?.trim() ?? DEFAULT_SETTINGS.themeMutedForegroundLight,
-        themeBorderLight: data.themeBorderLight?.trim() ?? DEFAULT_SETTINGS.themeBorderLight,
-        themeInputLight: data.themeInputLight?.trim() ?? DEFAULT_SETTINGS.themeInputLight,
-        themeRingLight: data.themeRingLight?.trim() ?? DEFAULT_SETTINGS.themeRingLight,
-        themeDestructiveLight: data.themeDestructiveLight?.trim() ?? DEFAULT_SETTINGS.themeDestructiveLight,
-        themeDestructiveForegroundLight: data.themeDestructiveForegroundLight?.trim() ?? DEFAULT_SETTINGS.themeDestructiveForegroundLight,
+      // Prepare the data to save, ensuring all keys from SiteSettings are present and using defaults if form values are empty/undefined for optional fields.
+      const dataToSavePrepared: SiteSettings = { ...DEFAULT_SETTINGS }; // Start with all defaults
 
-        themeBackgroundDark: data.themeBackgroundDark?.trim() ?? DEFAULT_SETTINGS.themeBackgroundDark,
-        themeForegroundDark: data.themeForegroundDark?.trim() ?? DEFAULT_SETTINGS.themeForegroundDark,
-        themePrimaryDark: data.themePrimaryDark?.trim() ?? DEFAULT_SETTINGS.themePrimaryDark,
-        themePrimaryForegroundDark: data.themePrimaryForegroundDark?.trim() ?? DEFAULT_SETTINGS.themePrimaryForegroundDark,
-        themeAccentDark: data.themeAccentDark?.trim() ?? DEFAULT_SETTINGS.themeAccentDark,
-        themeAccentForegroundDark: data.themeAccentForegroundDark?.trim() ?? DEFAULT_SETTINGS.themeAccentForegroundDark,
-        themeCardDark: data.themeCardDark?.trim() ?? DEFAULT_SETTINGS.themeCardDark,
-        themeCardForegroundDark: data.themeCardForegroundDark?.trim() ?? DEFAULT_SETTINGS.themeCardForegroundDark,
-        themePopoverDark: data.themePopoverDark?.trim() ?? DEFAULT_SETTINGS.themePopoverDark,
-        themePopoverForegroundDark: data.themePopoverForegroundDark?.trim() ?? DEFAULT_SETTINGS.themePopoverForegroundDark,
-        themeSecondaryDark: data.themeSecondaryDark?.trim() ?? DEFAULT_SETTINGS.themeSecondaryDark,
-        themeSecondaryForegroundDark: data.themeSecondaryForegroundDark?.trim() ?? DEFAULT_SETTINGS.themeSecondaryForegroundDark,
-        themeMutedDark: data.themeMutedDark?.trim() ?? DEFAULT_SETTINGS.themeMutedDark,
-        themeMutedForegroundDark: data.themeMutedForegroundDark?.trim() ?? DEFAULT_SETTINGS.themeMutedForegroundDark,
-        themeBorderDark: data.themeBorderDark?.trim() ?? DEFAULT_SETTINGS.themeBorderDark,
-        themeInputDark: data.themeInputDark?.trim() ?? DEFAULT_SETTINGS.themeInputDark,
-        themeRingDark: data.themeRingDark?.trim() ?? DEFAULT_SETTINGS.themeRingDark,
-        themeDestructiveDark: data.themeDestructiveDark?.trim() ?? DEFAULT_SETTINGS.themeDestructiveDark,
-        themeDestructiveForegroundDark: data.themeDestructiveForegroundDark?.trim() ?? DEFAULT_SETTINGS.themeDestructiveForegroundDark,
-        
-        socialFacebookUrl: typeof data.socialFacebookUrl === 'string' ? data.socialFacebookUrl.trim() : DEFAULT_SETTINGS.socialFacebookUrl,
-        socialTwitterUrl: typeof data.socialTwitterUrl === 'string' ? data.socialTwitterUrl.trim() : DEFAULT_SETTINGS.socialTwitterUrl,
-        socialLinkedinUrl: typeof data.socialLinkedinUrl === 'string' ? data.socialLinkedinUrl.trim() : DEFAULT_SETTINGS.socialLinkedinUrl,
-        socialInstagramUrl: typeof data.socialInstagramUrl === 'string' ? data.socialInstagramUrl.trim() : DEFAULT_SETTINGS.socialInstagramUrl,
-
-        themeSidebarBackgroundLight: data.themeSidebarBackgroundLight?.trim() ?? DEFAULT_SETTINGS.themeSidebarBackgroundLight,
-        themeSidebarForegroundLight: data.themeSidebarForegroundLight?.trim() ?? DEFAULT_SETTINGS.themeSidebarForegroundLight,
-        themeSidebarPrimaryLight: data.themeSidebarPrimaryLight?.trim() ?? DEFAULT_SETTINGS.themeSidebarPrimaryLight,
-        themeSidebarPrimaryForegroundLight: data.themeSidebarPrimaryForegroundLight?.trim() ?? DEFAULT_SETTINGS.themeSidebarPrimaryForegroundLight,
-        themeSidebarAccentLight: data.themeSidebarAccentLight?.trim() ?? DEFAULT_SETTINGS.themeSidebarAccentLight,
-        themeSidebarAccentForegroundLight: data.themeSidebarAccentForegroundLight?.trim() ?? DEFAULT_SETTINGS.themeSidebarAccentForegroundLight,
-        themeSidebarBorderLight: data.themeSidebarBorderLight?.trim() ?? DEFAULT_SETTINGS.themeSidebarBorderLight,
-        themeSidebarRingLight: data.themeSidebarRingLight?.trim() ?? DEFAULT_SETTINGS.themeSidebarRingLight,
-
-        themeSidebarBackgroundDark: data.themeSidebarBackgroundDark?.trim() ?? DEFAULT_SETTINGS.themeSidebarBackgroundDark,
-        themeSidebarForegroundDark: data.themeSidebarForegroundDark?.trim() ?? DEFAULT_SETTINGS.themeSidebarForegroundDark,
-        themeSidebarPrimaryDark: data.themeSidebarPrimaryDark?.trim() ?? DEFAULT_SETTINGS.themeSidebarPrimaryDark,
-        themeSidebarPrimaryForegroundDark: data.themeSidebarPrimaryForegroundDark?.trim() ?? DEFAULT_SETTINGS.themeSidebarPrimaryForegroundDark,
-        themeSidebarAccentDark: data.themeSidebarAccentDark?.trim() ?? DEFAULT_SETTINGS.themeSidebarAccentDark,
-        themeSidebarAccentForegroundDark: data.themeSidebarAccentForegroundDark?.trim() ?? DEFAULT_SETTINGS.themeSidebarAccentForegroundDark,
-        themeSidebarBorderDark: data.themeSidebarBorderDark?.trim() ?? DEFAULT_SETTINGS.themeSidebarBorderDark,
-        themeSidebarRingDark: data.themeSidebarRingDark?.trim() ?? DEFAULT_SETTINGS.themeSidebarRingDark,
-      };
+      (Object.keys(data) as Array<keyof SettingsFormValues>).forEach(formKey => {
+          const siteSettingsKey = formKey as keyof SiteSettings; // Assuming keys generally match
+          if (siteSettingsKey in dataToSavePrepared) { // Check if the key exists in our target SiteSettings interface
+              const valueFromForm = data[formKey];
+              
+              if (typeof valueFromForm === 'string') {
+                  (dataToSavePrepared as any)[siteSettingsKey] = valueFromForm.trim();
+              } else if (typeof valueFromForm === 'boolean') {
+                  (dataToSavePrepared as any)[siteSettingsKey] = valueFromForm;
+              } else if (valueFromForm === undefined) {
+                  // If the form value is undefined, the default from dataToSavePrepared (spread from DEFAULT_SETTINGS) remains.
+                  (dataToSavePrepared as any)[siteSettingsKey] = DEFAULT_SETTINGS[siteSettingsKey];
+              }
+          }
+      });
       
-      await setDoc(settingsDocRef, dataToSave, { merge: true });
+      await setDoc(settingsDocRef, dataToSavePrepared, { merge: true });
       
       toast({
         title: "تم الحفظ بنجاح",
         description: "تم تحديث إعدادات النظام.",
+        duration: 2000, // Display for 2 seconds
       });
        if (adminUser) {
         await logActivity({
           actionType: "SETTINGS_UPDATED",
           description: `Admin ${adminUser.displayName || adminUser.email} updated system settings.`,
           actor: { id: adminUser.uid, role: adminUser.role || undefined, name: adminUser.displayName },
-          details: { portalName: dataToSave.portalName, maintenanceMode: dataToSave.maintenanceMode }, 
+          details: { portalName: dataToSavePrepared.portalName, maintenanceMode: dataToSavePrepared.maintenanceMode }, 
         });
       }
     } catch (error: any) {
