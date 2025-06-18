@@ -72,13 +72,11 @@ export const AuthProvider = ({ children }: { children: ReactNode }) => {
   }, []);
 
   useEffect(() => {
-    // Check if auth instance is available from firebase.ts
     if (!auth) {
-      console.error("AuthContext: Firebase auth instance is not available. Firebase might not be configured correctly.");
+      console.warn("AuthContext: Firebase auth instance is not available during onAuthStateChanged setup. Firebase might not be configured correctly or is still initializing.");
       setLoading(false);
-      // Potentially set user to null explicitly or handle error state
       setUser(null);
-      return;
+      return; // Early return if auth is not available
     }
 
     const unsubscribe = onAuthStateChanged(auth, (firebaseUser: FirebaseUser | null) => {
@@ -98,7 +96,7 @@ export const AuthProvider = ({ children }: { children: ReactNode }) => {
     });
 
     return () => unsubscribe();
-  }, []); // Removed 'auth' from dependency array as its availability is checked above.
+  }, [auth]); // Re-added 'auth' to the dependency array.
 
   const signIn = async (email: string, pass: string): Promise<FirebaseUser> => {
     if (!auth) throw new Error("Firebase auth is not initialized.");
@@ -174,12 +172,14 @@ export const AuthProvider = ({ children }: { children: ReactNode }) => {
       if (user?.role === 'admin') {
         if (isMaintenancePath) router.push('/admin/dashboard'); 
       } else if (isMaintenancePath) {
+      // Already on maintenance page, do nothing
       } else {
         router.push(maintenancePath);
       }
       return; 
     }
 
+    // If not in maintenance mode
     if (!user && !isPublicPath && !isMaintenancePath) {
       router.push("/auth/login");
     } else if (user) {
@@ -209,3 +209,5 @@ export const useAuth = (): AuthContextType => {
   }
   return context;
 };
+
+    
