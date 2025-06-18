@@ -1,11 +1,11 @@
 "use client";
-import { ShieldAlert, Tool } from "lucide-react";
-import { useSiteSettings } from "@/hooks/useSiteSettings"; // Updated import
+import { ShieldAlert, Wrench } from "lucide-react"; // Changed Tool to Wrench
+import { useSiteSettings } from "@/hooks/useSiteSettings"; 
 import Link from "next/link";
 import { Button } from "@/components/ui/button";
 
 export default function MaintenancePage() {
-  const { portalName, isLoadingSiteSettings } = useSiteSettings(); // Updated hook usage
+  const { portalName, isLoadingSiteSettings } = useSiteSettings(); 
   const displayPortalName = isLoadingSiteSettings ? "..." : portalName;
 
   return (
@@ -22,7 +22,7 @@ export default function MaintenancePage() {
           نحن نعمل بجد لإعادة كل شيء إلى طبيعته في أقرب وقت ممكن. شكراً لتفهمكم وصبركم.
         </p>
         <div className="flex items-center justify-center text-primary mb-6">
-          <Tool className="h-6 w-6 me-2 animate-spin-slow" />
+          <Wrench className="h-6 w-6 me-2 animate-spin-slow" /> {/* Changed Tool to Wrench */}
           <p className="font-semibold">جاري العمل على التحسينات...</p>
         </div>
          <Button asChild variant="outline">
