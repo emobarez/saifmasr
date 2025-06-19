@@ -3,17 +3,13 @@ import type {Metadata} from 'next';
 import './globals.css';
 import { Toaster } from "@/components/ui/toaster";
 import { AuthProvider } from '@/context/AuthContext';
-import { DynamicHeadElementsSetter } from '@/components/layout/DynamicTitleSetter'; // Corrected import path
+import { DynamicHeadElementsSetter } from '@/components/layout/DynamicTitleSetter';
 import { ThemeApplicator } from '@/components/layout/ThemeApplicator';
+import { ClientOnly } from '@/components/layout/ClientOnly'; // Import ClientOnly
 
 export const metadata: Metadata = {
   title: 'سيف مصر الوطنية للأمن', // Default title, will be updated client-side
   description: 'بوابة شاملة لخدمات سيف مصر الوطنية للأمن',
-  // Note: Favicon defined in public/favicon.ico will be used by default if no dynamic one is set.
-  // Or, you can add a default static link here:
-  // icons: {
-  //   icon: '/favicon.ico', // Or your default favicon path
-  // },
 };
 
 export default function RootLayout({
@@ -31,8 +27,10 @@ export default function RootLayout({
       </head>
       <body className="font-body antialiased" suppressHydrationWarning={true}>
         <AuthProvider>
-          <ThemeApplicator />
-          <DynamicHeadElementsSetter />
+          <ClientOnly>
+            <ThemeApplicator />
+            <DynamicHeadElementsSetter />
+          </ClientOnly>
           {children}
           <Toaster />
         </AuthProvider>
@@ -40,4 +38,3 @@ export default function RootLayout({
     </html>
   );
 }
-
