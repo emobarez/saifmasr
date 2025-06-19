@@ -1,13 +1,19 @@
+
 "use client";
 
-import { useEffect } from 'react';
+import { useEffect, useState } from 'react'; 
 import { useSiteSettings } from '@/hooks/useSiteSettings'; 
 
 export function DynamicHeadElementsSetter() {
   const { portalName, faviconUrl, isLoadingSiteSettings } = useSiteSettings(); 
+  const [mounted, setMounted] = useState(false);
 
   useEffect(() => {
-    if (isLoadingSiteSettings) return;
+    setMounted(true); 
+  }, []);
+
+  useEffect(() => {
+    if (!mounted || isLoadingSiteSettings) return;
 
     if (portalName) {
       document.title = portalName;
@@ -17,13 +23,12 @@ export function DynamicHeadElementsSetter() {
       let link: HTMLLinkElement | null = document.querySelector("link[rel*='icon']");
       if (!link) {
         link = document.createElement('link');
-        link.type = 'image/x-icon'; // Or appropriate type based on faviconUrl
-        link.rel = 'shortcut icon'; // Standard rel
+        link.type = 'image/x-icon'; 
+        link.rel = 'shortcut icon'; 
         document.getElementsByTagName('head')[0].appendChild(link);
       }
       link.href = faviconUrl;
       
-      // Attempt to update common iOS/Apple touch icons as well if only one faviconUrl is provided
       const appleTouchIconSelectors = [
         "link[rel='apple-touch-icon']",
         "link[rel='apple-touch-icon-precomposed']"
@@ -32,7 +37,7 @@ export function DynamicHeadElementsSetter() {
         let appleLink: HTMLLinkElement | null = document.querySelector(selector);
         if (!appleLink) {
           appleLink = document.createElement('link');
-          appleLink.rel = selector.substring(selector.indexOf("'") + 1, selector.lastIndexOf("'")); // Extracts 'apple-touch-icon' etc.
+          appleLink.rel = selector.substring(selector.indexOf("'") + 1, selector.lastIndexOf("'")); 
           document.getElementsByTagName('head')[0].appendChild(appleLink);
         }
         appleLink.href = faviconUrl;
@@ -40,13 +45,9 @@ export function DynamicHeadElementsSetter() {
 
     } else {
       // Optional: remove or set to a default favicon if faviconUrl is empty/null
-      let link: HTMLLinkElement | null = document.querySelector("link[rel*='icon']");
-      if (link) {
-         // Example: link.href = '/default-favicon.ico'; or document.getElementsByTagName('head')[0].removeChild(link);
-         // For now, just leave it if it was set by public/favicon.ico
-      }
+      // Current logic leaves it as is, which is fine if public/favicon.ico exists.
     }
-  }, [portalName, faviconUrl, isLoadingSiteSettings]);
+  }, [portalName, faviconUrl, isLoadingSiteSettings, mounted]); 
 
   return null; 
 }

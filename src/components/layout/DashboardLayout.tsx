@@ -1,3 +1,4 @@
+
 "use client";
 
 import type { ReactNode, ElementType } from "react";
@@ -5,7 +6,7 @@ import Link from "next/link";
 import { usePathname, useRouter } from "next/navigation";
 import { useEffect } from "react";
 import {
-  SidebarProvider,
+  SidebarProvider, // We will wrap this layout with SidebarProvider externally
   Sidebar,
   SidebarHeader,
   SidebarContent,
@@ -14,6 +15,7 @@ import {
   SidebarMenuButton,
   SidebarFooter,
   SidebarTrigger,
+  useSidebar, // To get isMobile, openMobile, setOpenMobile
 } from "@/components/ui/sidebar";
 import { Button } from "@/components/ui/button";
 import { 
@@ -31,7 +33,8 @@ import {
   Settings as SettingsIcon, 
   ShieldEllipsis,
   ClipboardList,
-  HelpCircle
+  HelpCircle,
+  PanelLeft // For mobile trigger if Sidebar component doesn't provide one easily
 } from "lucide-react";
 import { useAuth } from "@/context/AuthContext";
 import { Avatar, AvatarFallback, AvatarImage } from "@/components/ui/avatar";
@@ -68,6 +71,7 @@ export function DashboardLayout({ children, navItems }: DashboardLayoutProps) {
   const { user, signOut, loading: authLoading } = useAuth();
   const router = useRouter();
   const { portalName, logoUrl, isLoadingSiteSettings } = useSiteSettings(); 
+  const { isMobile, openMobile, setOpenMobile } = useSidebar(); // Consume from context
 
   const getInitials = (name?: string | null) => {
     if (!name) return "SM";
@@ -80,7 +84,7 @@ export function DashboardLayout({ children, navItems }: DashboardLayoutProps) {
     }
   }, [authLoading, user, router]);
 
-  if (authLoading || isLoadingSiteSettings || !user) {
+  if (authLoading || isLoadingSiteSettings || !user || isMobile === undefined) { // Wait for isMobile determination
     return (
       <div className="flex items-center justify-center min-h-screen bg-background">
         <p className="text-lg text-primary font-semibold">جارٍ التحميل...</p>
@@ -89,14 +93,12 @@ export function DashboardLayout({ children, navItems }: DashboardLayoutProps) {
   }
 
   const filteredNavItems = navItems.filter(item => item.allowedRoles.includes(user.role!));
-  
   const displaySidebarPortalName = isLoadingSiteSettings ? "..." : portalName.split(" ").slice(0, 2).join(" ");
 
 
   return (
-    <SidebarProvider defaultOpen>
       <div className="flex min-h-screen bg-background">
-        <Sidebar collapsible="icon" side="right">
+        <Sidebar collapsible="icon" side="right"> {/* Sidebar will use useSidebar().isMobile internally */}
           <SidebarHeader className="p-4 border-b border-sidebar-border">
             <div className="flex items-center gap-3">
               <Link href="/" className="flex items-center gap-2 text-lg font-semibold text-sidebar-primary font-headline">
@@ -167,6 +169,5 @@ export function DashboardLayout({ children, navItems }: DashboardLayoutProps) {
           </div>
         </main>
       </div>
-    </SidebarProvider>
   );
 }

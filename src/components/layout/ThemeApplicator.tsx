@@ -1,7 +1,7 @@
 
 "use client";
 
-import { useEffect } from 'react';
+import { useEffect, useState } from 'react';
 import { useSiteSettings } from '@/hooks/useSiteSettings';
 
 const themePropertiesMap = {
@@ -40,9 +40,14 @@ const themePropertiesMap = {
 export function ThemeApplicator() {
   const siteSettings = useSiteSettings();
   const { isLoadingSiteSettings, ...settings } = siteSettings;
+  const [mounted, setMounted] = useState(false); 
 
   useEffect(() => {
-    if (isLoadingSiteSettings || !settings) return; 
+    setMounted(true); 
+  }, []);
+
+  useEffect(() => {
+    if (!mounted || isLoadingSiteSettings || !settings || Object.keys(settings).length === 0) return; 
 
     const root = document.documentElement;
 
@@ -66,9 +71,7 @@ export function ThemeApplicator() {
       }
     });
 
-  }, [settings, isLoadingSiteSettings]);
+  }, [settings, isLoadingSiteSettings, mounted]); 
 
   return null; 
 }
-
-    
