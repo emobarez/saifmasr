@@ -5,9 +5,9 @@ import { Toaster } from "@/components/ui/toaster";
 import { AuthProvider } from '@/context/AuthContext';
 import { DynamicHeadElementsSetter } from '@/components/layout/DynamicTitleSetter';
 import { ThemeApplicator } from '@/components/layout/ThemeApplicator';
-import { ClientOnly } from '@/components/layout/ClientOnly';
+// ClientOnly is no longer needed here for these specific components
 import { useState, useEffect } from 'react';
-import { app, initializeAnalytics } from '@/lib/firebase'; // Import app and initializeAnalytics
+import { app, initializeAnalytics } from '@/lib/firebase';
 
 export function AppInitializer({
   children,
@@ -18,10 +18,9 @@ export function AppInitializer({
 
   useEffect(() => {
     setAppMounted(true);
-    if (app) { // Check if the main Firebase app instance is available
+    if (app) {
       initializeAnalytics(app).then(analytics => {
         if (analytics) {
-          // Analytics initialized, you could potentially use it here or set it in a context
           console.log("Firebase Analytics instance is ready in AppInitializer.");
         }
       }).catch(error => {
@@ -38,12 +37,13 @@ export function AppInitializer({
 
   return (
     <AuthProvider>
-      <ClientOnly>
-        <ThemeApplicator />
-        <DynamicHeadElementsSetter />
-      </ClientOnly>
+      {/* Render ThemeApplicator and DynamicHeadElementsSetter directly */}
+      {/* Their internal logic will wait for settings if needed */}
+      <ThemeApplicator />
+      <DynamicHeadElementsSetter />
       {children}
       <Toaster />
     </AuthProvider>
   );
 }
+

@@ -1,19 +1,17 @@
 
 "use client";
 
-import { useEffect, useState } from 'react';
+import { useEffect } from 'react'; // Removed useState
 import { useSiteSettings } from '@/hooks/useSiteSettings';
 
 export function DynamicHeadElementsSetter() {
   const { portalName, faviconUrl, isLoadingSiteSettings } = useSiteSettings();
-  const [mounted, setMounted] = useState(false);
+  // Removed internal 'mounted' state
 
   useEffect(() => {
-    setMounted(true);
-  }, []);
-
-  useEffect(() => {
-    if (!mounted || isLoadingSiteSettings) return;
+    // This component is now only rendered when AppInitializer has mounted.
+    // So, we only need to check if settings are loaded.
+    if (isLoadingSiteSettings) return;
 
     if (portalName) {
       document.title = portalName;
@@ -45,9 +43,8 @@ export function DynamicHeadElementsSetter() {
 
     } else {
       // Optional: remove or set to a default favicon if faviconUrl is empty/null
-      // Current logic leaves it as is if faviconUrl is empty or not set.
     }
-  }, [portalName, faviconUrl, isLoadingSiteSettings, mounted]);
+  }, [portalName, faviconUrl, isLoadingSiteSettings]); // Dependency on settings and their loading state
 
   return null;
 }

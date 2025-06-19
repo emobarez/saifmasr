@@ -1,7 +1,7 @@
 
 "use client";
 
-import { useEffect, useState } from 'react';
+import { useEffect } from 'react'; // Removed useState
 import { useSiteSettings } from '@/hooks/useSiteSettings';
 
 const themePropertiesMap = {
@@ -40,14 +40,12 @@ const themePropertiesMap = {
 export function ThemeApplicator() {
   const siteSettings = useSiteSettings();
   const { isLoadingSiteSettings, ...settings } = siteSettings;
-  const [mounted, setMounted] = useState(false); 
+  // Removed internal 'mounted' state
 
   useEffect(() => {
-    setMounted(true); 
-  }, []);
-
-  useEffect(() => {
-    if (!mounted || isLoadingSiteSettings || !settings || Object.keys(settings).length === 0) return; 
+    // This component is now only rendered when AppInitializer has mounted.
+    // So, we only need to check if settings are loaded.
+    if (isLoadingSiteSettings || !settings || Object.keys(settings).length === 0) return;
 
     const root = document.documentElement;
 
@@ -71,7 +69,7 @@ export function ThemeApplicator() {
       }
     });
 
-  }, [settings, isLoadingSiteSettings, mounted]); 
+  }, [settings, isLoadingSiteSettings]); // Dependency on settings and their loading state
 
   return null; 
 }
