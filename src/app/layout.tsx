@@ -1,14 +1,10 @@
 
-import type {Metadata} from 'next';
+import type { Metadata } from 'next';
 import './globals.css';
-import { Toaster } from "@/components/ui/toaster";
-import { AuthProvider } from '@/context/AuthContext';
-import { DynamicHeadElementsSetter } from '@/components/layout/DynamicTitleSetter';
-import { ThemeApplicator } from '@/components/layout/ThemeApplicator';
-import { ClientOnly } from '@/components/layout/ClientOnly'; // Import ClientOnly
+import { AppInitializer } from '@/components/layout/AppInitializer';
 
 export const metadata: Metadata = {
-  title: 'سيف مصر الوطنية للأمن', // Default title, will be updated client-side
+  title: 'سيف مصر الوطنية للأمن',
   description: 'بوابة شاملة لخدمات سيف مصر الوطنية للأمن',
 };
 
@@ -22,18 +18,10 @@ export default function RootLayout({
       <head>
         <link rel="preconnect" href="https://fonts.googleapis.com" />
         <link rel="preconnect" href="https://fonts.gstatic.com" crossOrigin="anonymous" />
-        {/* Poppins for headlines, Inter for body */}
         <link href="https://fonts.googleapis.com/css2?family=Poppins:wght@400;500;600;700;900&family=Inter:wght@400;500;600;700&display=swap" rel="stylesheet" />
       </head>
       <body className="font-body antialiased" suppressHydrationWarning={true}>
-        <AuthProvider>
-          <ClientOnly>
-            <ThemeApplicator />
-            <DynamicHeadElementsSetter />
-          </ClientOnly>
-          {children}
-          <Toaster />
-        </AuthProvider>
+        <AppInitializer>{children}</AppInitializer>
       </body>
     </html>
   );
