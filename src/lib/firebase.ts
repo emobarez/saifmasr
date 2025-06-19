@@ -7,7 +7,6 @@ import { getStorage, type FirebaseStorage } from "firebase/storage";
 import { getAnalytics, type Analytics, isSupported as isAnalyticsSupported } from "firebase/analytics";
 
 // Your web app's Firebase configuration
-// For Firebase JS SDK v7.20.0 and later, measurementId is optional
 const firebaseConfig: FirebaseOptions = {
   apiKey: "AIzaSyA6jyoz9UWvmRJgckYnSMsc825mpyQlpIU",
   authDomain: "saif-masr.firebaseapp.com",
@@ -22,10 +21,9 @@ let app: FirebaseApp | undefined;
 let authInstance: Auth | undefined;
 let dbInstance: Firestore | undefined;
 let storageInstance: FirebaseStorage | undefined;
-let analyticsInstance: Analytics | undefined;
+let _analyticsInstance: Analytics | undefined; // Renamed to avoid direct export conflict
 
 // Initialize Firebase
-// Check if Firebase has already been initialized to avoid re-initialization errors
 if (getApps().length === 0) {
   try {
     app = initializeApp(firebaseConfig);
@@ -34,10 +32,9 @@ if (getApps().length === 0) {
     app = undefined;
   }
 } else {
-  app = getApp(); // Use the already initialized app
+  app = getApp();
 }
 
-// Initialize Firebase services only if 'app' was successfully initialized
 if (app) {
   try {
     authInstance = getAuth(app);
@@ -59,38 +56,34 @@ if (app) {
     console.error("CRITICAL FIREBASE STORAGE INIT ERROR:", error);
     storageInstance = undefined;
   }
-
-  // Conditionally initialize Analytics only on the client-side
-  if (typeof window !== 'undefined') {
-    isAnalyticsSupported().then((supported) => {
-      if (supported && app) { // Ensure app is defined here too
-        try {
-          analyticsInstance = getAnalytics(app);
-        } catch (error) {
-          console.error("Firebase Analytics Init Error (client-side):", error);
-          analyticsInstance = undefined;
-        }
-      } else if (!supported) {
-        console.warn("Firebase Analytics is not supported in this environment.");
-        analyticsInstance = undefined;
-      }
-    }).catch(error => {
-        console.error("Error checking Analytics support:", error);
-        analyticsInstance = undefined;
-    });
-  } else {
-    // Server-side or environment where window is not defined
-    analyticsInstance = undefined;
-  }
-
+  // Analytics will be initialized on demand
 } else {
-  // If app failed to initialize, ensure all service instances are undefined
   console.error("Firebase app failed to initialize. All Firebase services will be unavailable.");
   authInstance = undefined;
   dbInstance = undefined;
   storageInstance = undefined;
-  analyticsInstance = undefined;
+  _analyticsInstance = undefined;
 }
 
-export { app, authInstance as auth, dbInstance as db, storageInstance as storage, analyticsInstance as analytics };
+export async function initializeAnalytics(currentApp: FirebaseApp): Promise<Analytics | undefined> {
+  if (typeof window !== 'undefined' && !_analyticsInstance && currentApp) {
+    try {
+      const supported = await isAnalyticsSupported();
+      if (supported) {
+        _analyticsInstance = getAnalytics(currentApp);
+        console.log("Firebase Analytics initialized successfully via explicit call.");
+      } else {
+        console.warn("Firebase Analytics is not supported in this environment.");
+        _analyticsInstance = undefined;
+      }
+    } catch (error) {
+      console.error("Error during explicit Firebase Analytics initialization:", error);
+      _analyticsInstance = undefined;
+    }
+  }
+  return _analyticsInstance;
+}
 
+export const getAnalyticsInstance = (): Analytics | undefined => _analyticsInstance;
+
+export { app, authInstance as auth, dbInstance as db, storageInstance as storage };

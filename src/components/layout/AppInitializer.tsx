@@ -7,6 +7,7 @@ import { DynamicHeadElementsSetter } from '@/components/layout/DynamicTitleSette
 import { ThemeApplicator } from '@/components/layout/ThemeApplicator';
 import { ClientOnly } from '@/components/layout/ClientOnly';
 import { useState, useEffect } from 'react';
+import { app, initializeAnalytics } from '@/lib/firebase'; // Import app and initializeAnalytics
 
 export function AppInitializer({
   children,
@@ -17,12 +18,21 @@ export function AppInitializer({
 
   useEffect(() => {
     setAppMounted(true);
+    if (app) { // Check if the main Firebase app instance is available
+      initializeAnalytics(app).then(analytics => {
+        if (analytics) {
+          // Analytics initialized, you could potentially use it here or set it in a context
+          console.log("Firebase Analytics instance is ready in AppInitializer.");
+        }
+      }).catch(error => {
+        console.error("Failed to initialize analytics from AppInitializer:", error);
+      });
+    } else {
+      console.warn("Firebase app instance not available in AppInitializer, skipping analytics init.");
+    }
   }, []);
 
   if (!appMounted) {
-    // Render nothing or a very simple global loader until mounted.
-    // This helps ensure server and initial client render are consistent
-    // for the parts managed by AppInitializer.
     return null;
   }
 
