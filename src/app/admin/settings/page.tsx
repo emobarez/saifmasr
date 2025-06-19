@@ -32,9 +32,6 @@ const isValidHslForPreview = (value: string | undefined): boolean => {
 
 function parseHslString(hslStr?: string | null): { h: number; s: number; l: number } | null {
   if (!hslStr || typeof hslStr !== 'string') return null;
-  // This simpler regex is fine for parsing once validated by hslFormatRegex if needed,
-  // but the main Zod validation uses the more precise hslFormatRegex.
-  // Using parseFloat to handle potential decimals if the string contains them.
   const match = hslStr.match(/(\d{1,3}(?:\.\d+)?)\s+(\d{1,3}(?:\.\d+)?%)\s+(\d{1,3}(?:\.\d+)?%)/);
   if (match) {
     return { 
@@ -205,19 +202,19 @@ const HtmlColorPicker = ({ formFieldName, watch, setValue, disabled }: {
 
   useEffect(() => {
     const hslParts = parseHslString(hslValueFromForm);
-    let newHex = pickerHex; // Keep current picker hex if HSL is invalid
+    let newHex = pickerHex; 
 
     if (hslParts) {
       const [r, g, b] = hslToRgb(hslParts.h, hslParts.s, hslParts.l);
       newHex = rgbToHex(r, g, b);
-    } else if (hslValueFromForm === "") { // HSL field was cleared
+    } else if (hslValueFromForm === "") { 
         const defaultHslForField = DEFAULT_SETTINGS[formFieldName] as string | undefined;
         const defaultHslParts = parseHslString(defaultHslForField || "0 0% 0%");
         if (defaultHslParts) {
             const [r,g,b] = hslToRgb(defaultHslParts.h, defaultHslParts.s, defaultHslParts.l);
             newHex = rgbToHex(r,g,b);
         } else {
-            newHex = '#FFFFFF'; // Fallback if default is also invalid
+            newHex = '#FFFFFF'; 
         }
     }
     if (newHex.toUpperCase() !== pickerHex.toUpperCase()) {
@@ -246,6 +243,19 @@ const HtmlColorPicker = ({ formFieldName, watch, setValue, disabled }: {
       className="h-10 w-10 p-1 border rounded-md cursor-pointer disabled:cursor-not-allowed disabled:opacity-50 shrink-0"
     />
   );
+};
+
+// Helper to check if a string is a valid, constructible URL for image preview
+const isPreviewableUrl = (url: string | undefined | null): url is string => {
+  if (!url || typeof url !== 'string' || url.trim() === '') {
+    return false;
+  }
+  try {
+    new URL(url.trim()); // Attempt to construct URL
+    return true;
+  } catch (e) {
+    return false;
+  }
 };
 
 
@@ -291,7 +301,6 @@ export default function AdminSettingsPage() {
               } else if (typeof valueFromForm === 'boolean') {
                   (dataToSavePrepared as any)[siteSettingsKey] = valueFromForm;
               } else if (valueFromForm === undefined) {
-                  // If form field is undefined (e.g. optional and cleared), use default
                   (dataToSavePrepared as any)[siteSettingsKey] = DEFAULT_SETTINGS[siteSettingsKey];
               }
           }
@@ -458,7 +467,7 @@ export default function AdminSettingsPage() {
   const handleResetColorSection = (
     colorFields: Array<{nameBase: string}>, 
     mode: 'Light' | 'Dark',
-    sectionName: string // For toast message
+    sectionName: string 
   ) => {
     colorFields.forEach(fieldInfo => {
       const fieldName = `theme${fieldInfo.nameBase}${mode}` as keyof SettingsFormValues;
@@ -519,9 +528,9 @@ export default function AdminSettingsPage() {
                                 <FormControl className="flex-grow">
                                     <Input placeholder="https://example.com/logo.png" {...field} value={field.value || ""} disabled={isSubmitting} />
                                 </FormControl>
-                                {field.value && (
+                                {isPreviewableUrl(field.value) && (
                                     <Image
-                                        src={field.value}
+                                        src={field.value.trim()}
                                         alt="Logo Preview"
                                         width={80}
                                         height={40}
@@ -540,9 +549,9 @@ export default function AdminSettingsPage() {
                                 <FormControl className="flex-grow">
                                     <Input placeholder="https://example.com/favicon.ico" {...field} value={field.value || ""} disabled={isSubmitting} />
                                 </FormControl>
-                                {field.value && (
+                                {isPreviewableUrl(field.value) && (
                                     <Image
-                                        src={field.value}
+                                        src={field.value.trim()}
                                         alt="Favicon Preview"
                                         width={40}
                                         height={40}
@@ -694,4 +703,3 @@ export default function AdminSettingsPage() {
   );
 }
     
-
