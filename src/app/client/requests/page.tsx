@@ -85,6 +85,12 @@ export default function ClientServiceRequestsPage() {
       const file = data.attachments?.[0] as File | undefined;
 
       if (file) {
+        if (!storage) {
+          toast({ title: "خطأ في الخدمة", description: "خدمة تخزين الملفات غير متاحة حالياً. لا يمكن رفع المرفق.", variant: "destructive" });
+          setIsUploading(false);
+          setUploadProgress(null);
+          return;
+        }
         setIsUploading(true);
         setUploadProgress(0);
         toast({ title: "جارٍ رفع المرفق...", description: `اسم الملف: ${file.name}`, duration: 3000 });
@@ -155,6 +161,8 @@ export default function ClientServiceRequestsPage() {
       let errorMessage = "حدث خطأ أثناء محاولة إرسال طلبك. يرجى المحاولة مرة أخرى.";
       if (error.code && error.code.startsWith('storage/')) {
         errorMessage = "حدث خطأ أثناء رفع المرفق. يرجى التحقق من حجم الملف ونوعه أو إرسال الطلب بدون مرفق.";
+      } else if (error.message && error.message.includes("Firebase Storage is not initialized")) {
+        errorMessage = "خدمة تخزين الملفات غير متاحة حالياً. لا يمكن رفع المرفق.";
       }
       toast({
         title: "خطأ في إرسال الطلب",

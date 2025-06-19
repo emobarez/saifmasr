@@ -12,7 +12,7 @@ const firebaseConfig: FirebaseOptions = {
   apiKey: "AIzaSyA6jyoz9UWvmRJgckYnSMsc825mpyQlpIU",
   authDomain: "saif-masr.firebaseapp.com",
   projectId: "saif-masr",
-  storageBucket: "saif-masr.firebasestorage.app", // Double-check this value. Firebase Storage buckets usually end with '.appspot.com'.
+  storageBucket: "saif-masr.appspot.com", // Corrected to standard .appspot.com format
   messagingSenderId: "738970444904",
   appId: "1:738970444904:web:9b26e803c50abbacad07dd",
   measurementId: "G-27Q0JSGQVL"

@@ -185,6 +185,11 @@ export default function ClientProfilePage() {
     
     const imageFile = data.profileImage?.[0];
     if (imageFile) {
+      if (!storage) {
+        toast({ title: "خطأ في الخدمة", description: "خدمة تخزين الملفات غير متاحة حالياً. لا يمكن رفع الصورة.", variant: "destructive" });
+        setIsUploadingImage(false);
+        return;
+      }
       setIsUploadingImage(true);
       try {
         const fileExtension = imageFile.name.split('.').pop();

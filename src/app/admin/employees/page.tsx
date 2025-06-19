@@ -149,6 +149,10 @@ export default function AdminEmployeesPage() {
   };
 
   const uploadProfileImage = async (file: File, employeeId: string): Promise<string> => {
+    if (!storage) {
+      toast({ title: "خطأ في الخدمة", description: "خدمة تخزين الملفات غير متاحة حالياً. لا يمكن رفع الصورة.", variant: "destructive" });
+      throw new Error("Firebase Storage is not initialized.");
+    }
     setIsUploadingImage(true);
     try {
       const fileExtension = file.name.split('.').pop();
@@ -182,6 +186,11 @@ export default function AdminEmployeesPage() {
     let docRefId: string | null = null;
 
     try {
+      if (selectedImageFile && !storage) {
+        toast({ title: "خطأ في الخدمة", description: "خدمة تخزين الملفات غير متاحة حالياً. لا يمكن رفع الصورة.", variant: "destructive" });
+        return;
+      }
+
       const employeeDocData: Omit<Employee, 'id' | 'profileImageUrl' | 'createdAt'> & { joinDate: Timestamp, createdAt: Timestamp, profileImageUrl?: string } = {
         ...data,
         nationalId: data.nationalId || undefined,
@@ -246,6 +255,11 @@ export default function AdminEmployeesPage() {
     const oldImageUrl = editingEmployee.profileImageUrl;
 
     try {
+      if (selectedImageFile && !storage) {
+        toast({ title: "خطأ في الخدمة", description: "خدمة تخزين الملفات غير متاحة حالياً. لا يمكن رفع الصورة.", variant: "destructive" });
+        return;
+      }
+
       if (selectedImageFile) {
         finalProfileImageUrl = await uploadProfileImage(selectedImageFile, editingEmployee.id);
       } else if (data.profileImageUrl === '') { // Explicit removal via empty text field or "Remove" button
@@ -330,24 +344,42 @@ export default function AdminEmployeesPage() {
     try {
       const employeeToDelete = employees.find(emp => emp.id === employeeId);
       if (employeeToDelete?.profileImageUrl) {
-         try {
-            const imageHttpUrl = employeeToDelete.profileImageUrl;
-            if (imageHttpUrl.startsWith("https://storage.googleapis.com/")) {
-                const bucketName = process.env.NEXT_PUBLIC_FIREBASE_STORAGE_BUCKET;
-                if (bucketName && imageHttpUrl.includes(bucketName)) {
-                    const pathStartIndex = imageHttpUrl.indexOf(bucketName) + bucketName.length + 1;
-                    const imageStoragePath = decodeURIComponent(imageHttpUrl.substring(pathStartIndex).split('?')[0]);
+        if (!storage) {
+            toast({ title: "تحذير", description: "خدمة تخزين الملفات غير متاحة حالياً. لا يمكن حذف الصورة من المخزن. سيتم حذف بيانات الموظف فقط.", variant: "destructive", duration: 7000 });
+        } else {
+            try {
+                const imageHttpUrl = employeeToDelete.profileImageUrl;
+                if (imageHttpUrl.startsWith("https://firebasestorage.googleapis.com/") || imageHttpUrl.startsWith("https://storage.googleapis.com/")) { // Check both common Firebase Storage URL formats
+                    // Attempt to parse path from URL, robustly handling different Firebase Storage URL structures
+                    let imageStoragePath = "";
+                    try {
+                        const url = new URL(imageHttpUrl);
+                        // For 'firebasestorage.googleapis.com', path is usually after /o/ and before ?alt=media
+                        // For 'storage.googleapis.com', path is usually after the bucket name.
+                        if (url.hostname === "firebasestorage.googleapis.com") {
+                            imageStoragePath = decodeURIComponent(url.pathname.substring(url.pathname.indexOf('/o/') + 3).split('?')[0]);
+                        } else if (url.hostname === "storage.googleapis.com") {
+                            // Assumes path starts after the first segment (bucket name)
+                            imageStoragePath = decodeURIComponent(url.pathname.substring(url.pathname.indexOf('/', 1) + 1).split('?')[0]);
+                        }
+                    } catch (urlParseError) {
+                        console.warn("Could not parse storage path from URL:", imageHttpUrl, urlParseError);
+                    }
+
                     if (imageStoragePath) {
                         const imageRefToDelete = ref(storage, imageStoragePath);
                         await deleteObject(imageRefToDelete);
                         toast({ title: "تم حذف الصورة", description: "تم حذف صورة الملف الشخصي للموظف من المخزن.", variant: "default" });
+                    } else {
+                         console.warn("Could not determine storage path for deletion from URL:", imageHttpUrl);
+                         toast({ title: "تنبيه", description: "تعذر تحديد مسار الصورة في المخزن. سيتم حذف بيانات الموظف فقط.", variant: "destructive", duration: 7000 });
                     }
                 }
+            } catch (storageError) {
+                console.error("Error deleting profile image from storage, continuing with Firestore delete:", storageError);
+                toast({ title: "تنبيه", description: "تم حذف بيانات الموظف، ولكن حدث خطأ أثناء محاولة حذف الصورة من المخزن. قد تحتاج لمراجعة المخزن يدوياً.", variant: "destructive", duration: 7000 });
             }
-        } catch (storageError) {
-            console.error("Error deleting profile image from storage, continuing with Firestore delete:", storageError);
-            toast({ title: "تنبيه", description: "تم حذف بيانات الموظف، ولكن حدث خطأ أثناء محاولة حذف الصورة من المخزن. قد تحتاج لمراجعة المخزن يدوياً.", variant: "destructive", duration: 7000 });
-        }
+          }
       }
       
       await deleteDoc(doc(db, "employees", employeeId));
