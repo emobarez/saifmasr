@@ -12,7 +12,7 @@ interface ThemeSwitcherProps extends Omit<ComponentProps<typeof Button>, "onClic
 
 export function ThemeSwitcher({ className, ...props }: ThemeSwitcherProps) {
   const [mounted, setMounted] = useState(false);
-  const [theme, setTheme] = useState<"light" | "dark">("light");
+  const [theme, setTheme] = useState<"light" | "dark" | null>(null); // Initialize theme as null
 
   useEffect(() => {
     // Determine initial theme
@@ -20,7 +20,8 @@ export function ThemeSwitcher({ className, ...props }: ThemeSwitcherProps) {
     // Ensure window is defined for matchMedia (it will be in useEffect)
     const systemTheme = window.matchMedia("(prefers-color-scheme: dark)").matches ? "dark" : "light";
     const initialTheme = storedTheme || systemTheme;
-    setTheme(initialTheme);
+    
+    setTheme(initialTheme); // Set the theme state
 
     // Apply theme to HTML element
     if (initialTheme === "dark") {
@@ -28,13 +29,15 @@ export function ThemeSwitcher({ className, ...props }: ThemeSwitcherProps) {
     } else {
       document.documentElement.classList.remove("dark");
     }
-    // Mark as mounted after initial theme setup
+    // Mark as mounted AFTER theme is determined and applied
     setMounted(true);
   }, []);
 
   const toggleTheme = () => {
     setTheme((prevTheme) => {
-      const newTheme = prevTheme === "light" ? "dark" : "light";
+      // If prevTheme is null (shouldn't happen if mounted is true), default to 'light' for toggling
+      const currentThemeForToggle = prevTheme || 'light';
+      const newTheme = currentThemeForToggle === "light" ? "dark" : "light";
       localStorage.setItem("theme", newTheme);
       if (newTheme === "dark") {
         document.documentElement.classList.add("dark");
@@ -45,10 +48,8 @@ export function ThemeSwitcher({ className, ...props }: ThemeSwitcherProps) {
     });
   };
 
-  if (!mounted) {
-    // Render a placeholder or null until the component is mounted
-    // This helps avoid hydration mismatches with server-rendered HTML
-    return <div className="h-10 w-10" />; // Placeholder for button size (assuming size="icon")
+  if (!mounted || theme === null) { // If not mounted or theme not yet determined, render nothing
+    return null; 
   }
 
   return (
