@@ -2,19 +2,22 @@
 "use client";
 
 import type { User as FirebaseUser } from "firebase/auth";
-import { auth, db } from "@/lib/firebase"; 
+import { auth as firebaseAuthService, db as firebaseDbService } from "@/lib/firebase"; 
 import { doc, getDoc } from "firebase/firestore"; 
 import { 
   onAuthStateChanged, 
   signOut as firebaseSignOut,
   signInWithEmailAndPassword,
   createUserWithEmailAndPassword,
-  updateProfile
+  updateProfile,
+  type Auth // Import Auth type for firebaseAuthService
 } from "firebase/auth";
+import type { Firestore } from "firebase/firestore"; // Import Firestore type for firebaseDbService
 import type { ReactNode } from "react";
 import React, { createContext, useContext, useEffect, useState } from "react";
 import { useRouter, usePathname } from "next/navigation";
 import { logActivity } from "@/lib/activityLogger";
+import { DEFAULT_SETTINGS } from "@/hooks/useSiteSettings"; // Import default settings
 
 interface User {
   uid: string;
@@ -51,19 +54,27 @@ export const AuthProvider = ({ children }: { children: ReactNode }) => {
   const pathname = usePathname();
 
   useEffect(() => {
+    setIsLoadingSettings(true);
+    if (!firebaseDbService) {
+      console.warn("AuthContext: Firestore service (db) is not available. Using default system settings.");
+      setSettings(DEFAULT_SETTINGS as AppSettings); // Use default settings
+      setIsLoadingSettings(false);
+      return;
+    }
+
     const fetchSettings = async () => {
-      setIsLoadingSettings(true);
       try {
-        const settingsDocRef = doc(db, "systemSettings", "general");
+        const settingsDocRef = doc(firebaseDbService, "systemSettings", "general");
         const docSnap = await getDoc(settingsDocRef);
         if (docSnap.exists()) {
           setSettings(docSnap.data() as AppSettings);
         } else {
-          setSettings({ maintenanceMode: false, portalName: "سيف مصر الوطنية للأمن" });
+          console.warn("AuthContext: System settings document not found. Using default system settings.");
+          setSettings(DEFAULT_SETTINGS as AppSettings);
         }
       } catch (error) {
         console.error("Error fetching system settings:", error);
-        setSettings({ maintenanceMode: false, portalName: "سيف مصر الوطنية للأمن" });
+        setSettings(DEFAULT_SETTINGS as AppSettings);
       } finally {
         setIsLoadingSettings(false);
       }
@@ -72,14 +83,14 @@ export const AuthProvider = ({ children }: { children: ReactNode }) => {
   }, []);
 
   useEffect(() => {
-    if (!auth) {
-      console.warn("AuthContext: Firebase auth instance is not available during onAuthStateChanged setup. Firebase might not be configured correctly or is still initializing.");
-      setLoading(false);
+    if (!firebaseAuthService) {
+      console.warn("AuthContext: Firebase auth service is not available. User will be null and loading false.");
       setUser(null);
-      return; // Early return if auth is not available
+      setLoading(false);
+      return; 
     }
 
-    const unsubscribe = onAuthStateChanged(auth, (firebaseUser: FirebaseUser | null) => {
+    const unsubscribe = onAuthStateChanged(firebaseAuthService, (firebaseUser: FirebaseUser | null) => {
       if (firebaseUser) {
         const appUser: User = {
           uid: firebaseUser.uid,
@@ -96,11 +107,11 @@ export const AuthProvider = ({ children }: { children: ReactNode }) => {
     });
 
     return () => unsubscribe();
-  }, [auth]); // Re-added 'auth' to the dependency array.
+  }, []); 
 
   const signIn = async (email: string, pass: string): Promise<FirebaseUser> => {
-    if (!auth) throw new Error("Firebase auth is not initialized.");
-    const userCredential = await signInWithEmailAndPassword(auth, email, pass);
+    if (!firebaseAuthService) throw new Error("Firebase auth service is not initialized.");
+    const userCredential = await signInWithEmailAndPassword(firebaseAuthService, email, pass);
     const firebaseUser = userCredential.user;
     const appUserRole = firebaseUser.email?.includes("admin@saifmasr.com") || firebaseUser.email?.includes("admin@example.com") ? "admin" : "client";
     const appUser: User = {
@@ -111,17 +122,19 @@ export const AuthProvider = ({ children }: { children: ReactNode }) => {
         photoURL: firebaseUser.photoURL,
     };
     
-    await logActivity({
-      actionType: "USER_LOGIN",
-      description: `User ${appUser.email} logged in. Role: ${appUser.role}.`,
-      actor: { id: appUser.uid, role: appUser.role, name: appUser.displayName },
-    });
+    if (firebaseDbService) { // Only log if db is available
+        await logActivity({
+          actionType: "USER_LOGIN",
+          description: `User ${appUser.email} logged in. Role: ${appUser.role}.`,
+          actor: { id: appUser.uid, role: appUser.role, name: appUser.displayName },
+        });
+    }
     return firebaseUser;
   };
 
   const signUp = async (name: string, email: string, pass: string): Promise<FirebaseUser> => {
-    if (!auth) throw new Error("Firebase auth is not initialized.");
-    const userCredential = await createUserWithEmailAndPassword(auth, email, pass);
+    if (!firebaseAuthService) throw new Error("Firebase auth service is not initialized.");
+    const userCredential = await createUserWithEmailAndPassword(firebaseAuthService, email, pass);
     const firebaseUser = userCredential.user;
     await updateProfile(firebaseUser, { displayName: name });
     
@@ -133,30 +146,32 @@ export const AuthProvider = ({ children }: { children: ReactNode }) => {
         photoURL: firebaseUser.photoURL,
     };
     
-    await logActivity({
-      actionType: "USER_REGISTERED",
-      description: `New user registered: ${appUser.email}. Name: ${appUser.displayName}.`,
-      actor: { id: appUser.uid, role: appUser.role, name: appUser.displayName },
-    });
+    if (firebaseDbService) { // Only log if db is available
+        await logActivity({
+          actionType: "USER_REGISTERED",
+          description: `New user registered: ${appUser.email}. Name: ${appUser.displayName}.`,
+          actor: { id: appUser.uid, role: appUser.role, name: appUser.displayName },
+        });
+    }
     
     return firebaseUser;
   };
   
   const signOut = async () => {
-    if (!auth) {
-      console.warn("Firebase auth not initialized, cannot sign out properly through Firebase.");
-      setUser(null); // Clear user state locally
+    if (!firebaseAuthService) {
+      console.warn("Firebase auth service not initialized, cannot sign out properly through Firebase.");
+      setUser(null); 
       router.push("/auth/login");
       return;
     }
-    if (user) { 
+    if (user && firebaseDbService) { // Only log if db and user are available
       await logActivity({
         actionType: "USER_LOGOUT",
         description: `User ${user.email} logged out.`,
         actor: { id: user.uid, role: user.role, name: user.displayName },
       });
     }
-    await firebaseSignOut(auth);
+    await firebaseSignOut(firebaseAuthService);
     router.push("/auth/login");
   };
 
@@ -165,15 +180,13 @@ export const AuthProvider = ({ children }: { children: ReactNode }) => {
 
     const publicPaths = ["/", "/auth/login", "/auth/register", "/services"];
     const maintenancePath = "/maintenance";
-    const isPublicPath = publicPaths.some(p => pathname === p || (p === "/" && pathname.startsWith("/#")) || pathname.startsWith("/services/")); // Allow /services/[serviceId]
+    const isPublicPath = publicPaths.some(p => pathname === p || (p === "/" && pathname.startsWith("/#")) || pathname.startsWith("/services/"));
     const isMaintenancePath = pathname === maintenancePath;
 
     if (settings?.maintenanceMode) {
       if (user?.role === 'admin') {
         if (isMaintenancePath) router.push('/admin/dashboard'); 
-      } else if (isMaintenancePath) {
-      // Already on maintenance page, do nothing
-      } else {
+      } else if (!isMaintenancePath) {
         router.push(maintenancePath);
       }
       return; 

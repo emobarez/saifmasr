@@ -12,17 +12,17 @@ const firebaseConfig: FirebaseOptions = {
   apiKey: "AIzaSyA6jyoz9UWvmRJgckYnSMsc825mpyQlpIU",
   authDomain: "saif-masr.firebaseapp.com",
   projectId: "saif-masr",
-  storageBucket: "saif-masr.appspot.com", // Corrected to standard .appspot.com format
+  storageBucket: "saif-masr.appspot.com",
   messagingSenderId: "738970444904",
   appId: "1:738970444904:web:9b26e803c50abbacad07dd",
   measurementId: "G-27Q0JSGQVL"
 };
 
-let app: FirebaseApp;
-let authInstance: Auth;
-let dbInstance: Firestore;
-let storageInstance: FirebaseStorage;
-let analyticsInstance: Analytics | undefined; // Initialize as undefined
+let app: FirebaseApp | undefined;
+let authInstance: Auth | undefined;
+let dbInstance: Firestore | undefined;
+let storageInstance: FirebaseStorage | undefined;
+let analyticsInstance: Analytics | undefined;
 
 // Initialize Firebase
 // Check if Firebase has already been initialized to avoid re-initialization errors
@@ -30,11 +30,8 @@ if (getApps().length === 0) {
   try {
     app = initializeApp(firebaseConfig);
   } catch (error) {
-    console.error("CRITICAL FIREBASE INIT ERROR:", error);
-    // If app initialization fails, subsequent Firebase service initializations will also fail.
-    // Gracefully handle this by ensuring service instances remain undefined or are set to a non-functional state.
-    // @ts-ignore
-    app = undefined; 
+    console.error("CRITICAL FIREBASE APP INIT ERROR:", error);
+    app = undefined;
   }
 } else {
   app = getApp(); // Use the already initialized app
@@ -46,7 +43,6 @@ if (app) {
     authInstance = getAuth(app);
   } catch (error) {
     console.error("CRITICAL FIREBASE AUTH INIT ERROR:", error);
-    // @ts-ignore
     authInstance = undefined;
   }
 
@@ -54,7 +50,6 @@ if (app) {
     dbInstance = getFirestore(app);
   } catch (error) {
     console.error("CRITICAL FIREBASE FIRESTORE INIT ERROR:", error);
-    // @ts-ignore
     dbInstance = undefined;
   }
 
@@ -62,21 +57,20 @@ if (app) {
     storageInstance = getStorage(app);
   } catch (error) {
     console.error("CRITICAL FIREBASE STORAGE INIT ERROR:", error);
-    // @ts-ignore
     storageInstance = undefined;
   }
 
   // Conditionally initialize Analytics only on the client-side
   if (typeof window !== 'undefined') {
     isAnalyticsSupported().then((supported) => {
-      if (supported) {
+      if (supported && app) { // Ensure app is defined here too
         try {
           analyticsInstance = getAnalytics(app);
         } catch (error) {
           console.error("Firebase Analytics Init Error (client-side):", error);
           analyticsInstance = undefined;
         }
-      } else {
+      } else if (!supported) {
         console.warn("Firebase Analytics is not supported in this environment.");
         analyticsInstance = undefined;
       }
@@ -86,19 +80,17 @@ if (app) {
     });
   } else {
     // Server-side or environment where window is not defined
-    analyticsInstance = undefined; 
+    analyticsInstance = undefined;
   }
 
 } else {
   // If app failed to initialize, ensure all service instances are undefined
   console.error("Firebase app failed to initialize. All Firebase services will be unavailable.");
-  // @ts-ignore
   authInstance = undefined;
-  // @ts-ignore
   dbInstance = undefined;
-  // @ts-ignore
   storageInstance = undefined;
   analyticsInstance = undefined;
 }
 
 export { app, authInstance as auth, dbInstance as db, storageInstance as storage, analyticsInstance as analytics };
+
