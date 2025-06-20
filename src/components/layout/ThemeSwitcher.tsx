@@ -10,18 +10,46 @@ interface ThemeSwitcherProps extends Omit<ComponentProps<typeof Button>, "onClic
   // We omit props that are set internally by ThemeSwitcher
 }
 
+// Function to safely access localStorage
+const getStoredTheme = (): "light" | "dark" | null => {
+  try {
+    if (typeof window !== "undefined" && window.localStorage) {
+      return localStorage.getItem("theme") as "light" | "dark" | null;
+    }
+  } catch (e) {
+    console.warn("ThemeSwitcher: localStorage is not available or accessible.", e);
+  }
+  return null;
+};
+
+const setStoredTheme = (theme: "light" | "dark"): void => {
+  try {
+    if (typeof window !== "undefined" && window.localStorage) {
+      localStorage.setItem("theme", theme);
+    }
+  } catch (e) {
+    console.warn("ThemeSwitcher: localStorage is not available or accessible for setting theme.", e);
+  }
+};
+
 export function ThemeSwitcher({ className, ...props }: ThemeSwitcherProps) {
   const [mounted, setMounted] = useState(false);
-  const [theme, setTheme] = useState<"light" | "dark" | null>(null); // Initialize theme as null
+  const [theme, setTheme] = useState<"light" | "dark" | null>(null);
 
   useEffect(() => {
     // Determine initial theme
-    const storedTheme = localStorage.getItem("theme") as "light" | "dark" | null;
-    // Ensure window is defined for matchMedia (it will be in useEffect)
-    const systemTheme = window.matchMedia("(prefers-color-scheme: dark)").matches ? "dark" : "light";
-    const initialTheme = storedTheme || systemTheme;
+    let initialTheme: "light" | "dark";
+    const storedTheme = getStoredTheme();
     
-    setTheme(initialTheme); // Set the theme state
+    if (typeof window !== "undefined") {
+      const systemTheme = window.matchMedia("(prefers-color-scheme: dark)").matches ? "dark" : "light";
+      initialTheme = storedTheme || systemTheme;
+    } else {
+      // Fallback for non-browser environments (though "use client" should prevent this for logic)
+      initialTheme = "light"; 
+    }
+    
+    setTheme(initialTheme); 
 
     // Apply theme to HTML element
     if (initialTheme === "dark") {
@@ -29,16 +57,16 @@ export function ThemeSwitcher({ className, ...props }: ThemeSwitcherProps) {
     } else {
       document.documentElement.classList.remove("dark");
     }
-    // Mark as mounted AFTER theme is determined and applied
     setMounted(true);
   }, []);
 
   const toggleTheme = () => {
     setTheme((prevTheme) => {
-      // If prevTheme is null (shouldn't happen if mounted is true), default to 'light' for toggling
-      const currentThemeForToggle = prevTheme || 'light';
+      const currentThemeForToggle = prevTheme || (typeof window !== "undefined" && window.matchMedia("(prefers-color-scheme: dark)").matches ? "dark" : "light");
       const newTheme = currentThemeForToggle === "light" ? "dark" : "light";
-      localStorage.setItem("theme", newTheme);
+      
+      setStoredTheme(newTheme); // Safely set stored theme
+
       if (newTheme === "dark") {
         document.documentElement.classList.add("dark");
       } else {
@@ -48,7 +76,7 @@ export function ThemeSwitcher({ className, ...props }: ThemeSwitcherProps) {
     });
   };
 
-  if (!mounted || theme === null) { // If not mounted or theme not yet determined, render nothing
+  if (!mounted || theme === null) { 
     return null; 
   }
 
@@ -65,4 +93,3 @@ export function ThemeSwitcher({ className, ...props }: ThemeSwitcherProps) {
     </Button>
   );
 }
-
