@@ -19,7 +19,7 @@ export function AppInitializer({
   useEffect(() => {
     setAppMounted(true);
     if (app) {
-      const initAnalytics = async () => {
+      const initAnalyticsAsync = async () => {
         try {
           const analytics = await initializeAnalytics(app);
           if (analytics) {
@@ -29,7 +29,7 @@ export function AppInitializer({
           console.error("Failed to initialize analytics from AppInitializer:", error);
         }
       };
-      initAnalytics();
+      initAnalyticsAsync();
     } else {
       console.warn("Firebase app instance not available in AppInitializer, skipping analytics init.");
     }
@@ -40,10 +40,9 @@ export function AppInitializer({
       if (event.reason && (typeof event.reason.message === 'string' && event.reason.message.toLowerCase().includes('permission error'))) {
         console.warn(
           "This unhandled rejection appears to be a 'permission error', possibly from a browser extension. " +
-          "The application's global handler has caught it."
+          "The application's global handler has caught it and will attempt to prevent default browser handling."
         );
-        // Optionally, prevent default to stop it from bubbling further if it helps stability
-        // event.preventDefault(); // Use with caution
+        event.preventDefault(); // Attempt to prevent default handling for this specific error
       }
     };
 
@@ -55,7 +54,7 @@ export function AppInitializer({
   }, []);
 
   if (!appMounted) {
-    return null; 
+    return null;
   }
 
   return (
