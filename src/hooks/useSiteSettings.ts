@@ -1,8 +1,8 @@
 
 "use client";
 
-import { useState, useEffect, useMemo } from 'react'; // Added useMemo
-import { db } from '@/lib/firebase';
+import { useState, useEffect, useMemo } from 'react'; 
+import { db } from '@/lib/firebase'; // db might be undefined if Firebase init failed
 import { doc, onSnapshot } from 'firebase/firestore';
 
 const DEFAULT_PORTAL_NAME = "سيف مصر الوطنية للأمن";
@@ -166,16 +166,15 @@ export function useSiteSettings() {
   useEffect(() => {
     setIsLoadingSiteSettings(true);
 
-    // Check if db instance is available before trying to use it
     if (!db) {
         console.warn(
-            "Firestore instance (db) is not available in useSiteSettings. " +
+            "useSiteSettings: Firestore instance (db) is not available. " +
             "Site settings will use defaults and Firestore will not be connected for settings. " +
-            "This might be due to Firebase initialization issues (e.g., missing environment variables in the preview environment)."
+            "This might be due to Firebase initialization issues (e.g., missing environment variables or service init failure)."
         );
         setSiteSettings(DEFAULT_SETTINGS);
         setIsLoadingSiteSettings(false);
-        return; 
+        return () => {}; // Return an empty function for cleanup if db is not available
     }
 
     const settingsDocRef = doc(db, "systemSettings", "general");
@@ -184,7 +183,6 @@ export function useSiteSettings() {
       (docSnap) => {
         if (docSnap.exists()) {
           const data = docSnap.data() as Partial<SiteSettings>;
-          // Merge fetched data with defaults to ensure all keys are present
           setSiteSettings(prev => ({ ...DEFAULT_SETTINGS, ...prev, ...data }));
         } else {
           setSiteSettings(DEFAULT_SETTINGS);
@@ -192,14 +190,14 @@ export function useSiteSettings() {
         setIsLoadingSiteSettings(false);
       },
       (error) => {
-        console.error("Error fetching site settings with snapshot:", error);
+        console.error("useSiteSettings: Error fetching site settings with snapshot:", error);
         setSiteSettings(DEFAULT_SETTINGS);
         setIsLoadingSiteSettings(false);
       }
     );
 
     return () => unsubscribe();
-  }, []); // db is stable after initialization
+  }, []); 
 
   return useMemo(() => ({
     ...siteSettings,

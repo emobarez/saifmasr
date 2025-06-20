@@ -56,8 +56,8 @@ export const AuthProvider = ({ children }: { children: ReactNode }) => {
   useEffect(() => {
     setIsLoadingSettings(true);
     if (!firebaseDbService) {
-      console.warn("AuthContext: Firestore service (db) is not available. Using default system settings.");
-      setSettings(DEFAULT_SETTINGS as AppSettings); // Use default settings
+      console.warn("AuthContext: Firestore service (firebaseDbService) is not available. Using default system settings.");
+      setSettings(DEFAULT_SETTINGS as AppSettings); 
       setIsLoadingSettings(false);
       return;
     }
@@ -73,7 +73,7 @@ export const AuthProvider = ({ children }: { children: ReactNode }) => {
           setSettings(DEFAULT_SETTINGS as AppSettings);
         }
       } catch (error) {
-        console.error("Error fetching system settings:", error);
+        console.error("AuthContext: Error fetching system settings:", error);
         setSettings(DEFAULT_SETTINGS as AppSettings);
       } finally {
         setIsLoadingSettings(false);
@@ -84,7 +84,7 @@ export const AuthProvider = ({ children }: { children: ReactNode }) => {
 
   useEffect(() => {
     if (!firebaseAuthService) {
-      console.warn("AuthContext: Firebase auth service is not available. User will be null and loading false.");
+      console.warn("AuthContext: Firebase auth service (firebaseAuthService) is not available. User will be null and loading false.");
       setUser(null);
       setLoading(false);
       return; 
@@ -110,7 +110,7 @@ export const AuthProvider = ({ children }: { children: ReactNode }) => {
   }, []); 
 
   const signIn = async (email: string, pass: string): Promise<FirebaseUser> => {
-    if (!firebaseAuthService) throw new Error("Firebase auth service is not initialized.");
+    if (!firebaseAuthService) throw new Error("AuthContext: Firebase auth service is not initialized for signIn.");
     const userCredential = await signInWithEmailAndPassword(firebaseAuthService, email, pass);
     const firebaseUser = userCredential.user;
     const appUserRole = firebaseUser.email?.includes("admin@saifmasr.com") || firebaseUser.email?.includes("admin@example.com") ? "admin" : "client";
@@ -122,18 +122,20 @@ export const AuthProvider = ({ children }: { children: ReactNode }) => {
         photoURL: firebaseUser.photoURL,
     };
     
-    if (firebaseDbService) { // Only log if db is available
+    if (firebaseDbService) { 
         await logActivity({
           actionType: "USER_LOGIN",
           description: `User ${appUser.email} logged in. Role: ${appUser.role}.`,
           actor: { id: appUser.uid, role: appUser.role, name: appUser.displayName },
         });
+    } else {
+        console.warn("AuthContext: Firestore (firebaseDbService) unavailable, skipping USER_LOGIN activity log.");
     }
     return firebaseUser;
   };
 
   const signUp = async (name: string, email: string, pass: string): Promise<FirebaseUser> => {
-    if (!firebaseAuthService) throw new Error("Firebase auth service is not initialized.");
+    if (!firebaseAuthService) throw new Error("AuthContext: Firebase auth service is not initialized for signUp.");
     const userCredential = await createUserWithEmailAndPassword(firebaseAuthService, email, pass);
     const firebaseUser = userCredential.user;
     await updateProfile(firebaseUser, { displayName: name });
@@ -146,12 +148,14 @@ export const AuthProvider = ({ children }: { children: ReactNode }) => {
         photoURL: firebaseUser.photoURL,
     };
     
-    if (firebaseDbService) { // Only log if db is available
+    if (firebaseDbService) { 
         await logActivity({
           actionType: "USER_REGISTERED",
           description: `New user registered: ${appUser.email}. Name: ${appUser.displayName}.`,
           actor: { id: appUser.uid, role: appUser.role, name: appUser.displayName },
         });
+    } else {
+         console.warn("AuthContext: Firestore (firebaseDbService) unavailable, skipping USER_REGISTERED activity log.");
     }
     
     return firebaseUser;
@@ -159,17 +163,19 @@ export const AuthProvider = ({ children }: { children: ReactNode }) => {
   
   const signOut = async () => {
     if (!firebaseAuthService) {
-      console.warn("Firebase auth service not initialized, cannot sign out properly through Firebase.");
+      console.warn("AuthContext: Firebase auth service not initialized, cannot sign out properly through Firebase.");
       setUser(null); 
       router.push("/auth/login");
       return;
     }
-    if (user && firebaseDbService) { // Only log if db and user are available
+    if (user && firebaseDbService) { 
       await logActivity({
         actionType: "USER_LOGOUT",
         description: `User ${user.email} logged out.`,
         actor: { id: user.uid, role: user.role, name: user.displayName },
       });
+    } else if (user) {
+        console.warn("AuthContext: Firestore (firebaseDbService) unavailable, skipping USER_LOGOUT activity log for user:", user.email);
     }
     await firebaseSignOut(firebaseAuthService);
     router.push("/auth/login");

@@ -21,20 +21,21 @@ let app: FirebaseApp | undefined;
 let authInstance: Auth | undefined;
 let dbInstance: Firestore | undefined;
 let storageInstance: FirebaseStorage | undefined;
-let _analyticsInstance: Analytics | undefined; // Renamed to avoid direct export conflict
+let _analyticsInstance: Analytics | undefined;
 
-// Initialize Firebase
+// Initialize Firebase App
 if (getApps().length === 0) {
   try {
     app = initializeApp(firebaseConfig);
   } catch (error) {
     console.error("CRITICAL FIREBASE APP INIT ERROR:", error);
-    app = undefined;
+    app = undefined; // Ensure app is undefined if init fails
   }
 } else {
   app = getApp();
 }
 
+// Initialize individual Firebase services only if app initialized successfully
 if (app) {
   try {
     authInstance = getAuth(app);
@@ -56,9 +57,9 @@ if (app) {
     console.error("CRITICAL FIREBASE STORAGE INIT ERROR:", error);
     storageInstance = undefined;
   }
-  // Analytics will be initialized on demand
+  // Analytics will be initialized on demand via initializeAnalytics function
 } else {
-  console.error("Firebase app failed to initialize. All Firebase services will be unavailable.");
+  console.error("Firebase app failed to initialize. All Firebase services (Auth, Firestore, Storage, Analytics) will be unavailable.");
   authInstance = undefined;
   dbInstance = undefined;
   storageInstance = undefined;
@@ -86,4 +87,5 @@ export async function initializeAnalytics(currentApp: FirebaseApp): Promise<Anal
 
 export const getAnalyticsInstance = (): Analytics | undefined => _analyticsInstance;
 
+// Export potentially undefined service instances
 export { app, authInstance as auth, dbInstance as db, storageInstance as storage };
