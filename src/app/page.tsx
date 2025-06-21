@@ -1,3 +1,4 @@
+
 import { Button } from "@/components/ui/button";
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card";
 import { Briefcase, ShieldCheck, FileText, ArrowLeftCircle, Users, SearchCheck, Search, LogIn } from "lucide-react";
@@ -8,10 +9,10 @@ import { Footer } from "@/components/layout/Footer";
 
 const services = [
   {
-    icon: <Briefcase className="h-10 w-10 text-primary" />,
-    title: "خدمات استشارية",
-    description: "نقدم استشارات متخصصة لمساعدتك في تحقيق أهدافك الاستراتيجية.",
-    dataAiHint: "strategic consulting",
+    icon: <ShieldCheck className="h-10 w-10 text-primary" />,
+    title: "خدمه الحارس الشخصي",
+    description: "نوفر حماية شخصية متخصصة لضمان سلامتك وأمنك في جميع الظروف.",
+    dataAiHint: "bodyguard protection",
     imageUrl: "https://placehold.co/600x400.png"
   },
   {
