@@ -38,9 +38,9 @@ const services = [
   },
   {
     icon: <SearchCheck className="h-10 w-10 text-primary" />,
-    title: "تأمين مؤتمرات",
-    description: "توفير الحماية والأمن للمؤتمرات والفعاليات الكبرى.",
-    dataAiHint: "conference protection",
+    title: "حراسة مناطق المؤتمرات",
+    description: "توفير حراس أمن مدربين لتأمين كافة مناطق المؤتمرات والفعاليات، وضمان سلامة الحضور.",
+    dataAiHint: "conference guard",
     imageUrl: "https://images.unsplash.com/photo-1618371690240-e0d46eead4b8?crop=entropy&cs=tinysrgb&fit=max&fm=jpg&ixid=M3w3NDE5ODJ8MHwxfHNlYXJjaHwxfHxCb2R5Z3VhcmQlMjB8ZW58MHx8fHwxNzUwNTAxODcwfDA&ixlib=rb-4.1.0&q=80&w=1080"
   },
 ];
