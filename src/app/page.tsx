@@ -27,7 +27,7 @@ const services = [
     title: "خدمه كاميرات المراقبه",
     description: "تركيب وتشغيل أنظمة المراقبة بالكاميرات لتأمين ممتلكاتك على مدار الساعة.",
     dataAiHint: "cctv camera",
-    imageUrl: "https://placehold.co/600x400.png"
+    imageUrl: "https://images.unsplash.com/photo-1675213958054-46062269e343?crop=entropy&cs=tinysrgb&fit=max&fm=jpg&ixid=M3w3NDE5ODJ8MHwxfHNlYXJjaHw2fHxTZWN1cml0aWVzJTIwY2FtZXJhfGVufDB8fHx8MTc1MDUyNzA4M3ww&ixlib=rb-4.1.0&q=80&w=1080"
   },
   {
     icon: <Users className="h-10 w-10 text-primary" />,
