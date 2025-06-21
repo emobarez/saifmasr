@@ -149,7 +149,7 @@ const settingsSchema = z.object({
   themePopoverDark: optionalHslString,
   themePopoverForegroundDark: optionalHslString,
   themeSecondaryDark: optionalHslString,
-  themeSecondaryForegroundDark: optionalHslString,
+  themeSecondaryForegroundLight: optionalHslString,
   themeMutedDark: optionalHslString,
   themeMutedForegroundDark: optionalHslString,
   themeBorderDark: optionalHslString,
@@ -287,18 +287,19 @@ export default function AdminSettingsPage() {
   const settingsDocRef = doc(db, "systemSettings", "general");
   
   useEffect(() => {
+    // Only reset the form when the hook has finished loading and provides data.
     const { isLoadingSiteSettings: isFetchingSettings, ...loadedSettings } = siteSettingsDataFromHook;
 
-    if (!isFetchingSettings && loadedSettings.portalName !== undefined) { 
+    if (!isFetchingSettings) {
       reset({
-        ...DEFAULT_SETTINGS, 
-        ...loadedSettings,       
-        maintenanceMode: loadedSettings.maintenanceMode === undefined ? DEFAULT_SETTINGS.maintenanceMode : loadedSettings.maintenanceMode,
-        logoFile: undefined,
+        ...DEFAULT_SETTINGS, // Ensure all fields have a default
+        ...loadedSettings, // Overwrite with loaded data
+        logoFile: undefined, // Always clear the file input field on load
       });
       setLogoPreview(loadedSettings.logoUrl || null);
     }
-  }, [siteSettingsDataFromHook, reset]);
+  }, [siteSettingsDataFromHook.isLoadingSiteSettings, siteSettingsDataFromHook.portalName, reset]); // Depend on loading state and a key data point
+
 
   const handleLogoFileChange = (event: React.ChangeEvent<HTMLInputElement>) => {
     const files = event.target.files;
@@ -339,18 +340,17 @@ export default function AdminSettingsPage() {
 
   const handleSaveSettings = async (data: SettingsFormValues) => {
     const { logoFile, ...settingsData } = data;
-    // Get the current logoUrl from state, to preserve it if no new file is uploaded
+    // Get the current logoUrl from the hook, only to preserve it if no new file is uploaded.
     let finalLogoUrl = siteSettingsDataFromHook.logoUrl || "";
 
     if (logoFile?.[0]) {
       setIsUploadingLogo(true);
       try {
         const downloadURL = await uploadSystemFile(logoFile[0], 'logo');
-        finalLogoUrl = downloadURL; // Update with the new URL
+        finalLogoUrl = downloadURL;
         toast({ title: "تم رفع الشعار بنجاح" });
       } catch (error: any) {
         toast({ title: "خطأ في رفع الشعار", description: error.message, variant: "destructive" });
-        setIsUploadingLogo(false);
         return; // Stop execution on upload failure
       } finally {
         setIsUploadingLogo(false);
@@ -358,28 +358,28 @@ export default function AdminSettingsPage() {
     }
     
     try {
-      // Combine the existing non-form settings with the new form data and the final logo URL.
-      const updatedSettings: Partial<SiteSettings> = {
-        ...siteSettingsDataFromHook,
+      // The settingsData object comes directly from the form, representing the user's latest edits.
+      // We combine it with the final logo URL.
+      const settingsToSave: Partial<SiteSettings> = {
         ...settingsData,
         logoUrl: finalLogoUrl,
       };
-
-      // Clean up properties that shouldn't be saved to Firestore.
-      delete (updatedSettings as any).isLoadingSiteSettings;
       
-      await setDoc(settingsDocRef, updatedSettings, { merge: true });
+      // Using { merge: true } ensures we only update the fields present in settingsToSave
+      // and don't overwrite other fields in the Firestore document that aren't managed by this form.
+      await setDoc(settingsDocRef, settingsToSave, { merge: true });
       
       toast({
         title: "تم الحفظ بنجاح",
-        description: "تم تحديث إعدادات النظام.",
+        description: "تم تحديث إعدادات النظام. قد تحتاج لتحديث الصفحة لرؤية بعض التغييرات.",
       });
+
        if (adminUser) {
         await logActivity({
           actionType: "SETTINGS_UPDATED",
           description: `Admin ${adminUser.displayName || adminUser.email} updated system settings.`,
           actor: { id: adminUser.uid, role: adminUser.role || undefined, name: adminUser.displayName },
-          details: { portalName: updatedSettings.portalName, maintenanceMode: updatedSettings.maintenanceMode }, 
+          details: { portalName: settingsToSave.portalName, maintenanceMode: settingsToSave.maintenanceMode }, 
         });
       }
     } catch (error: any) {
@@ -391,6 +391,7 @@ export default function AdminSettingsPage() {
       });
     }
   };
+
 
   const handleInvalidSubmit = (errors: FieldErrors<SettingsFormValues>) => {
     console.error("Form validation failed:", errors);
