@@ -284,6 +284,7 @@ export default function AdminSettingsPage() {
 
   const [isUploadingLogo, setIsUploadingLogo] = useState(false);
   const [logoPreview, setLogoPreview] = useState<string | null>(null);
+  const [initialDataLoaded, setInitialDataLoaded] = useState(false);
   const logoFileRef = useRef<HTMLInputElement>(null);
 
   const settingsDocRef = doc(db, "systemSettings", "general");
@@ -291,7 +292,7 @@ export default function AdminSettingsPage() {
   useEffect(() => {
     const { isLoadingSiteSettings: isFetchingSettings, ...loadedSettings } = siteSettingsDataFromHook;
 
-    if (!isFetchingSettings && loadedSettings.portalName !== undefined) { 
+    if (!isFetchingSettings && loadedSettings.portalName !== undefined && !initialDataLoaded) { 
       reset({
         ...DEFAULT_SETTINGS, 
         ...loadedSettings,       
@@ -299,8 +300,9 @@ export default function AdminSettingsPage() {
         logoFile: undefined,
       });
       setLogoPreview(loadedSettings.logoUrl || null);
+      setInitialDataLoaded(true);
     }
-  }, [siteSettingsDataFromHook, reset]);
+  }, [siteSettingsDataFromHook, reset, initialDataLoaded]);
 
   const handleLogoFileChange = (event: React.ChangeEvent<HTMLInputElement>) => {
     const files = event.target.files;
