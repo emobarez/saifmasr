@@ -1,4 +1,3 @@
-
 "use client";
 
 import { Moon, Sun } from "lucide-react";
@@ -6,49 +5,68 @@ import { Button } from "@/components/ui/button";
 import { useEffect, useState } from "react";
 import type { ComponentProps } from "react";
 
-interface ThemeSwitcherProps extends Omit<ComponentProps<typeof Button>, "onClick" | "aria-label" | "variant" | "size" > {
-  // We omit props that are set internally by ThemeSwitcher
+// Helper function to safely get the stored theme
+function getStoredTheme(): "light" | "dark" | null {
+  try {
+    // Ensure we are in a browser environment and localStorage is available and functional
+    if (typeof window !== "undefined" && typeof window.localStorage !== "undefined" && window.localStorage !== null && typeof window.localStorage.getItem === 'function') {
+      return localStorage.getItem("theme") as "light" | "dark" | null;
+    }
+  } catch (error) {
+    console.warn("Could not access localStorage to get theme. This can happen in restricted environments like private browsing or sandboxed iframes.", error);
+  }
+  return null;
 }
+
+// Helper function to safely set the stored theme
+function setStoredTheme(theme: "light" | "dark"): void {
+  try {
+    // Ensure we are in a browser environment and localStorage is available and functional
+    if (typeof window !== "undefined" && typeof window.localStorage !== "undefined" && window.localStorage !== null && typeof window.localStorage.setItem === 'function') {
+      localStorage.setItem("theme", theme);
+    }
+  } catch (error) {
+    console.warn(`Could not access localStorage to set theme to '${theme}'.`, error);
+  }
+}
+
+interface ThemeSwitcherProps extends Omit<ComponentProps<typeof Button>, "onClick" | "aria-label" | "variant" | "size" > {}
 
 export function ThemeSwitcher({ className, ...props }: ThemeSwitcherProps) {
   const [mounted, setMounted] = useState(false);
-  const [theme, setTheme] = useState<"light" | "dark" | null>(null); // Initialize theme as null
+  // Default to 'light' to avoid null state and ensure a predictable initial state
+  const [theme, setTheme] = useState<"light" | "dark">("light"); 
 
   useEffect(() => {
-    // Determine initial theme
-    const storedTheme = localStorage.getItem("theme") as "light" | "dark" | null;
-    // Ensure window is defined for matchMedia (it will be in useEffect)
+    // This effect runs only on the client, after the component has mounted
+    const storedTheme = getStoredTheme();
     const systemTheme = window.matchMedia("(prefers-color-scheme: dark)").matches ? "dark" : "light";
     const initialTheme = storedTheme || systemTheme;
     
-    setTheme(initialTheme); // Set the theme state
-
-    // Apply theme to HTML element
-    if (initialTheme === "dark") {
+    setTheme(initialTheme);
+    setMounted(true);
+  }, []);
+  
+  // This separate effect handles applying the theme class to the document's root
+  // It runs whenever the 'theme' state changes.
+  useEffect(() => {
+    if (theme === "dark") {
       document.documentElement.classList.add("dark");
     } else {
       document.documentElement.classList.remove("dark");
     }
-    // Mark as mounted AFTER theme is determined and applied
-    setMounted(true);
-  }, []);
+  }, [theme]);
 
   const toggleTheme = () => {
     setTheme((prevTheme) => {
-      // If prevTheme is null (shouldn't happen if mounted is true), default to 'light' for toggling
-      const currentThemeForToggle = prevTheme || 'light';
-      const newTheme = currentThemeForToggle === "light" ? "dark" : "light";
-      localStorage.setItem("theme", newTheme);
-      if (newTheme === "dark") {
-        document.documentElement.classList.add("dark");
-      } else {
-        document.documentElement.classList.remove("dark");
-      }
+      const newTheme = prevTheme === "light" ? "dark" : "light";
+      setStoredTheme(newTheme); // Safely store the new theme
       return newTheme;
     });
   };
 
-  if (!mounted || theme === null) { // If not mounted or theme not yet determined, render nothing
+  if (!mounted) {
+    // Render nothing on the server and during initial client render to avoid hydration mismatch
     return null; 
   }
 
@@ -65,4 +83,3 @@ export function ThemeSwitcher({ className, ...props }: ThemeSwitcherProps) {
     </Button>
   );
 }
-
