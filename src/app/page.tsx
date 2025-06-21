@@ -17,9 +17,9 @@ const services = [
   },
   {
     icon: <ShieldCheck className="h-10 w-10 text-primary" />,
-    title: "حلول أمنية",
-    description: "نوفر حلولاً أمنية متكاملة لحماية أصولك وبياناتك.",
-    dataAiHint: "cyber security",
+    title: "خدمه تأمين المصانع",
+    description: "نوفر حلولاً أمنية متكاملة لحماية المنشآت الصناعية والمصانع.",
+    dataAiHint: "factory security",
     imageUrl: "https://images.unsplash.com/photo-1582190506824-ef3bd95a956e?crop=entropy&cs=tinysrgb&fit=max&fm=jpg&ixid=M3w3NDE5ODJ8MHwxfHNlYXJjaHwxMHx8bWFudWZhY3R1cmV8ZW58MHx8fHwxNzUwNTI2MTMxfDA&ixlib=rb-4.1.0&q=80&w=1080"
   },
   {
