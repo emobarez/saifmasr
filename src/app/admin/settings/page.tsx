@@ -287,18 +287,18 @@ export default function AdminSettingsPage() {
   const settingsDocRef = doc(db, "systemSettings", "general");
   
   useEffect(() => {
-    // Only reset the form when the hook has finished loading and provides data.
+    // This effect should only run once when the settings have loaded.
     const { isLoadingSiteSettings: isFetchingSettings, ...loadedSettings } = siteSettingsDataFromHook;
 
     if (!isFetchingSettings) {
       reset({
-        ...DEFAULT_SETTINGS, // Ensure all fields have a default
-        ...loadedSettings, // Overwrite with loaded data
-        logoFile: undefined, // Always clear the file input field on load
+        ...DEFAULT_SETTINGS,
+        ...loadedSettings,
+        logoFile: undefined,
       });
       setLogoPreview(loadedSettings.logoUrl || null);
     }
-  }, [siteSettingsDataFromHook.isLoadingSiteSettings, siteSettingsDataFromHook.portalName, reset]); // Depend on loading state and a key data point
+  }, [siteSettingsDataFromHook.isLoadingSiteSettings, reset]);
 
 
   const handleLogoFileChange = (event: React.ChangeEvent<HTMLInputElement>) => {
@@ -757,4 +757,6 @@ export default function AdminSettingsPage() {
     </div>
   );
 }
+    
+
     
