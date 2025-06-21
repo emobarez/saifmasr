@@ -4,13 +4,14 @@ import { Card, CardHeader, CardTitle, CardDescription, CardContent } from "@/com
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Switch } from "@/components/ui/switch";
-import { Save, Bell, ShieldCheck, Palette, Loader2, Settings as SettingsIcon, Phone, Mail, MapPin, Paintbrush, Link as LinkIcon, Facebook, Twitter, Linkedin, Instagram, Sun, Moon, Sidebar, Image as ImageIcon, Globe, RotateCcw, Edit3 } from "lucide-react";
+import { Save, Bell, ShieldCheck, Palette, Loader2, Settings as SettingsIcon, Phone, Mail, MapPin, Paintbrush, Link as LinkIcon, Facebook, Twitter, Linkedin, Instagram, Sun, Moon, Sidebar, Image as ImageIcon, Globe, RotateCcw, Edit3, Upload } from "lucide-react";
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
 import { Accordion, AccordionContent, AccordionItem, AccordionTrigger } from "@/components/ui/accordion";
-import { useState, useEffect } from "react";
+import { useState, useEffect, useRef } from "react";
 import { useToast } from "@/hooks/use-toast";
-import { db } from "@/lib/firebase";
+import { db, storage } from "@/lib/firebase";
 import { doc, getDoc, setDoc } from "firebase/firestore";
+import { ref, uploadBytesResumable, getDownloadURL } from "firebase/storage";
 import { useForm, type FieldErrors } from "react-hook-form";
 import { zodResolver } from "@hookform/resolvers/zod";
 import * as z from "zod";
@@ -24,6 +25,8 @@ import Image from "next/image";
 // Regex to validate HSL strings like "H S% L%" (e.g., "240 10% 15%"), allowing for optional decimal points in H, S, and L.
 const hslFormatRegex = /^\s*\d{1,3}(?:\.\d+)?\s+\d{1,3}(?:\.\d+)?%\s+\d{1,3}(?:\.\d+)?%\s*$/;
 
+const MAX_LOGO_SIZE = 2 * 1024 * 1024; // 2MB
+const ALLOWED_LOGO_TYPES = ["image/jpeg", "image/png", "image/svg+xml"];
 
 const isValidHslForPreview = (value: string | undefined): boolean => {
   if (!value) return false;
@@ -107,6 +110,14 @@ const settingsSchema = z.object({
   companyAddress: z.string().max(250, { message: "العنوان يجب ألا يتجاوز 250 حرفًا."}).optional(),
   publicEmail: z.string().email({ message: "البريد الإلكتروني العام غير صالح." }).optional().or(z.literal('')),
   logoUrl: optionalUrl,
+  logoFile: z.custom<FileList>().optional()
+    .refine(
+      (files) => !files || files.length === 0 || (files[0]?.size ?? 0) <= MAX_LOGO_SIZE,
+      `حجم الشعار يجب أن لا يتجاوز ${MAX_LOGO_SIZE / 1024 / 1024} ميجا بايت.`
+    ).refine(
+      (files) => !files || files.length === 0 || ALLOWED_LOGO_TYPES.includes(files[0]?.type),
+      "نوع الشعار غير مدعوم. الأنواع المسموح بها: JPG, PNG, SVG."
+    ),
   faviconUrl: optionalUrl,
   
   themeBackgroundLight: optionalHslString,
@@ -271,6 +282,10 @@ export default function AdminSettingsPage() {
   });
   const { handleSubmit, control, reset, formState: {isSubmitting, errors}, watch, setValue } = form;
 
+  const [isUploadingLogo, setIsUploadingLogo] = useState(false);
+  const [logoPreview, setLogoPreview] = useState<string | null>(null);
+  const logoFileRef = useRef<HTMLInputElement>(null);
+
   const settingsDocRef = doc(db, "systemSettings", "general");
   
   useEffect(() => {
@@ -281,20 +296,76 @@ export default function AdminSettingsPage() {
         ...DEFAULT_SETTINGS, 
         ...loadedSettings,       
         maintenanceMode: loadedSettings.maintenanceMode === undefined ? DEFAULT_SETTINGS.maintenanceMode : loadedSettings.maintenanceMode,
+        logoFile: undefined,
       });
+      setLogoPreview(loadedSettings.logoUrl || null);
     }
   }, [siteSettingsDataFromHook, reset]);
 
+  const handleLogoFileChange = (event: React.ChangeEvent<HTMLInputElement>) => {
+    const files = event.target.files;
+    if (files && files.length > 0) {
+      const file = files[0];
+      if (file.size > MAX_LOGO_SIZE) {
+        form.setError("logoFile", { type: "manual", message: `حجم الشعار يجب أن لا يتجاوز ${MAX_LOGO_SIZE / 1024 / 1024} ميجا بايت.` });
+        return;
+      }
+      if (!ALLOWED_LOGO_TYPES.includes(file.type)) {
+        form.setError("logoFile", { type: "manual", message: "نوع الشعار غير مدعوم. الأنواع المسموح بها: JPG, PNG, SVG." });
+        return;
+      }
+      form.clearErrors("logoFile");
+      setLogoPreview(URL.createObjectURL(file));
+      setValue("logoFile", files, { shouldValidate: true, shouldDirty: true });
+      setValue("logoUrl", "", { shouldDirty: true });
+    }
+  };
+
+  const uploadSystemFile = async (file: File, path: 'logo' | 'favicon'): Promise<string> => {
+    if (!storage) throw new Error("خدمة تخزين الملفات غير متاحة حالياً.");
+    const fileExtension = file.name.split('.').pop();
+    const storagePath = `system/${path}/${path}.${fileExtension}`;
+    const storageRef = ref(storage, storagePath);
+    const uploadTask = uploadBytesResumable(storageRef, file);
+
+    return new Promise((resolve, reject) => {
+      uploadTask.on('state_changed',
+        null,
+        (error) => reject(error),
+        async () => {
+          const downloadURL = await getDownloadURL(uploadTask.snapshot.ref);
+          resolve(downloadURL);
+        }
+      );
+    });
+  };
 
   const handleSaveSettings = async (data: SettingsFormValues) => {
-    console.log("handleSaveSettings triggered. Data:", data);
+    const { logoFile, ...settingsData } = data;
+    let finalSettings = { ...settingsData };
+
+    if (logoFile?.[0]) {
+      setIsUploadingLogo(true);
+      try {
+        const downloadURL = await uploadSystemFile(logoFile[0], 'logo');
+        finalSettings.logoUrl = downloadURL;
+        toast({ title: "تم رفع الشعار بنجاح" });
+      } catch (error: any) {
+        toast({ title: "خطأ في رفع الشعار", description: error.message, variant: "destructive" });
+        setIsUploadingLogo(false);
+        return; 
+      } finally {
+        setIsUploadingLogo(false);
+      }
+    }
+    
     try {
       const dataToSavePrepared: SiteSettings = { ...DEFAULT_SETTINGS }; 
 
-      (Object.keys(data) as Array<keyof SettingsFormValues>).forEach(formKey => {
+      (Object.keys(finalSettings) as Array<keyof SettingsFormValues>).forEach(formKey => {
           const siteSettingsKey = formKey as keyof SiteSettings; 
           if (siteSettingsKey in dataToSavePrepared) { 
-              const valueFromForm = data[formKey];
+              const valueFromForm = finalSettings[formKey];
               
               if (typeof valueFromForm === 'string') {
                   (dataToSavePrepared as any)[siteSettingsKey] = valueFromForm.trim();
@@ -518,7 +589,7 @@ export default function AdminSettingsPage() {
                     </CardHeader>
                     <CardContent className="space-y-6">
                        <FormField control={control} name="portalName" render={({ field }) => (
-                          <FormItem><FormLabel>اسم البوابة</FormLabel><FormControl><Input {...field} disabled={isSubmitting} /></FormControl><FormMessage /></FormItem>
+                          <FormItem><FormLabel>اسم البوابة</FormLabel><FormControl><Input {...field} disabled={isSubmitting || isUploadingLogo} /></FormControl><FormMessage /></FormItem>
                         )}
                       />
                       <FormField control={control} name="logoUrl" render={({ field }) => (
@@ -526,11 +597,20 @@ export default function AdminSettingsPage() {
                             <FormLabel className="flex items-center gap-1"><ImageIcon className="h-4 w-4 text-muted-foreground" />رابط شعار البوابة (Logo)</FormLabel>
                             <div className="flex items-end gap-2">
                                 <FormControl className="flex-grow">
-                                    <Input placeholder="https://example.com/logo.png" {...field} value={field.value || ""} disabled={isSubmitting} />
+                                    <Input placeholder="https://example.com/logo.png" {...field} value={field.value || ""} disabled={isSubmitting || isUploadingLogo} />
                                 </FormControl>
-                                {isPreviewableUrl(field.value) && (
+                                <Button
+                                  type="button"
+                                  variant="outline"
+                                  onClick={() => logoFileRef.current?.click()}
+                                  disabled={isSubmitting || isUploadingLogo}
+                                >
+                                  {isUploadingLogo ? <Loader2 className="h-4 w-4 animate-spin" /> : <Upload className="h-4 w-4" />}
+                                  <span className="ms-2">رفع</span>
+                                </Button>
+                                {logoPreview && (
                                     <Image
-                                        src={field.value.trim()}
+                                        src={logoPreview}
                                         alt="Logo Preview"
                                         width={80}
                                         height={40}
@@ -538,16 +618,34 @@ export default function AdminSettingsPage() {
                                     />
                                 )}
                             </div>
-                            <FormMessage />
+                            <FormMessage>{form.formState.errors.logoFile?.message}</FormMessage>
                           </FormItem>
                         )}
+                      />
+                      <FormField
+                          control={control}
+                          name="logoFile"
+                          render={({ field }) => (
+                              <FormItem className="hidden">
+                                  <FormControl>
+                                      <Input
+                                          type="file"
+                                          ref={logoFileRef}
+                                          accept={ALLOWED_LOGO_TYPES.join(",")}
+                                          onChange={handleLogoFileChange}
+                                          disabled={isSubmitting || isUploadingLogo}
+                                      />
+                                  </FormControl>
+                                  <FormMessage />
+                              </FormItem>
+                          )}
                       />
                       <FormField control={control} name="faviconUrl" render={({ field }) => (
                           <FormItem>
                             <FormLabel className="flex items-center gap-1"><LinkIcon className="h-4 w-4 text-muted-foreground" />رابط أيقونة الموقع (Favicon)</FormLabel>
                              <div className="flex items-end gap-2">
                                 <FormControl className="flex-grow">
-                                    <Input placeholder="https://example.com/favicon.ico" {...field} value={field.value || ""} disabled={isSubmitting} />
+                                    <Input placeholder="https://example.com/favicon.ico" {...field} value={field.value || ""} disabled={isSubmitting || isUploadingLogo} />
                                 </FormControl>
                                 {isPreviewableUrl(field.value) && (
                                     <Image
@@ -573,13 +671,13 @@ export default function AdminSettingsPage() {
                     </CardHeader>
                     <CardContent className="space-y-6">
                       <FormField control={control} name="adminEmail" render={({ field }) => (
-                          <FormItem><FormLabel>بريد المسؤول الرئيسي</FormLabel><FormControl><Input type="email" {...field} disabled={isSubmitting} /></FormControl><FormMessage /></FormItem>
+                          <FormItem><FormLabel>بريد المسؤول الرئيسي</FormLabel><FormControl><Input type="email" {...field} disabled={isSubmitting || isUploadingLogo} /></FormControl><FormMessage /></FormItem>
                         )}
                       />
                       <FormField control={control} name="maintenanceMode" render={({ field }) => (
                           <FormItem className="flex flex-row items-center justify-between rounded-lg border p-3 shadow-sm">
                             <div className="space-y-0.5"><FormLabel>تفعيل وضع الصيانة</FormLabel><FormMessage /></div>
-                            <FormControl><Switch checked={field.value} onCheckedChange={field.onChange} disabled={isSubmitting} /></FormControl>
+                            <FormControl><Switch checked={field.value} onCheckedChange={field.onChange} disabled={isSubmitting || isUploadingLogo} /></FormControl>
                           </FormItem>
                         )}
                       />
@@ -593,15 +691,15 @@ export default function AdminSettingsPage() {
                     </CardHeader>
                     <CardContent className="space-y-6">
                         <FormField control={control} name="publicEmail" render={({ field }) => (
-                            <FormItem><FormLabel className="flex items-center gap-1"><Mail className="h-4 w-4 text-muted-foreground" />البريد الإلكتروني العام (للتواصل)</FormLabel><FormControl><Input type="email" placeholder="contact@example.com" {...field} value={field.value || ""} disabled={isSubmitting} /></FormControl><FormMessage /></FormItem>
+                            <FormItem><FormLabel className="flex items-center gap-1"><Mail className="h-4 w-4 text-muted-foreground" />البريد الإلكتروني العام (للتواصل)</FormLabel><FormControl><Input type="email" placeholder="contact@example.com" {...field} value={field.value || ""} disabled={isSubmitting || isUploadingLogo} /></FormControl><FormMessage /></FormItem>
                           )}
                         />
                         <FormField control={control} name="companyPhone" render={({ field }) => (
-                            <FormItem><FormLabel className="flex items-center gap-1"><Phone className="h-4 w-4 text-muted-foreground" />رقم الهاتف</FormLabel><FormControl><Input placeholder="مثال: +201234567890" {...field} value={field.value || ""} disabled={isSubmitting} /></FormControl><FormMessage /></FormItem>
+                            <FormItem><FormLabel className="flex items-center gap-1"><Phone className="h-4 w-4 text-muted-foreground" />رقم الهاتف</FormLabel><FormControl><Input placeholder="مثال: +201234567890" {...field} value={field.value || ""} disabled={isSubmitting || isUploadingLogo} /></FormControl><FormMessage /></FormItem>
                           )}
                         />
                         <FormField control={control} name="companyAddress" render={({ field }) => (
-                            <FormItem><FormLabel className="flex items-center gap-1"><MapPin className="h-4 w-4 text-muted-foreground" />العنوان الفعلي</FormLabel><FormControl><Textarea placeholder="مثال: 123 شارع النصر، القاهرة، مصر" {...field} value={field.value || ""} disabled={isSubmitting} rows={3} /></FormControl><FormMessage /></FormItem>
+                            <FormItem><FormLabel className="flex items-center gap-1"><MapPin className="h-4 w-4 text-muted-foreground" />العنوان الفعلي</FormLabel><FormControl><Textarea placeholder="مثال: 123 شارع النصر، القاهرة، مصر" {...field} value={field.value || ""} disabled={isSubmitting || isUploadingLogo} rows={3} /></FormControl><FormMessage /></FormItem>
                           )}
                         />
                     </CardContent>
@@ -617,7 +715,7 @@ export default function AdminSettingsPage() {
                               {item.label}
                             </FormLabel>
                             <FormControl>
-                              <Input placeholder={item.placeholder} {...field} value={field.value || ""} disabled={isSubmitting} className="dir-ltr text-left"/>
+                              <Input placeholder={item.placeholder} {...field} value={field.value || ""} disabled={isSubmitting || isUploadingLogo} className="dir-ltr text-left"/>
                             </FormControl>
                             <FormMessage />
                           </FormItem>
@@ -643,10 +741,10 @@ export default function AdminSettingsPage() {
                                 <AccordionContent className="pt-4 space-y-6">
                                     {renderColorFields(mainThemeColorFields)}
                                     <div className="flex flex-col sm:flex-row gap-2 pt-4 border-t">
-                                        <Button type="button" variant="outline" onClick={() => handleResetColorSection(mainThemeColorFields, 'Light', 'الواجهة الرئيسية')} disabled={isSubmitting}>
+                                        <Button type="button" variant="outline" onClick={() => handleResetColorSection(mainThemeColorFields, 'Light', 'الواجهة الرئيسية')} disabled={isSubmitting || isUploadingLogo}>
                                         <RotateCcw className="me-2 h-4 w-4" /> استعادة الألوان الفاتحة الافتراضية
                                         </Button>
-                                        <Button type="button" variant="outline" onClick={() => handleResetColorSection(mainThemeColorFields, 'Dark', 'الواجهة الرئيسية')} disabled={isSubmitting}>
+                                        <Button type="button" variant="outline" onClick={() => handleResetColorSection(mainThemeColorFields, 'Dark', 'الواجهة الرئيسية')} disabled={isSubmitting || isUploadingLogo}>
                                         <RotateCcw className="me-2 h-4 w-4" /> استعادة الألوان الداكنة الافتراضية
                                         </Button>
                                     </div>
@@ -670,10 +768,10 @@ export default function AdminSettingsPage() {
                                 <AccordionContent className="pt-4 space-y-6">
                                     {renderColorFields(sidebarThemeColorFields)}
                                     <div className="flex flex-col sm:flex-row gap-2 pt-4 border-t">
-                                        <Button type="button" variant="outline" onClick={() => handleResetColorSection(sidebarThemeColorFields, 'Light', 'الشريط الجانبي')} disabled={isSubmitting}>
+                                        <Button type="button" variant="outline" onClick={() => handleResetColorSection(sidebarThemeColorFields, 'Light', 'الشريط الجانبي')} disabled={isSubmitting || isUploadingLogo}>
                                         <RotateCcw className="me-2 h-4 w-4" /> استعادة الألوان الفاتحة الافتراضية
                                         </Button>
-                                        <Button type="button" variant="outline" onClick={() => handleResetColorSection(sidebarThemeColorFields, 'Dark', 'الشريط الجانبي')} disabled={isSubmitting}>
+                                        <Button type="button" variant="outline" onClick={() => handleResetColorSection(sidebarThemeColorFields, 'Dark', 'الشريط الجانبي')} disabled={isSubmitting || isUploadingLogo}>
                                         <RotateCcw className="me-2 h-4 w-4" /> استعادة الألوان الداكنة الافتراضية
                                         </Button>
                                     </div>
@@ -690,8 +788,8 @@ export default function AdminSettingsPage() {
               </Tabs>
 
               <div className="mt-8 flex justify-end">
-                <Button type="submit" disabled={isSubmitting || siteSettingsDataFromHook.isLoadingSiteSettings}>
-                  {(isSubmitting || siteSettingsDataFromHook.isLoadingSiteSettings) ? <Loader2 className="me-2 h-5 w-5 animate-spin" /> : <Save className="me-2 h-5 w-5" />}
+                <Button type="submit" disabled={isSubmitting || siteSettingsDataFromHook.isLoadingSiteSettings || isUploadingLogo}>
+                  {(isSubmitting || siteSettingsDataFromHook.isLoadingSiteSettings || isUploadingLogo) ? <Loader2 className="me-2 h-5 w-5 animate-spin" /> : <Save className="me-2 h-5 w-5" />}
                   حفظ الإعدادات
                 </Button>
               </div>
