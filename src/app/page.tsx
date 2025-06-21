@@ -1,4 +1,3 @@
-
 import { Button } from "@/components/ui/button";
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card";
 import { Briefcase, ShieldCheck, FileText, ArrowLeftCircle, Users, SearchCheck, Search, LogIn } from "lucide-react";
@@ -55,7 +54,7 @@ export default function LandingPage() {
               حلولك المتكاملة لإدارة الخدمات، تتبع الطلبات، والحصول على تقارير دقيقة ومدعومة بالذكاء الاصطناعي.
             </p>
             <div className="flex flex-col sm:flex-row items-center justify-center gap-4 mt-10">
-              <Button asChild size="lg" className="font-semibold w-full sm:w-auto">
+              <Button asChild size="lg" className="font-semibold w-full sm:w-auto bg-black text-white hover:bg-black/90">
                 <Link href="/auth/register">ابدأ الآن <ArrowLeftCircle className="ms-2 h-5 w-5" /></Link>
               </Button>
               <Button asChild variant="outline" size="lg" className="font-semibold w-full sm:w-auto">
@@ -68,7 +67,7 @@ export default function LandingPage() {
         {/* Services Section */}
         <section id="services" className="py-16 md:py-24 bg-background">
           <div className="container mx-auto px-6">
-            <h2 className="text-3xl md:text-4xl font-bold font-headline text-center mb-4 text-primary">
+            <h2 className="text-3xl md:text-4xl font-bold font-headline text-center mb-4 text-foreground">
               خدماتنا المتميزة
             </h2>
             <p className="text-muted-foreground text-center mb-12 max-w-xl mx-auto">
