@@ -11,31 +11,36 @@ const services = [
     icon: <Briefcase className="h-10 w-10 text-primary" />,
     title: "خدمات استشارية",
     description: "نقدم استشارات متخصصة لمساعدتك في تحقيق أهدافك الاستراتيجية.",
-    dataAiHint: "strategic consulting"
+    dataAiHint: "strategic consulting",
+    imageUrl: "https://placehold.co/600x400.png"
   },
   {
     icon: <ShieldCheck className="h-10 w-10 text-primary" />,
     title: "حلول أمنية",
     description: "نوفر حلولاً أمنية متكاملة لحماية أصولك وبياناتك.",
-    dataAiHint: "cyber security"
+    dataAiHint: "cyber security",
+    imageUrl: "https://placehold.co/600x400.png"
   },
   {
     icon: <FileText className="h-10 w-10 text-primary" />,
     title: "إدارة التقارير",
     description: "أدوات متقدمة لإنشاء وإدارة التقارير بكفاءة عالية.",
-    dataAiHint: "report analytics"
+    dataAiHint: "report analytics",
+    imageUrl: "https://placehold.co/600x400.png"
   },
   {
     icon: <Users className="h-10 w-10 text-primary" />,
     title: "إدارة العملاء",
     description: "نظام متكامل لإدارة علاقات العملاء وتتبع تفاعلاتهم.",
-    dataAiHint: "client management"
+    dataAiHint: "client management",
+    imageUrl: "https://placehold.co/600x400.png"
   },
   {
     icon: <SearchCheck className="h-10 w-10 text-primary" />,
     title: "التدقيق والمراجعة",
     description: "خدمات تدقيق ومراجعة دقيقة لضمان الامتثال والشفافية.",
-    dataAiHint: "compliance audit"
+    dataAiHint: "compliance audit",
+    imageUrl: "https://images.unsplash.com/photo-1618371690240-e0d46eead4b8?crop=entropy&cs=tinysrgb&fit=max&fm=jpg&ixid=M3w3NDE5ODJ8MHwxfHNlYXJjaHwxfHxCb2R5Z3VhcmQlMjB8ZW58MHx8fHwxNzUwNTAxODcwfDA&ixlib=rb-4.1.0&q=80&w=1080"
   },
 ];
 
@@ -87,7 +92,7 @@ export default function LandingPage() {
                   </CardContent>
                   <div className="p-4 text-center">
                      <Image 
-                        src={`https://placehold.co/600x400.png`} 
+                        src={service.imageUrl} 
                         alt={service.title} 
                         width={600} 
                         height={400} 
