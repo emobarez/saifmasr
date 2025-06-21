@@ -47,9 +47,9 @@ export function Header() {
   };
 
   return (
-    <header className="sticky top-0 z-50 w-full border-b border-border/40 bg-background/95 backdrop-blur supports-[backdrop-filter]:bg-background/60">
+    <header className="sticky top-0 z-50 w-full border-b border-gray-200 bg-white">
       <div className="container flex h-16 max-w-screen-2xl items-center justify-between">
-        <Link href="/" className="flex items-center gap-2 font-headline text-lg font-semibold text-primary">
+        <Link href="/" className="flex items-center gap-2 font-headline text-lg font-semibold text-gray-900">
           {logoUrl && logoUrl.trim() !== '' ? (
             <Image src={logoUrl} alt={`${displayPortalName} Logo`} width={32} height={32} className="h-8 w-auto object-contain"/>
           ) : (
@@ -63,7 +63,7 @@ export function Header() {
             <Link
               key={link.href}
               href={link.href}
-              className="text-foreground/80 transition-colors hover:text-foreground"
+              className="text-gray-600 transition-colors hover:text-gray-900"
             >
               {link.label}
             </Link>
@@ -71,7 +71,7 @@ export function Header() {
         </nav>
 
         <div className="flex items-center gap-2">
-          <ThemeSwitcher className="text-foreground/80 hover:text-foreground hover:bg-accent/10" />
+          <ThemeSwitcher className="text-gray-600 hover:text-gray-900" />
           <Button onClick={handleAuthAction} variant="default" size="sm" className="font-semibold" disabled={authLoading}>
             {getAuthButtonLabel()}
           </Button>
