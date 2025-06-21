@@ -109,7 +109,6 @@ const settingsSchema = z.object({
   companyPhone: z.string().optional(),
   companyAddress: z.string().max(250, { message: "العنوان يجب ألا يتجاوز 250 حرفًا."}).optional(),
   publicEmail: z.string().email({ message: "البريد الإلكتروني العام غير صالح." }).optional().or(z.literal('')),
-  logoUrl: optionalUrl,
   logoFile: z.custom<FileList>().optional()
     .refine(
       (files) => !files || files.length === 0 || (files[0]?.size ?? 0) <= MAX_LOGO_SIZE,
@@ -118,7 +117,6 @@ const settingsSchema = z.object({
       (files) => !files || files.length === 0 || ALLOWED_LOGO_TYPES.includes(files[0]?.type),
       "نوع الشعار غير مدعوم. الأنواع المسموح بها: JPG, PNG, SVG."
     ),
-  faviconUrl: optionalUrl,
   
   themeBackgroundLight: optionalHslString,
   themeForegroundLight: optionalHslString,
@@ -202,7 +200,7 @@ const HtmlColorPicker = ({ formFieldName, watch, setValue, disabled }: {
       const [r, g, b] = hslToRgb(hslParts.h, hslParts.s, hslParts.l);
       return rgbToHex(r, g, b);
     }
-    const defaultHslForField = DEFAULT_SETTINGS[formFieldName] as string | undefined;
+    const defaultHslForField = DEFAULT_SETTINGS[formFieldName as keyof SiteSettings] as string | undefined;
     const defaultHslParts = parseHslString(defaultHslForField || "0 0% 0%");
     if (defaultHslParts) {
         const [r,g,b] = hslToRgb(defaultHslParts.h, defaultHslParts.s, defaultHslParts.l);
@@ -219,7 +217,7 @@ const HtmlColorPicker = ({ formFieldName, watch, setValue, disabled }: {
       const [r, g, b] = hslToRgb(hslParts.h, hslParts.s, hslParts.l);
       newHex = rgbToHex(r, g, b);
     } else if (hslValueFromForm === "") { 
-        const defaultHslForField = DEFAULT_SETTINGS[formFieldName] as string | undefined;
+        const defaultHslForField = DEFAULT_SETTINGS[formFieldName as keyof SiteSettings] as string | undefined;
         const defaultHslParts = parseHslString(defaultHslForField || "0 0% 0%");
         if (defaultHslParts) {
             const [r,g,b] = hslToRgb(defaultHslParts.h, defaultHslParts.s, defaultHslParts.l);
@@ -284,7 +282,6 @@ export default function AdminSettingsPage() {
 
   const [isUploadingLogo, setIsUploadingLogo] = useState(false);
   const [logoPreview, setLogoPreview] = useState<string | null>(null);
-  const [initialDataLoaded, setInitialDataLoaded] = useState(false);
   const logoFileRef = useRef<HTMLInputElement>(null);
 
   const settingsDocRef = doc(db, "systemSettings", "general");
@@ -292,7 +289,7 @@ export default function AdminSettingsPage() {
   useEffect(() => {
     const { isLoadingSiteSettings: isFetchingSettings, ...loadedSettings } = siteSettingsDataFromHook;
 
-    if (!isFetchingSettings && loadedSettings.portalName !== undefined && !initialDataLoaded) { 
+    if (!isFetchingSettings && loadedSettings.portalName !== undefined) { 
       reset({
         ...DEFAULT_SETTINGS, 
         ...loadedSettings,       
@@ -300,9 +297,8 @@ export default function AdminSettingsPage() {
         logoFile: undefined,
       });
       setLogoPreview(loadedSettings.logoUrl || null);
-      setInitialDataLoaded(true);
     }
-  }, [siteSettingsDataFromHook, reset, initialDataLoaded]);
+  }, [siteSettingsDataFromHook, reset]);
 
   const handleLogoFileChange = (event: React.ChangeEvent<HTMLInputElement>) => {
     const files = event.target.files;
@@ -319,7 +315,6 @@ export default function AdminSettingsPage() {
       form.clearErrors("logoFile");
       setLogoPreview(URL.createObjectURL(file));
       setValue("logoFile", files, { shouldValidate: true, shouldDirty: true });
-      setValue("logoUrl", "", { shouldDirty: true });
     }
   };
 
@@ -344,69 +339,55 @@ export default function AdminSettingsPage() {
 
   const handleSaveSettings = async (data: SettingsFormValues) => {
     const { logoFile, ...settingsData } = data;
-    let finalSettings = { ...settingsData };
+    // Get the current logoUrl from state, to preserve it if no new file is uploaded
+    let finalLogoUrl = siteSettingsDataFromHook.logoUrl || "";
 
     if (logoFile?.[0]) {
       setIsUploadingLogo(true);
       try {
         const downloadURL = await uploadSystemFile(logoFile[0], 'logo');
-        finalSettings.logoUrl = downloadURL;
+        finalLogoUrl = downloadURL; // Update with the new URL
         toast({ title: "تم رفع الشعار بنجاح" });
       } catch (error: any) {
         toast({ title: "خطأ في رفع الشعار", description: error.message, variant: "destructive" });
         setIsUploadingLogo(false);
-        return; 
+        return; // Stop execution on upload failure
       } finally {
         setIsUploadingLogo(false);
       }
     }
     
     try {
-      const dataToSavePrepared: SiteSettings = { ...DEFAULT_SETTINGS }; 
+      // Combine the existing non-form settings with the new form data and the final logo URL.
+      const updatedSettings: Partial<SiteSettings> = {
+        ...siteSettingsDataFromHook,
+        ...settingsData,
+        logoUrl: finalLogoUrl,
+      };
 
-      (Object.keys(finalSettings) as Array<keyof SettingsFormValues>).forEach(formKey => {
-          const siteSettingsKey = formKey as keyof SiteSettings; 
-          if (siteSettingsKey in dataToSavePrepared) { 
-              const valueFromForm = finalSettings[formKey];
-              
-              if (typeof valueFromForm === 'string') {
-                  (dataToSavePrepared as any)[siteSettingsKey] = valueFromForm.trim();
-              } else if (typeof valueFromForm === 'boolean') {
-                  (dataToSavePrepared as any)[siteSettingsKey] = valueFromForm;
-              } else if (valueFromForm === undefined) {
-                  (dataToSavePrepared as any)[siteSettingsKey] = DEFAULT_SETTINGS[siteSettingsKey];
-              }
-          }
-      });
+      // Clean up properties that shouldn't be saved to Firestore.
+      delete (updatedSettings as any).isLoadingSiteSettings;
       
-      await setDoc(settingsDocRef, dataToSavePrepared, { merge: true });
+      await setDoc(settingsDocRef, updatedSettings, { merge: true });
       
       toast({
         title: "تم الحفظ بنجاح",
         description: "تم تحديث إعدادات النظام.",
-        duration: 2000, 
       });
        if (adminUser) {
         await logActivity({
           actionType: "SETTINGS_UPDATED",
           description: `Admin ${adminUser.displayName || adminUser.email} updated system settings.`,
           actor: { id: adminUser.uid, role: adminUser.role || undefined, name: adminUser.displayName },
-          details: { portalName: dataToSavePrepared.portalName, maintenanceMode: dataToSavePrepared.maintenanceMode }, 
+          details: { portalName: updatedSettings.portalName, maintenanceMode: updatedSettings.maintenanceMode }, 
         });
       }
     } catch (error: any) {
-      console.error("Firestore Save Error Details:", error); 
-      let description = "لم نتمكن من حفظ التغييرات. يرجى المحاولة مرة أخرى.";
-      if (error.code === 'permission-denied') {
-        description = "فشلت عملية الحفظ: ليس لديك الصلاحيات الكافية لتعديل الإعدادات. يرجى مراجعة قواعد أمان Firestore.";
-      } else if (error.message) {
-        description = `فشل الحفظ: ${error.message}. راجع وحدة التحكم لمزيد من التفاصيل.`;
-      }
+      console.error("Firestore Save Error Details:", error);
       toast({
         title: "خطأ في حفظ الإعدادات",
-        description: description,
+        description: "لم نتمكن من حفظ التغييرات. يرجى المحاولة مرة أخرى.",
         variant: "destructive",
-        duration: 9000, 
       });
     }
   };
@@ -482,7 +463,7 @@ export default function AdminSettingsPage() {
                     />
                     <FormControl className="flex-grow">
                         <Input 
-                            placeholder={(DEFAULT_SETTINGS[lightFieldName] as string) || item.placeholder} 
+                            placeholder={(DEFAULT_SETTINGS[lightFieldName as keyof SiteSettings] as string) || item.placeholder} 
                             {...field} 
                             value={field.value || ""} 
                             disabled={isSubmitting} 
@@ -513,7 +494,7 @@ export default function AdminSettingsPage() {
                     />
                     <FormControl className="flex-grow">
                         <Input 
-                            placeholder={(DEFAULT_SETTINGS[darkFieldName] as string) || item.placeholder} 
+                            placeholder={(DEFAULT_SETTINGS[darkFieldName as keyof SiteSettings] as string) || item.placeholder} 
                             {...field} 
                             value={field.value || ""} 
                             disabled={isSubmitting} 
@@ -587,20 +568,20 @@ export default function AdminSettingsPage() {
                   <Card>
                     <CardHeader>
                         <CardTitle className="flex items-center gap-2"><ImageIcon className="h-5 w-5" />الهوية الأساسية للبوابة</CardTitle>
-                        <CardDescription>تحديد اسم البوابة، شعارها، وأيقونتها لتعزيز الهوية.</CardDescription>
+                        <CardDescription>تحديد اسم البوابة وشعارها لتعزيز الهوية.</CardDescription>
                     </CardHeader>
                     <CardContent className="space-y-6">
                        <FormField control={control} name="portalName" render={({ field }) => (
                           <FormItem><FormLabel>اسم البوابة</FormLabel><FormControl><Input {...field} disabled={isSubmitting || isUploadingLogo} /></FormControl><FormMessage /></FormItem>
                         )}
                       />
-                      <FormField control={control} name="logoUrl" render={({ field }) => (
-                          <FormItem>
-                            <FormLabel className="flex items-center gap-1"><ImageIcon className="h-4 w-4 text-muted-foreground" />رابط شعار البوابة (Logo)</FormLabel>
-                            <div className="flex items-end gap-2">
-                                <FormControl className="flex-grow">
-                                    <Input placeholder="https://example.com/logo.png" {...field} value={field.value || ""} disabled={isSubmitting || isUploadingLogo} />
-                                </FormControl>
+                       <FormField
+                          control={control}
+                          name="logoFile"
+                          render={() => (
+                            <FormItem>
+                              <FormLabel className="flex items-center gap-1"><ImageIcon className="h-4 w-4 text-muted-foreground" />شعار البوابة (Logo)</FormLabel>
+                              <div className="flex items-end gap-2">
                                 <Button
                                   type="button"
                                   variant="outline"
@@ -608,61 +589,34 @@ export default function AdminSettingsPage() {
                                   disabled={isSubmitting || isUploadingLogo}
                                 >
                                   {isUploadingLogo ? <Loader2 className="h-4 w-4 animate-spin" /> : <Upload className="h-4 w-4" />}
-                                  <span className="ms-2">رفع</span>
+                                  <span className="ms-2">
+                                    {logoPreview ? "تغيير الشعار" : "رفع الشعار"}
+                                  </span>
                                 </Button>
                                 {logoPreview && (
-                                    <Image
-                                        src={logoPreview}
-                                        alt="Logo Preview"
-                                        width={80}
-                                        height={40}
-                                        className="h-10 w-auto max-w-[80px] object-contain border rounded bg-muted"
-                                    />
+                                  <Image
+                                    src={logoPreview}
+                                    alt="Logo Preview"
+                                    width={80}
+                                    height={40}
+                                    className="h-10 w-auto max-w-[80px] object-contain border rounded bg-muted"
+                                  />
                                 )}
-                            </div>
-                            <FormMessage>{form.formState.errors.logoFile?.message}</FormMessage>
-                          </FormItem>
-                        )}
-                      />
-                      <FormField
-                          control={control}
-                          name="logoFile"
-                          render={({ field }) => (
-                              <FormItem className="hidden">
-                                  <FormControl>
-                                      <Input
-                                          type="file"
-                                          ref={logoFileRef}
-                                          accept={ALLOWED_LOGO_TYPES.join(",")}
-                                          onChange={handleLogoFileChange}
-                                          disabled={isSubmitting || isUploadingLogo}
-                                      />
-                                  </FormControl>
-                                  <FormMessage />
-                              </FormItem>
+                              </div>
+                              <FormControl>
+                                <Input
+                                  type="file"
+                                  ref={logoFileRef}
+                                  className="hidden"
+                                  accept={ALLOWED_LOGO_TYPES.join(",")}
+                                  onChange={handleLogoFileChange}
+                                  disabled={isSubmitting || isUploadingLogo}
+                                />
+                              </FormControl>
+                              <FormMessage />
+                            </FormItem>
                           )}
-                      />
-                      <FormField control={control} name="faviconUrl" render={({ field }) => (
-                          <FormItem>
-                            <FormLabel className="flex items-center gap-1"><LinkIcon className="h-4 w-4 text-muted-foreground" />رابط أيقونة الموقع (Favicon)</FormLabel>
-                             <div className="flex items-end gap-2">
-                                <FormControl className="flex-grow">
-                                    <Input placeholder="https://example.com/favicon.ico" {...field} value={field.value || ""} disabled={isSubmitting || isUploadingLogo} />
-                                </FormControl>
-                                {isPreviewableUrl(field.value) && (
-                                    <Image
-                                        src={field.value.trim()}
-                                        alt="Favicon Preview"
-                                        width={40}
-                                        height={40}
-                                        className="h-10 w-10 object-contain border rounded bg-muted" 
-                                    />
-                                )}
-                            </div>
-                            <FormMessage />
-                          </FormItem>
-                        )}
-                      />
+                        />
                     </CardContent>
                   </Card>
                   

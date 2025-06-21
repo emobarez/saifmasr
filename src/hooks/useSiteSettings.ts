@@ -15,7 +15,6 @@ export interface SiteSettings {
   companyAddress?: string;
   publicEmail?: string;
   logoUrl?: string; 
-  faviconUrl?: string; 
 
   themeBackgroundLight?: string;
   themeForegroundLight?: string;
@@ -89,7 +88,6 @@ export const DEFAULT_SETTINGS: SiteSettings = {
   companyAddress: "",
   publicEmail: "",
   logoUrl: "", 
-  faviconUrl: "", 
 
   // Light Theme Defaults (PRD Aligned - Alpha removed to match regex)
   themeBackgroundLight: "240 11% 89%", 
@@ -165,7 +163,7 @@ export function useSiteSettings() {
 
   useEffect(() => {
     const fetchSettings = async () => {
-      setIsLoadingSiteSettings(true);
+      // No need to set loading to true here, it's true by default
       if (!db) {
         console.warn(
           "useSiteSettings: Firestore instance (db) is not available. " +
@@ -194,7 +192,7 @@ export function useSiteSettings() {
     };
     
     fetchSettings();
-  }, []); // Empty dependency array ensures this runs only once on mount
+  }, []); // Empty dependency array ensures this runs only once on component mount
 
   return useMemo(() => ({
     ...siteSettings,
