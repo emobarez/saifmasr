@@ -1,36 +1,12 @@
-
 rules_version = '2';
 
 service firebase.storage {
   match /b/{bucket}/o {
-    // Default deny all
+    // Allow public read access to all files, so anyone can see images like the logo.
+    // Allow write access only for authenticated (logged-in) users.
     match /{allPaths=**} {
-      allow read, write: if false;
-    }
-
-    // Profile pictures:
-    // - Allow public read
-    // - Allow authenticated users to write to their own folder
-    match /profile-pictures/{userId}/{allPaths=**} {
       allow read;
-      allow write: if request.auth != null && request.auth.uid == userId;
-    }
-
-    // Employee profile pictures:
-    // - Allow public read (for display in admin panel or potentially public employee lists)
-    // - Allow authenticated users (admins) to write
-    //   (More specific admin role check would be ideal here if available via custom claims)
-    match /employee-profile-pictures/{employeeId}/{allPaths=**} {
-      allow read;
-      allow write: if request.auth != null; // Simplified for now, assuming admins are authenticated
-    }
-
-    // Service request attachments:
-    // - Allow authenticated users to write to their own folder
-    // - Allow ONLY the authenticated user who uploaded the attachment to read it.
-    match /service-request-attachments/{userId}/{allPaths=**} {
-      allow read: if request.auth != null && request.auth.uid == userId;
-      allow write: if request.auth != null && request.auth.uid == userId;
+      allow write: if request.auth != null;
     }
   }
 }
