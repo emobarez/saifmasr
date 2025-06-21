@@ -31,10 +31,10 @@ const services = [
   },
   {
     icon: <Users className="h-10 w-10 text-primary" />,
-    title: "إدارة العملاء",
-    description: "نظام متكامل لإدارة علاقات العملاء وتتبع تفاعلاتهم.",
-    dataAiHint: "client management",
-    imageUrl: "https://placehold.co/600x400.png"
+    title: "الأمن الإنتظامى",
+    description: "توفير أفراد أمن مدربين ومؤهلين لضمان أمن وحماية منشأتك على مدار الساعة.",
+    dataAiHint: "security guard",
+    imageUrl: "https://images.unsplash.com/photo-1618482914248-29272d021005?crop=entropy&cs=tinysrgb&fit=max&fm=jpg&ixid=M3w3NDE5ODJ8MHwxfHNlYXJjaHw3fHwlRDklODMlRDglQTclRDklODUlRDklOEElRDglQjElRDglQTclRDglQUElMjAlRDklODUlRDglQjElRDglQTclRDklODIlRDglQTglRDklODclMjAlRDklODYlRDglQjglRDglQTclRDklODV8ZW58MHx8fHwxNzUwNTI2NTc1fDA&ixlib=rb-4.1.0&q=80&w=1080"
   },
   {
     icon: <SearchCheck className="h-10 w-10 text-primary" />,
