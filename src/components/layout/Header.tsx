@@ -1,4 +1,3 @@
-
 "use client";
 import Link from "next/link";
 import { Button } from "@/components/ui/button";
@@ -47,7 +46,7 @@ export function Header() {
   };
 
   return (
-    <header className="sticky top-0 z-50 w-full border-b border-gray-200 bg-white">
+    <header className="sticky top-0 z-50 w-full border-b bg-white text-gray-900">
       <div className="container flex h-16 max-w-screen-2xl items-center justify-between">
         <Link href="/" className="flex items-center gap-2 font-headline text-lg font-semibold text-gray-900">
           {logoUrl && logoUrl.trim() !== '' ? (
@@ -72,7 +71,7 @@ export function Header() {
 
         <div className="flex items-center gap-2">
           <ThemeSwitcher className="text-gray-600 hover:text-gray-900" />
-          <Button onClick={handleAuthAction} variant="default" size="sm" className="font-semibold" disabled={authLoading}>
+          <Button onClick={handleAuthAction} variant="default" size="sm" className="font-semibold bg-gray-900 hover:bg-gray-800 text-primary-foreground" disabled={authLoading}>
             {getAuthButtonLabel()}
           </Button>
           {user && !authLoading && (
