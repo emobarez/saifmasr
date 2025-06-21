@@ -1,3 +1,4 @@
+
 "use client";
 import Link from "next/link";
 import { Button } from "@/components/ui/button";
@@ -71,7 +72,7 @@ export function Header() {
 
         <div className="flex items-center gap-2">
           <ThemeSwitcher className="text-gray-600 hover:text-gray-900" />
-          <Button onClick={handleAuthAction} variant="default" size="sm" className="font-semibold bg-gray-900 hover:bg-gray-800 text-primary-foreground" disabled={authLoading}>
+          <Button onClick={handleAuthAction} variant="default" size="sm" className="font-semibold" disabled={authLoading}>
             {getAuthButtonLabel()}
           </Button>
           {user && !authLoading && (

@@ -48,14 +48,14 @@ export default function LandingPage() {
         {/* Hero Section */}
         <section className="py-20 md:py-32 bg-white">
           <div className="container mx-auto px-6 text-center">
-            <h1 className="text-4xl md:text-6xl font-bold font-headline mb-6 text-gray-900">
+            <h1 className="text-4xl md:text-6xl font-bold font-headline mb-6 text-foreground">
               سيف مصر الوطنية للأمن
             </h1>
             <p className="text-lg md:text-xl text-foreground/80 mb-10 max-w-2xl mx-auto">
               حلولك المتكاملة لإدارة الخدمات، تتبع الطلبات، والحصول على تقارير دقيقة ومدعومة بالذكاء الاصطناعي.
             </p>
             <div className="flex flex-col sm:flex-row items-center justify-center gap-4 mt-10">
-              <Button asChild size="lg" className="font-semibold w-full sm:w-auto bg-gray-900 hover:bg-gray-800">
+              <Button asChild size="lg" className="font-semibold w-full sm:w-auto">
                 <Link href="/auth/register">ابدأ الآن <ArrowLeftCircle className="ms-2 h-5 w-5" /></Link>
               </Button>
               <Button asChild variant="outline" size="lg" className="font-semibold w-full sm:w-auto">
