@@ -27,7 +27,7 @@ const services = [
     title: "إدارة التقارير",
     description: "أدوات متقدمة لإنشاء وإدارة التقارير بكفاءة عالية.",
     dataAiHint: "report analytics",
-    imageUrl: "https://placehold.co/600x400.png"
+    imageUrl: "https://images.unsplash.com/photo-1618482914248-29272d021005?crop=entropy&cs=tinysrgb&fit=max&fm=jpg&ixid=M3w3NDE5ODJ8MHwxfHNlYXJjaHw3fHwlRDklODMlRDglQTclRDklODUlRDklOEElRDglQjElRDglQTclRDglQUElMjAlRDklODUlRDglQjElRDglQTclRDklODIlRDglQTglRDklODclMjAlRDklODYlRDglQjglRDglQTclRDklODV8ZW58MHx8fHwxNzUwNTI2NTc1fDA&ixlib=rb-4.1.0&q=80&w=1080"
   },
   {
     icon: <Users className="h-10 w-10 text-primary" />,
