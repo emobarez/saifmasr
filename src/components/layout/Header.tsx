@@ -7,9 +7,8 @@ import { Menu, ShieldHalf } from "lucide-react";
 import { useAuth } from "@/context/AuthContext";
 import { useRouter } from "next/navigation";
 import { useSiteSettings } from '@/hooks/useSiteSettings';
-import { useState, useEffect } from "react";
+import { useState } from "react";
 import { ThemeSwitcher } from "./ThemeSwitcher";
-import Image from "next/image";
 
 const navLinks = [
   { href: "/services", label: "الخدمات" },
@@ -20,7 +19,7 @@ const navLinks = [
 export function Header() {
   const { user, signOut, loading: authLoading } = useAuth();
   const router = useRouter();
-  const { portalName, logoUrl, isLoadingSiteSettings } = useSiteSettings();
+  const { portalName, isLoadingSiteSettings } = useSiteSettings();
   const [isMobileMenuOpen, setIsMobileMenuOpen] = useState(false);
 
   const handleAuthAction = () => {
@@ -50,11 +49,7 @@ export function Header() {
     <header className="sticky top-0 z-50 w-full border-b bg-white text-gray-900">
       <div className="container flex h-16 max-w-screen-2xl items-center justify-between">
         <Link href="/" className="flex items-center gap-2 font-headline text-lg font-semibold text-gray-900">
-          {logoUrl && logoUrl.trim() !== '' ? (
-            <Image src={logoUrl} alt={`${displayPortalName} Logo`} width={32} height={32} className="h-8 w-auto object-contain"/>
-          ) : (
-            <ShieldHalf className="h-7 w-7 text-primary" />
-          )}
+          <ShieldHalf className="h-7 w-7 text-primary" />
           <span>{displayPortalName}</span>
         </Link>
 
@@ -89,11 +84,7 @@ export function Header() {
               <SheetTitle className="sr-only">القائمة</SheetTitle>
               <nav className="grid gap-6 text-lg font-medium mt-8">
                 <Link href="/" className="flex items-center gap-2 text-lg font-semibold text-primary mb-4" onClick={handleMobileLinkClick}>
-                   {logoUrl && logoUrl.trim() !== '' ? (
-                      <Image src={logoUrl} alt={`${displayPortalName} Logo`} width={28} height={28} className="h-7 w-auto object-contain"/>
-                    ) : (
-                      <ShieldHalf className="h-6 w-6 text-primary" />
-                    )}
+                   <ShieldHalf className="h-6 w-6 text-primary" />
                    <span>{displayPortalName}</span>
                 </Link>
                 {navLinks.map((link) => (
