@@ -14,8 +14,7 @@ export interface SiteSettings {
   companyPhone?: string;
   companyAddress?: string;
   publicEmail?: string;
-  logoUrl?: string; 
-
+  
   themeBackgroundLight?: string;
   themeForegroundLight?: string;
   themePrimaryLight?: string;
@@ -87,48 +86,47 @@ export const DEFAULT_SETTINGS: SiteSettings = {
   companyPhone: "",
   companyAddress: "",
   publicEmail: "",
-  logoUrl: "", 
-
-  // Light Theme Defaults (PRD Aligned - Alpha removed to match regex)
-  themeBackgroundLight: "240 11% 89%", 
-  themeForegroundLight: "238 10% 20%", 
-  themePrimaryLight: "238 52% 38%", 
-  themePrimaryForegroundLight: "0 0% 98%", 
-  themeAccentLight: "191 55% 41%", 
-  themeAccentForegroundLight: "0 0% 98%", 
-  themeCardLight: "0 0% 100%", // Was "0 0% 100% / 0.9"
-  themeCardForegroundLight: "238 10% 20%",
-  themePopoverLight: "0 0% 100%", // Was "0 0% 100% / 0.9"
-  themePopoverForegroundLight: "238 10% 20%",
-  themeSecondaryLight: "240 10% 94%", 
-  themeSecondaryForegroundLight: "238 10% 25%", 
-  themeMutedLight: "240 10% 80%", 
-  themeMutedForegroundLight: "240 10% 45%",
-  themeBorderLight: "240 10% 78%", 
-  themeInputLight: "0 0% 100%", 
-  themeRingLight: "191 55% 41%", 
+  
+  // Light Theme Defaults (Riplet CSS)
+  themeBackgroundLight: "220 60% 98%",
+  themeForegroundLight: "0 0% 20%",
+  themePrimaryLight: "208 100% 34%",
+  themePrimaryForegroundLight: "0 0% 100%",
+  themeAccentLight: "199 100% 50%",
+  themeAccentForegroundLight: "0 0% 100%",
+  themeCardLight: "0 0% 100%",
+  themeCardForegroundLight: "0 0% 20%",
+  themePopoverLight: "0 0% 100%",
+  themePopoverForegroundLight: "0 0% 20%",
+  themeSecondaryLight: "220 20% 94%",
+  themeSecondaryForegroundLight: "0 0% 20%",
+  themeMutedLight: "220 20% 94%",
+  themeMutedForegroundLight: "0 0% 40%",
+  themeBorderLight: "220 20% 88%",
+  themeInputLight: "220 20% 91%",
+  themeRingLight: "199 100% 50%",
   themeDestructiveLight: "0 84.2% 60.2%",
   themeDestructiveForegroundLight: "0 0% 98%",
 
-  // Dark Theme Defaults (Replit/Elite Inspired - Alpha removed)
-  themeBackgroundDark: "222 84% 4.9%",    
-  themeForegroundDark: "210 40% 98%",    
-  themePrimaryDark: "217 91.2% 59.8%",  
-  themePrimaryForegroundDark: "210 40% 98%", 
-  themeAccentDark: "188 92% 50%",     
-  themeAccentForegroundDark: "222 84% 4.9%",   
-  themeCardDark: "222 80% 8%",       
-  themeCardForegroundDark: "210 40% 96.1%",
-  themePopoverDark: "222 80% 8%",
-  themePopoverForegroundDark: "210 40% 96.1%",
-  themeSecondaryDark: "217.2 32.6% 17.5%", 
-  themeSecondaryForegroundDark: "210 40% 98%",
-  themeMutedDark: "217.2 32.6% 17.5%",    
-  themeMutedForegroundDark: "215 20.2% 65.1%", 
-  themeBorderDark: "217.2 32.6% 17.5%",    
-  themeInputDark: "217.2 32.6% 17.5%",     
-  themeRingDark: "217 91.2% 59.8%",    
-  themeDestructiveDark: "0 62.8% 30.6%",   
+  // Dark Theme Defaults (Riplet CSS derived)
+  themeBackgroundDark: "210 10% 15%",
+  themeForegroundDark: "210 20% 90%",
+  themePrimaryDark: "208 100% 70%",
+  themePrimaryForegroundDark: "208 100% 10%",
+  themeAccentDark: "199 100% 50%",
+  themeAccentForegroundDark: "210 100% 10%",
+  themeCardDark: "210 10% 20%",
+  themeCardForegroundDark: "210 20% 90%",
+  themePopoverDark: "210 10% 20%",
+  themePopoverForegroundDark: "210 20% 90%",
+  themeSecondaryDark: "210 10% 25%",
+  themeSecondaryForegroundDark: "210 20% 90%",
+  themeMutedDark: "210 10% 25%",
+  themeMutedForegroundDark: "210 20% 60%",
+  themeBorderDark: "210 10% 30%",
+  themeInputDark: "210 10% 30%",
+  themeRingDark: "199 100% 50%",
+  themeDestructiveDark: "0 72% 51%",
   themeDestructiveForegroundDark: "0 0% 98%",
 
   socialFacebookUrl: "",
@@ -136,25 +134,25 @@ export const DEFAULT_SETTINGS: SiteSettings = {
   socialLinkedinUrl: "",
   socialInstagramUrl: "",
 
-  // Sidebar Light Theme Defaults (PRD Aligned - Alpha removed)
-  themeSidebarBackgroundLight: "238 30% 95%", // Was "238 30% 95% / 0.9"
-  themeSidebarForegroundLight: "238 15% 30%",
-  themeSidebarPrimaryLight: "238 52% 38%",
-  themeSidebarPrimaryForegroundLight: "0 0% 98%",
-  themeSidebarAccentLight: "191 55% 41%",
-  themeSidebarAccentForegroundLight: "0 0% 98%",
-  themeSidebarBorderLight: "240 10% 85%",
-  themeSidebarRingLight: "191 55% 41%",
+  // Sidebar Light Theme Defaults (Riplet CSS derived)
+  themeSidebarBackgroundLight: "0 0% 98%",
+  themeSidebarForegroundLight: "0 0% 20%",
+  themeSidebarPrimaryLight: "208 100% 34%",
+  themeSidebarPrimaryForegroundLight: "0 0% 100%",
+  themeSidebarAccentLight: "199 100% 50%",
+  themeSidebarAccentForegroundLight: "0 0% 100%",
+  themeSidebarBorderLight: "220 20% 88%",
+  themeSidebarRingLight: "199 100% 50%",
 
-  // Sidebar Dark Theme Defaults (Replit/Elite Inspired - Alpha removed)
-  themeSidebarBackgroundDark: "222 80% 6.5%", // Was "222 80% 6.5% / 0.9"
-  themeSidebarForegroundDark: "210 40% 90%",
-  themeSidebarPrimaryDark: "217 91.2% 59.8%",
-  themeSidebarPrimaryForegroundDark: "0 0% 98%",
-  themeSidebarAccentDark: "188 92% 50%",
-  themeSidebarAccentForegroundDark: "222 84% 4.9%",
-  themeSidebarBorderDark: "217.2 32.6% 14%", 
-  themeSidebarRingDark: "217 91.2% 59.8%",
+  // Sidebar Dark Theme Defaults (Riplet CSS derived)
+  themeSidebarBackgroundDark: "210 10% 18%",
+  themeSidebarForegroundDark: "210 20% 90%",
+  themeSidebarPrimaryDark: "208 100% 70%",
+  themeSidebarPrimaryForegroundDark: "208 100% 10%",
+  themeSidebarAccentDark: "199 100% 50%",
+  themeSidebarAccentForegroundDark: "210 100% 10%",
+  themeSidebarBorderDark: "210 10% 30%",
+  themeSidebarRingDark: "199 100% 50%",
 };
 
 export function useSiteSettings() {
@@ -162,37 +160,49 @@ export function useSiteSettings() {
   const [isLoadingSiteSettings, setIsLoadingSiteSettings] = useState(true);
 
   useEffect(() => {
+    let isMounted = true;
     const fetchSettings = async () => {
-      // No need to set loading to true here, it's true by default
       if (!db) {
         console.warn(
           "useSiteSettings: Firestore instance (db) is not available. " +
           "Site settings will use defaults and Firestore will not be connected for settings."
         );
-        setSiteSettings(DEFAULT_SETTINGS);
-        setIsLoadingSiteSettings(false);
+        if (isMounted) {
+          setSiteSettings(DEFAULT_SETTINGS);
+          setIsLoadingSiteSettings(false);
+        }
         return;
       }
       
       const settingsDocRef = doc(db, "systemSettings", "general");
       try {
         const docSnap = await getDoc(settingsDocRef);
-        if (docSnap.exists()) {
-          const data = docSnap.data() as Partial<SiteSettings>;
-          setSiteSettings(prev => ({ ...DEFAULT_SETTINGS, ...prev, ...data }));
-        } else {
-          setSiteSettings(DEFAULT_SETTINGS);
+        if (isMounted) {
+          if (docSnap.exists()) {
+            const data = docSnap.data() as Partial<SiteSettings>;
+            setSiteSettings(prev => ({ ...DEFAULT_SETTINGS, ...prev, ...data }));
+          } else {
+            setSiteSettings(DEFAULT_SETTINGS);
+          }
         }
       } catch (error) {
         console.error("useSiteSettings: Error fetching site settings with getDoc:", error);
-        setSiteSettings(DEFAULT_SETTINGS);
+        if (isMounted) {
+          setSiteSettings(DEFAULT_SETTINGS);
+        }
       } finally {
-        setIsLoadingSiteSettings(false);
+        if (isMounted) {
+          setIsLoadingSiteSettings(false);
+        }
       }
     };
     
     fetchSettings();
-  }, []); // Empty dependency array ensures this runs only once on component mount
+
+    return () => {
+      isMounted = false;
+    };
+  }, []);
 
   return useMemo(() => ({
     ...siteSettings,
