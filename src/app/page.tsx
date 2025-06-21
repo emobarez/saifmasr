@@ -20,7 +20,7 @@ const services = [
     title: "حلول أمنية",
     description: "نوفر حلولاً أمنية متكاملة لحماية أصولك وبياناتك.",
     dataAiHint: "cyber security",
-    imageUrl: "https://images.unsplash.com/photo-1552622594-9a37efeec618?crop=entropy&cs=tinysrgb&fit=max&fm=jpg&ixid=M3w3NDE5ODJ8MHwxfHNlYXJjaHwyfHxNYW51ZmFjdHVyZXIlMjBndWFyZHxlbnwwfHx8fDE3NTA1MTE1MzF8MA&ixlib=rb-4.1.0&q=80&w=1080"
+    imageUrl: "https://images.unsplash.com/photo-1582190506824-ef3bd95a956e?crop=entropy&cs=tinysrgb&fit=max&fm=jpg&ixid=M3w3NDE5ODJ8MHwxfHNlYXJjaHwxMHx8bWFudWZhY3R1cmV8ZW58MHx8fHwxNzUwNTI2MTMxfDA&ixlib=rb-4.1.0&q=80&w=1080"
   },
   {
     icon: <FileText className="h-10 w-10 text-primary" />,
