@@ -46,7 +46,7 @@ export default function LandingPage() {
       <Header />
       <main className="flex-grow">
         {/* Hero Section */}
-        <section className="py-20 md:py-32 bg-gradient-to-br from-primary/10 via-background to-background">
+        <section className="py-20 md:py-32 bg-white">
           <div className="container mx-auto px-6 text-center">
             <h1 className="text-4xl md:text-6xl font-bold font-headline mb-6 text-primary">
               سيف مصر الوطنية للأمن
