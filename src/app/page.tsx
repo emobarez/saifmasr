@@ -20,7 +20,7 @@ const services = [
     title: "حلول أمنية",
     description: "نوفر حلولاً أمنية متكاملة لحماية أصولك وبياناتك.",
     dataAiHint: "cyber security",
-    imageUrl: "https://placehold.co/600x400.png"
+    imageUrl: "https://images.unsplash.com/photo-1552622594-9a37efeec618?crop=entropy&cs=tinysrgb&fit=max&fm=jpg&ixid=M3w3NDE5ODJ8MHwxfHNlYXJjaHwyfHxNYW51ZmFjdHVyZXIlMjBndWFyZHxlbnwwfHx8fDE3NTA1MTE1MzF8MA&ixlib=rb-4.1.0&q=80&w=1080"
   },
   {
     icon: <FileText className="h-10 w-10 text-primary" />,
