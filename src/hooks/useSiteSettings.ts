@@ -3,7 +3,7 @@
 
 import { useState, useEffect, useMemo } from 'react'; 
 import { db } from '@/lib/firebase'; // db might be undefined if Firebase init failed
-import { doc, onSnapshot } from 'firebase/firestore';
+import { doc, getDoc } from 'firebase/firestore';
 
 const DEFAULT_PORTAL_NAME = "سيف مصر الوطنية للأمن";
 
@@ -164,44 +164,40 @@ export function useSiteSettings() {
   const [isLoadingSiteSettings, setIsLoadingSiteSettings] = useState(true);
 
   useEffect(() => {
-    setIsLoadingSiteSettings(true);
-
-    if (!db) {
+    const fetchSettings = async () => {
+      setIsLoadingSiteSettings(true);
+      if (!db) {
         console.warn(
-            "useSiteSettings: Firestore instance (db) is not available. " +
-            "Site settings will use defaults and Firestore will not be connected for settings. " +
-            "This might be due to Firebase initialization issues (e.g., missing environment variables or service init failure)."
+          "useSiteSettings: Firestore instance (db) is not available. " +
+          "Site settings will use defaults and Firestore will not be connected for settings."
         );
         setSiteSettings(DEFAULT_SETTINGS);
         setIsLoadingSiteSettings(false);
-        return () => {}; // Return an empty function for cleanup if db is not available
-    }
-
-    const settingsDocRef = doc(db, "systemSettings", "general");
-
-    const unsubscribe = onSnapshot(settingsDocRef,
-      (docSnap) => {
+        return;
+      }
+      
+      const settingsDocRef = doc(db, "systemSettings", "general");
+      try {
+        const docSnap = await getDoc(settingsDocRef);
         if (docSnap.exists()) {
           const data = docSnap.data() as Partial<SiteSettings>;
           setSiteSettings(prev => ({ ...DEFAULT_SETTINGS, ...prev, ...data }));
         } else {
           setSiteSettings(DEFAULT_SETTINGS);
         }
-        setIsLoadingSiteSettings(false);
-      },
-      (error) => {
-        console.error("useSiteSettings: Error fetching site settings with snapshot:", error);
+      } catch (error) {
+        console.error("useSiteSettings: Error fetching site settings with getDoc:", error);
         setSiteSettings(DEFAULT_SETTINGS);
+      } finally {
         setIsLoadingSiteSettings(false);
       }
-    );
-
-    return () => unsubscribe();
-  }, []); 
+    };
+    
+    fetchSettings();
+  }, []); // Empty dependency array ensures this runs only once on mount
 
   return useMemo(() => ({
     ...siteSettings,
     isLoadingSiteSettings,
   }), [siteSettings, isLoadingSiteSettings]);
 }
-
