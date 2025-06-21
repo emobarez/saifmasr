@@ -16,8 +16,8 @@ body {
     --default-card-foreground-light: 240 5% 10%;
     --default-popover-light: 0 0% 100%;
     --default-popover-foreground-light: 240 5% 10%;
-    --default-primary-light: 240 5% 10%;
-    --default-primary-foreground-light: 0 0% 98%;
+    --default-primary-light: 0 0% 0%;
+    --default-primary-foreground-light: 0 0% 100%;
     --default-secondary-light: 0 0% 96%;
     --default-secondary-foreground-light: 240 5% 10%;
     --default-muted-light: 0 0% 96%;
