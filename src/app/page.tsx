@@ -1,7 +1,7 @@
 
 import { Button } from "@/components/ui/button";
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card";
-import { Briefcase, ShieldCheck, FileText, ArrowLeftCircle, Users, SearchCheck, Search, LogIn } from "lucide-react";
+import { Briefcase, ShieldCheck, Camera, ArrowLeftCircle, Users, SearchCheck, Search, LogIn } from "lucide-react";
 import Image from "next/image";
 import Link from "next/link";
 import { Header } from "@/components/layout/Header";
@@ -23,11 +23,11 @@ const services = [
     imageUrl: "https://images.unsplash.com/photo-1582190506824-ef3bd95a956e?crop=entropy&cs=tinysrgb&fit=max&fm=jpg&ixid=M3w3NDE5ODJ8MHwxfHNlYXJjaHwxMHx8bWFudWZhY3R1cmV8ZW58MHx8fHwxNzUwNTI2MTMxfDA&ixlib=rb-4.1.0&q=80&w=1080"
   },
   {
-    icon: <FileText className="h-10 w-10 text-primary" />,
-    title: "إدارة التقارير",
-    description: "أدوات متقدمة لإنشاء وإدارة التقارير بكفاءة عالية.",
-    dataAiHint: "report analytics",
-    imageUrl: "https://images.unsplash.com/photo-1618482914248-29272d021005?crop=entropy&cs=tinysrgb&fit=max&fm=jpg&ixid=M3w3NDE5ODJ8MHwxfHNlYXJjaHw3fHwlRDklODMlRDglQTclRDklODUlRDklOEElRDglQjElRDglQTclRDglQUElMjAlRDklODUlRDglQjElRDglQTclRDklODIlRDglQTglRDklODclMjAlRDklODYlRDglQjglRDglQTclRDklODV8ZW58MHx8fHwxNzUwNTI2NTc1fDA&ixlib=rb-4.1.0&q=80&w=1080"
+    icon: <Camera className="h-10 w-10 text-primary" />,
+    title: "خدمه كاميرات المراقبه",
+    description: "تركيب وتشغيل أنظمة المراقبة بالكاميرات لتأمين ممتلكاتك على مدار الساعة.",
+    dataAiHint: "cctv camera",
+    imageUrl: "https://placehold.co/600x400.png"
   },
   {
     icon: <Users className="h-10 w-10 text-primary" />,
