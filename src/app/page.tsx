@@ -55,7 +55,7 @@ export default function LandingPage() {
               حلولك المتكاملة لإدارة الخدمات، تتبع الطلبات، والحصول على تقارير دقيقة ومدعومة بالذكاء الاصطناعي.
             </p>
             <div className="flex flex-col sm:flex-row items-center justify-center gap-4 mt-10">
-              <Button asChild size="lg" className="font-semibold w-full sm:w-auto">
+              <Button asChild size="lg" className="font-semibold w-full sm:w-auto bg-gray-900 hover:bg-gray-800">
                 <Link href="/auth/register">ابدأ الآن <ArrowLeftCircle className="ms-2 h-5 w-5" /></Link>
               </Button>
               <Button asChild variant="outline" size="lg" className="font-semibold w-full sm:w-auto">
