@@ -72,7 +72,7 @@ export function Header() {
 
         <div className="flex items-center gap-2">
           <ThemeSwitcher className="text-gray-600 hover:text-gray-900" />
-          <Button onClick={handleAuthAction} variant="default" size="sm" className="font-semibold" disabled={authLoading}>
+          <Button onClick={handleAuthAction} variant="default" size="sm" className="font-semibold bg-black text-white hover:bg-black/90" disabled={authLoading}>
             {getAuthButtonLabel()}
           </Button>
           {user && !authLoading && (
