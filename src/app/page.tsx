@@ -48,7 +48,7 @@ export default function LandingPage() {
         {/* Hero Section */}
         <section className="py-20 md:py-32 bg-white">
           <div className="container mx-auto px-6 text-center">
-            <h1 className="text-4xl md:text-6xl font-bold font-headline mb-6 text-primary">
+            <h1 className="text-4xl md:text-6xl font-bold font-headline mb-6 text-gray-900">
               سيف مصر الوطنية للأمن
             </h1>
             <p className="text-lg md:text-xl text-foreground/80 mb-10 max-w-2xl mx-auto">
