@@ -9,38 +9,34 @@ body {
 
 @layer base {
   :root {
-    /* Main Light Theme HSL values (Riplet CSS) */
-    --default-background-light: 220 60% 98%;
-    --default-foreground-light: 0 0% 20%;
+    /* Main Light Theme HSL values - Modern Reference Style */
+    --default-background-light: 220 100% 98%;
+    --default-foreground-light: 220 15% 15%;
     --default-card-light: 0 0% 100%;
-    --default-card-foreground-light: 0 0% 20%;
+    --default-card-foreground-light: 220 15% 15%;
     --default-popover-light: 0 0% 100%;
-    --default-popover-foreground-light: 0 0% 20%;
-    --default-primary-light: 208 100% 34%;
+    --default-popover-foreground-light: 220 15% 15%;
+    --default-primary-light: 214 100% 59%;
     --default-primary-foreground-light: 0 0% 100%;
-    --default-secondary-light: 220 20% 94%;
-    --default-secondary-foreground-light: 0 0% 20%;
-    --default-muted-light: 220 20% 94%;
-    --default-muted-foreground-light: 0 0% 40%;
-    --default-accent-light: 199 100% 50%;
+    --default-secondary-light: 220 25% 96%;
+    --default-secondary-foreground-light: 220 15% 20%;
+    --default-muted-light: 220 25% 96%;
+    --default-muted-foreground-light: 220 15% 50%;
+    --default-accent-light: 214 100% 59%;
     --default-accent-foreground-light: 0 0% 100%;
-    --default-destructive-light: 0 84.2% 60.2%;
-    --default-destructive-foreground-light: 0 0% 98%;
-    --default-border-light: 220 20% 88%;
-    --default-input-light: 220 20% 91%;
-    --default-ring-light: 199 100% 50%;
-
-    /* Sidebar Light Theme HSL values (Riplet CSS derived) */
-    --default-sidebar-background-light: 0 0% 98%;
-    --default-sidebar-foreground-light: 0 0% 20%;
-    --default-sidebar-primary-light: 208 100% 34%;
+    --default-destructive-light: 0 84% 60%;
+    --default-destructive-foreground-light: 0 0% 100%;
+    --default-border-light: 220 25% 90%;
+    --default-input-light: 220 25% 94%;
+    --default-ring-light: 214 100% 59%;    /* Sidebar Light Theme HSL values - Modern Reference Style */
+    --default-sidebar-background-light: 35 45% 94%; /* warm cream like reference */
+    --default-sidebar-foreground-light: 220 20% 20%; /* dark text */
+    --default-sidebar-primary-light: 214 100% 59%;
     --default-sidebar-primary-foreground-light: 0 0% 100%;
-    --default-sidebar-accent-light: 199 100% 50%;
+    --default-sidebar-accent-light: 214 100% 59%;  /* blue accent */
     --default-sidebar-accent-foreground-light: 0 0% 100%;
-    --default-sidebar-border-light: 220 20% 88%;
-    --default-sidebar-ring-light: 199 100% 50%;
-
-    /* Main CSS variables using custom properties from ThemeApplicator, with fallbacks */
+    --default-sidebar-border-light: 35 30% 88%;   /* subtle cream border */
+    --default-sidebar-ring-light: 214 100% 59%;    /* Main CSS variables using custom properties from ThemeApplicator, with fallbacks */
     --background: var(--custom-background-light, var(--default-background-light));
     --foreground: var(--custom-foreground-light, var(--default-foreground-light));
     --card: var(--custom-card-light, var(--default-card-light));
@@ -71,45 +67,45 @@ body {
     --sidebar-border: var(--custom-sidebar-border-light, var(--default-sidebar-border-light));
     --sidebar-ring: var(--custom-sidebar-ring-light, var(--default-sidebar-ring-light));
 
-    --chart-1: 12 76% 61%;
-    --chart-2: 173 58% 39%;
-    --chart-3: 197 37% 24%;
-    --chart-4: 43 74% 66%;
-    --chart-5: 27 87% 67%;
-    --radius: 0.75rem;
+    --chart-1: 195 100% 50%;  /* Primary teal */
+    --chart-2: 195 85% 40%;   /* Darker teal */
+    --chart-3: 210 50% 45%;   /* Navy blue */
+    --chart-4: 195 70% 60%;   /* Light teal */
+    --chart-5: 210 40% 35%;   /* Dark navy */
+    --radius: 1rem; /* rounded, premium look */
   }
 
   .dark {
-    /* Main Dark Theme HSL values (Riplet CSS derived) */
-    --default-background-dark: 210 10% 15%;
-    --default-foreground-dark: 210 20% 90%;
-    --default-card-dark: 210 10% 20%;
-    --default-card-foreground-dark: 210 20% 90%;
-    --default-popover-dark: 210 10% 20%;
-    --default-popover-foreground-dark: 210 20% 90%;
-    --default-primary-dark: 208 100% 70%;
-    --default-primary-foreground-dark: 208 100% 10%;
-    --default-secondary-dark: 210 10% 25%;
-    --default-secondary-foreground-dark: 210 20% 90%;
-    --default-muted-dark: 210 10% 25%;
-    --default-muted-foreground-dark: 210 20% 60%;
-    --default-accent-dark: 199 100% 50%;
-    --default-accent-foreground-dark: 210 100% 10%;
-    --default-destructive-dark: 0 72% 51%;
-    --default-destructive-foreground-dark: 0 0% 98%;
-    --default-border-dark: 210 10% 30%;
-    --default-input-dark: 210 10% 30%;
-    --default-ring-dark: 199 100% 50%;
+    /* Main Dark Theme HSL values - Modern Dark Style */
+    --default-background-dark: 220 35% 1%;
+    --default-foreground-dark: 220 15% 96%;
+    --default-card-dark: 220 30% 3%;
+    --default-card-foreground-dark: 220 15% 96%;
+    --default-popover-dark: 220 30% 4%;
+    --default-popover-foreground-dark: 220 15% 96%;
+    --default-primary-dark: 214 100% 65%;
+    --default-primary-foreground-dark: 220 25% 6%;
+    --default-secondary-dark: 220 25% 5%;
+    --default-secondary-foreground-dark: 220 15% 92%;
+    --default-muted-dark: 220 25% 5%;
+    --default-muted-foreground-dark: 220 15% 72%;
+    --default-accent-dark: 214 100% 65%;
+    --default-accent-foreground-dark: 220 25% 6%;
+    --default-destructive-dark: 0 75% 58%;
+    --default-destructive-foreground-dark: 220 15% 95%;
+    --default-border-dark: 220 25% 8%;
+    --default-input-dark: 220 25% 6%;
+    --default-ring-dark: 214 100% 65%;
 
-    /* Sidebar Dark Theme HSL values (Riplet CSS derived) */
-    --default-sidebar-background-dark: 210 10% 18%;
-    --default-sidebar-foreground-dark: 210 20% 90%;
-    --default-sidebar-primary-dark: 208 100% 70%;
-    --default-sidebar-primary-foreground-dark: 208 100% 10%;
-    --default-sidebar-accent-dark: 199 100% 50%;
-    --default-sidebar-accent-foreground-dark: 210 100% 10%;
-    --default-sidebar-border-dark: 210 10% 30%;
-    --default-sidebar-ring-dark: 199 100% 50%;
+    /* Sidebar Dark Theme HSL values - Modern Dark Style */
+    --default-sidebar-background-dark: 220 35% 2%;
+    --default-sidebar-foreground-dark: 220 15% 92%;
+    --default-sidebar-primary-dark: 214 100% 65%;
+    --default-sidebar-primary-foreground-dark: 220 35% 2%;
+    --default-sidebar-accent-dark: 214 100% 65%;
+    --default-sidebar-accent-foreground-dark: 220 35% 2%;
+    --default-sidebar-border-dark: 220 25% 6%;
+    --default-sidebar-ring-dark: 214 100% 65%;
 
     /* Main CSS variables using custom properties from ThemeApplicator, with fallbacks for dark mode */
     --background: var(--custom-background-dark, var(--default-background-dark));
@@ -142,11 +138,11 @@ body {
     --sidebar-border: var(--custom-sidebar-border-dark, var(--default-sidebar-border-dark));
     --sidebar-ring: var(--custom-sidebar-ring-dark, var(--default-sidebar-ring-dark));
 
-    --chart-1: 220 70% 50%;
-    --chart-2: 160 60% 45%;
-    --chart-3: 30 80% 55%;
-    --chart-4: 280 65% 60%;
-    --chart-5: 340 75% 55%;
+    --chart-1: 195 100% 65%;  /* Bright teal for dark mode */
+    --chart-2: 195 85% 55%;   /* Medium teal */
+    --chart-3: 210 60% 70%;   /* Light navy */
+    --chart-4: 195 70% 75%;   /* Very light teal */
+    --chart-5: 210 50% 60%;   /* Medium navy */
   }
 }
 

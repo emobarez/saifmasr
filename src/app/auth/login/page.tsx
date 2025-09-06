@@ -37,19 +37,28 @@ export default function LoginPage() {
   const onSubmit = async (data: LoginFormValues) => {
     setIsLoading(true);
     try {
-      await signIn(data.email, data.password);
-      // Navigation is handled by AuthContext
-      toast({
-        title: "تم تسجيل الدخول بنجاح",
-        description: "مرحباً بعودتك!",
-      });
+      const result = await signIn(data.email, data.password);
+      if (result?.error) {
+        toast({
+          title: "خطأ في تسجيل الدخول",
+          description: result.error,
+          variant: "destructive",
+        });
+        setIsLoading(false);
+      } else if (result?.ok) {
+        toast({
+          title: "تم تسجيل الدخول بنجاح",
+          description: "مرحباً بعودتك!",
+        });
+        // Don't set loading to false - let the redirect happen
+        // The page will change, so we don't need to update loading state
+      }
     } catch (error: any) {
       toast({
         title: "خطأ في تسجيل الدخول",
         description: error.message || "يرجى التحقق من بريدك الإلكتروني وكلمة المرور.",
         variant: "destructive",
       });
-    } finally {
       setIsLoading(false);
     }
   };

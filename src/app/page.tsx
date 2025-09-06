@@ -51,7 +51,7 @@ export default function LandingPage() {
       <Header />
       <main className="flex-grow">
         {/* Hero Section */}
-        <section className="py-20 md:py-32 bg-white">
+        <section className="py-20 md:py-32 bg-card">
           <div className="container mx-auto px-6 text-center">
             <h1 className="text-4xl md:text-6xl font-bold font-headline mb-6 text-foreground">
               سيف مصر الوطنية للأمن
@@ -60,10 +60,10 @@ export default function LandingPage() {
               حلولك المتكاملة لإدارة الخدمات، تتبع الطلبات، والحصول على تقارير دقيقة ومدعومة بالذكاء الاصطناعي.
             </p>
             <div className="flex flex-col sm:flex-row items-center justify-center gap-4 mt-10">
-              <Button asChild size="lg" className="font-semibold w-full sm:w-auto bg-black text-white hover:bg-black/90">
+              <Button asChild size="lg" className="font-semibold w-full sm:w-auto !bg-primary !text-primary-foreground hover:!bg-primary/90">
                 <Link href="/auth/register">ابدأ الآن <ArrowLeftCircle className="ms-2 h-5 w-5" /></Link>
               </Button>
-              <Button asChild variant="outline" size="lg" className="font-semibold w-full sm:w-auto">
+              <Button asChild variant="outline" size="lg" className="font-semibold w-full sm:w-auto text-foreground border-border hover:bg-muted">
                 <Link href="/#services"><Search className="me-2 h-5 w-5" />اكتشف خدماتنا</Link>
               </Button>
             </div>
@@ -81,27 +81,36 @@ export default function LandingPage() {
             </p>
             <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-8">
               {services.map((service, index) => (
-                <Card key={index} className="shadow-lg hover:shadow-xl transition-shadow duration-300 flex flex-col">
-                  <CardHeader className="items-center text-center">
-                    <div className="p-4 bg-primary/10 rounded-full mb-4">
-                      {service.icon}
-                    </div>
-                    <CardTitle className="font-headline text-xl text-primary">{service.title}</CardTitle>
-                  </CardHeader>
-                  <CardContent className="flex-grow text-center">
-                    <CardDescription>{service.description}</CardDescription>
-                  </CardContent>
-                  <div className="p-4 text-center">
-                     <Image 
-                        src={service.imageUrl} 
-                        alt={service.title} 
-                        width={600} 
-                        height={400} 
+                <Link
+                  key={index}
+                  href="/services"
+                  aria-label={`الانتقال إلى صفحة الخدمات: ${service.title}`}
+                  className="group block focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-primary focus-visible:ring-offset-2 focus-visible:ring-offset-background rounded-2xl"
+                >
+                  <Card className="h-full cursor-pointer shadow-lg transition-all duration-300 flex flex-col hover:shadow-xl group-hover:-translate-y-0.5">
+                    <CardHeader className="items-center text-center">
+                      <div className="p-4 bg-primary/10 rounded-full mb-4">
+                        {service.icon}
+                      </div>
+                      <CardTitle className="font-headline text-xl text-primary group-hover:text-primary/90">
+                        {service.title}
+                      </CardTitle>
+                    </CardHeader>
+                    <CardContent className="flex-grow text-center">
+                      <CardDescription>{service.description}</CardDescription>
+                    </CardContent>
+                    <div className="p-4 text-center">
+                      <Image
+                        src={service.imageUrl}
+                        alt={service.title}
+                        width={600}
+                        height={400}
                         className="rounded-md object-cover aspect-[3/2]"
                         data-ai-hint={service.dataAiHint}
                       />
-                  </div>
-                </Card>
+                    </div>
+                  </Card>
+                </Link>
               ))}
             </div>
           </div>

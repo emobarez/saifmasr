@@ -4,7 +4,7 @@
 import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogDescription, DialogFooter, DialogClose } from "@/components/ui/dialog";
 import { Button } from "@/components/ui/button";
 import { Badge } from "@/components/ui/badge";
-import { Timestamp } from "firebase/firestore";
+
 import { Separator } from "@/components/ui/separator";
 import { ScrollArea } from "@/components/ui/scroll-area";
 
@@ -14,8 +14,8 @@ interface Report {
   description: string;
   content: string;
   status: "مسودة" | "قيد المراجعة" | "منشور" | "مؤرشف";
-  createdAt: Timestamp;
-  updatedAt: Timestamp;
+  createdAt: Date;
+  updatedAt: Date;
 }
 
 interface ReportDetailsDialogProps {
@@ -24,17 +24,10 @@ interface ReportDetailsDialogProps {
   onOpenChange: (isOpen: boolean) => void;
 }
 
-const formatDateForDialog = (dateValue: Timestamp | Date | undefined): string => {
-  if (!dateValue) return "غير متوفر";
-  let date: Date;
-  if (dateValue instanceof Timestamp) {
-    date = dateValue.toDate();
-  } else if (dateValue instanceof Date) {
-    date = dateValue;
-  } else {
-    return "تاريخ غير صالح";
-  }
-  return new Intl.DateTimeFormat('ar-EG', { year: 'numeric', month: 'long', day: 'numeric', hour: '2-digit', minute: '2-digit' }).format(date);
+const formatDateForDialog = (date: Date | string | undefined): string => {
+  if (!date) return "غير متوفر";
+  const dateObj = date instanceof Date ? date : new Date(date);
+  return dateObj.toLocaleDateString('ar-EG', { year: 'numeric', month: 'long', day: 'numeric', hour: '2-digit', minute: '2-digit' });
 };
 
 const getStatusVariantForDialog = (status: Report["status"]): "default" | "secondary" | "destructive" | "outline" => {
@@ -49,7 +42,7 @@ export function ReportDetailsDialog({ report, isOpen, onOpenChange }: ReportDeta
   if (!report) return null;
 
   return (
-    <Dialog open={isOpen} onOpenChange={onOpenChange} dir="rtl">
+    <Dialog open={isOpen} onOpenChange={onOpenChange}>
       <DialogContent className="sm:max-w-2xl md:max-w-3xl lg:max-w-4xl max-h-[90vh] flex flex-col">
         <DialogHeader>
           <DialogTitle className="font-headline text-xl text-primary">{report.title}</DialogTitle>

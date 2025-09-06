@@ -1,0 +1,380 @@
+"use client";
+
+import { useState, useEffect } from "react";
+import { Card, CardHeader, CardTitle, CardDescription, CardContent } from "@/components/ui/card";
+import { Button } from "@/components/ui/button";
+import { Input } from "@/components/ui/input";
+import { Badge } from "@/components/ui/badge";
+import { 
+  Table, 
+  TableBody, 
+  TableCell, 
+  TableHead, 
+  TableHeader, 
+  TableRow 
+} from "@/components/ui/table";
+import { 
+  BriefcaseBusiness, 
+  Search, 
+  Plus, 
+  Edit3, 
+  Eye, 
+  Trash2,
+  Shield,
+  Camera,
+  Users,
+  Car,
+  Building,
+  DollarSign,
+  Clock,
+  Loader2
+} from "lucide-react";
+import Link from "next/link";
+
+interface Service {
+  id: string;
+  name: string;
+  description?: string;
+  category?: string;
+  price?: number;
+  status: 'ACTIVE' | 'INACTIVE';
+  createdAt: string;
+  _count?: {
+    serviceRequests: number;
+  };
+  faqs?: Array<{
+    id: string;
+    question: string;
+    answer: string;
+  }>;
+}
+
+export default function AdminServicesPage() {
+  const [searchTerm, setSearchTerm] = useState("");
+  const [services, setServices] = useState<Service[]>([]);
+  const [loading, setLoading] = useState(true);
+  const [error, setError] = useState<string | null>(null);
+  
+  // Fetch services from database
+  useEffect(() => {
+    const fetchServices = async () => {
+      try {
+        setLoading(true);
+        const response = await fetch('/api/services');
+        
+        if (!response.ok) {
+          throw new Error('Failed to fetch services');
+        }
+        
+        const data = await response.json();
+        setServices(data);
+        setError(null);
+      } catch (err) {
+        console.error('Error fetching services:', err);
+        setError('Failed to load services');
+        
+        // Fallback to mock data
+        setServices([
+          {
+            id: "1",
+            name: "خدمة الحراسة الأمنية",
+            description: "حراسة وحماية المنشآت والممتلكات",
+            category: "security",
+            price: 5000,
+            status: 'active',
+            createdDate: "2024-01-15",
+            duration: "شهري",
+            clients: 15,
+            icon: "shield"
+          }
+        ]);
+      } finally {
+        setLoading(false);
+      }
+    };
+
+    fetchServices();
+  }, []);
+
+interface Service {
+  id: string;
+  name: string;
+  category: string;
+  description: string;
+  price: number;
+  duration: string;
+  status: 'active' | 'inactive' | 'draft';
+  clients: number;
+  createdDate: string;
+  icon: any;
+}
+
+export default function AdminServicesPage() {
+  const [searchTerm, setSearchTerm] = useState("");
+  
+  // Mock data - replace with real database queries
+  const services: Service[] = [
+    {
+      id: "1",
+      name: "خدمات الحراسة الشخصية",
+      category: "حماية شخصية",
+      description: "حراسة شخصية متخصصة للشخصيات المهمة",
+      price: 5000,
+      duration: "شهرياً",
+      status: "active",
+      clients: 25,
+      createdDate: "2024-01-10",
+      icon: Shield
+    },
+    {
+      id: "2",
+      name: "أنظمة المراقبة بالكاميرات",
+      category: "تقنية أمنية",
+      description: "تركيب وصيانة أنظمة المراقبة المتطورة",
+      price: 15000,
+      duration: "مرة واحدة",
+      status: "active",
+      clients: 40,
+      createdDate: "2024-01-15",
+      icon: Camera
+    },
+    {
+      id: "3",
+      name: "أمن المباني والمنشآت",
+      category: "أمن المباني",
+      description: "حلول أمنية شاملة للمجمعات السكنية والتجارية",
+      price: 8000,
+      duration: "شهرياً",
+      status: "active",
+      clients: 18,
+      createdDate: "2024-02-01",
+      icon: Building
+    },
+    {
+      id: "4",
+      name: "خدمات النقل الآمن",
+      category: "نقل",
+      description: "نقل آمن للأفراد والبضائع القيمة",
+      price: 3000,
+      duration: "حسب الرحلة",
+      status: "draft",
+      clients: 0,
+      createdDate: "2024-12-01",
+      icon: Car
+    },
+    {
+      id: "5",
+      name: "تدريب أمني متخصص",
+      category: "تدريب",
+      description: "برامج تدريبية متخصصة في المجال الأمني",
+      price: 2500,
+      duration: "دورة",
+      status: "active",
+      clients: 12,
+      createdDate: "2024-03-15",
+      icon: Users
+    }
+  ];
+
+  const filteredServices = services.filter(service => 
+    service.name.toLowerCase().includes(searchTerm.toLowerCase()) ||
+    service.category.toLowerCase().includes(searchTerm.toLowerCase()) ||
+    service.description.toLowerCase().includes(searchTerm.toLowerCase())
+  );
+
+  const getStatusBadge = (status: string) => {
+    switch (status) {
+      case 'active':
+        return <Badge className="bg-green-100 text-green-800">نشط</Badge>;
+      case 'inactive':
+        return <Badge variant="secondary">غير نشط</Badge>;
+      case 'draft':
+        return <Badge className="bg-orange-100 text-orange-800">مسودة</Badge>;
+      default:
+        return <Badge variant="outline">{status}</Badge>;
+    }
+  };
+
+  const getCategoryColor = (category: string) => {
+    const colors: { [key: string]: string } = {
+      'حماية شخصية': 'bg-blue-100 text-blue-800',
+      'تقنية أمنية': 'bg-purple-100 text-purple-800',
+      'أمن المباني': 'bg-green-100 text-green-800',
+      'نقل': 'bg-orange-100 text-orange-800',
+      'تدريب': 'bg-indigo-100 text-indigo-800'
+    };
+    return colors[category] || 'bg-gray-100 text-gray-800';
+  };
+
+  return (
+    <div className="space-y-6">
+      {/* Header */}
+      <div className="flex justify-between items-center">
+        <div>
+          <h1 className="text-3xl font-bold flex items-center">
+            <BriefcaseBusiness className="h-8 w-8 mr-3 text-green-600" />
+            إدارة الخدمات
+          </h1>
+          <p className="text-muted-foreground mt-1">
+            إدارة خدمات الشركة الأمنية وأسعارها
+          </p>
+        </div>
+        <Button asChild>
+          <Link href="/admin/services/new">
+            <Plus className="h-4 w-4 mr-2" />
+            إضافة خدمة جديدة
+          </Link>
+        </Button>
+      </div>
+
+      {/* Stats Cards */}
+      <div className="grid grid-cols-1 md:grid-cols-4 gap-4">
+        <Card>
+          <CardContent className="p-6">
+            <div className="flex items-center justify-between">
+              <div>
+                <p className="text-sm font-medium text-muted-foreground">إجمالي الخدمات</p>
+                <p className="text-2xl font-bold">{services.length}</p>
+              </div>
+              <BriefcaseBusiness className="h-8 w-8 text-green-500" />
+            </div>
+          </CardContent>
+        </Card>
+        <Card>
+          <CardContent className="p-6">
+            <div className="flex items-center justify-between">
+              <div>
+                <p className="text-sm font-medium text-muted-foreground">الخدمات النشطة</p>
+                <p className="text-2xl font-bold">{services.filter(s => s.status === 'active').length}</p>
+              </div>
+              <div className="h-8 w-8 bg-green-100 rounded-full flex items-center justify-center">
+                <div className="h-4 w-4 bg-green-500 rounded-full"></div>
+              </div>
+            </div>
+          </CardContent>
+        </Card>
+        <Card>
+          <CardContent className="p-6">
+            <div className="flex items-center justify-between">
+              <div>
+                <p className="text-sm font-medium text-muted-foreground">إجمالي العملاء</p>
+                <p className="text-2xl font-bold">{services.reduce((acc, s) => acc + ((s as any)._count?.serviceRequests || 0), 0)}</p>
+              </div>
+              <Users className="h-8 w-8 text-blue-500" />
+            </div>
+          </CardContent>
+        </Card>
+        <Card>
+          <CardContent className="p-6">
+            <div className="flex items-center justify-between">
+              <div>
+                <p className="text-sm font-medium text-muted-foreground">متوسط السعر</p>
+                <p className="text-2xl font-bold">{services.length > 0 ? Math.round(services.reduce((acc, s) => acc + (s.price || 0), 0) / services.length).toLocaleString() : 0} ريال</p>
+              </div>
+              <DollarSign className="h-8 w-8 text-purple-500" />
+            </div>
+          </CardContent>
+        </Card>
+      </div>
+
+      {/* Search and Filters */}
+      <Card>
+        <CardContent className="p-6">
+          <div className="flex items-center space-x-4 space-x-reverse">
+            <div className="relative flex-1">
+              <Search className="absolute right-3 top-1/2 transform -translate-y-1/2 text-gray-400 h-4 w-4" />
+              <Input
+                placeholder="البحث في الخدمات..."
+                value={searchTerm}
+                onChange={(e) => setSearchTerm(e.target.value)}
+                className="pr-10"
+              />
+            </div>
+            <Button variant="outline">
+              تصفية حسب الفئة
+            </Button>
+          </div>
+        </CardContent>
+      </Card>
+
+      {/* Services Table */}
+      <Card>
+        <CardHeader>
+          <CardTitle>قائمة الخدمات</CardTitle>
+          <CardDescription>
+            {filteredServices.length} من أصل {services.length} خدمة
+          </CardDescription>
+        </CardHeader>
+        <CardContent>
+          <Table>
+            <TableHeader>
+              <TableRow>
+                <TableHead>الخدمة</TableHead>
+                <TableHead>الفئة</TableHead>
+                <TableHead>السعر</TableHead>
+                <TableHead>المدة</TableHead>
+                <TableHead>العملاء</TableHead>
+                <TableHead>الحالة</TableHead>
+                <TableHead>الإجراءات</TableHead>
+              </TableRow>
+            </TableHeader>
+            <TableBody>
+              {filteredServices.map((service) => {
+                const IconComponent = service.icon;
+                return (
+                  <TableRow key={service.id}>
+                    <TableCell>
+                      <div className="flex items-center space-x-3 space-x-reverse">
+                        <div className="h-10 w-10 bg-gray-100 rounded-lg flex items-center justify-center">
+                          <IconComponent className="h-5 w-5 text-gray-600" />
+                        </div>
+                        <div>
+                          <div className="font-medium">{service.name}</div>
+                          <div className="text-sm text-muted-foreground">{service.description}</div>
+                        </div>
+                      </div>
+                    </TableCell>
+                    <TableCell>
+                      <Badge className={getCategoryColor(service.category)}>
+                        {service.category}
+                      </Badge>
+                    </TableCell>
+                    <TableCell>
+                      <div className="flex items-center">
+                        <DollarSign className="h-4 w-4 mr-1 text-green-600" />
+                        {service.price.toLocaleString()} ريال
+                      </div>
+                    </TableCell>
+                    <TableCell>
+                      <div className="flex items-center">
+                        <Clock className="h-4 w-4 mr-1 text-gray-400" />
+                        {service.duration}
+                      </div>
+                    </TableCell>
+                    <TableCell>
+                      <Badge variant="outline">{service.clients} عميل</Badge>
+                    </TableCell>
+                    <TableCell>{getStatusBadge(service.status)}</TableCell>
+                    <TableCell>
+                      <div className="flex items-center space-x-2 space-x-reverse">
+                        <Button variant="ghost" size="sm">
+                          <Eye className="h-4 w-4" />
+                        </Button>
+                        <Button variant="ghost" size="sm">
+                          <Edit3 className="h-4 w-4" />
+                        </Button>
+                        <Button variant="ghost" size="sm" className="text-red-600 hover:text-red-800">
+                          <Trash2 className="h-4 w-4" />
+                        </Button>
+                      </div>
+                    </TableCell>
+                  </TableRow>
+                );
+              })}
+            </TableBody>
+          </Table>
+        </CardContent>
+      </Card>
+    </div>
+  );
+}

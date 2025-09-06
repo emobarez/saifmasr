@@ -1,6 +1,5 @@
 
-import { db } from '@/lib/firebase';
-import { collection, addDoc, serverTimestamp, Timestamp } from 'firebase/firestore';
+import { prisma } from '@/lib/db';
 
 export type ActivityActionType = 
   | "CLIENT_CREATED" | "CLIENT_UPDATED" | "CLIENT_DELETED"
@@ -38,18 +37,27 @@ interface ActivityLogPayload {
 
 export interface ActivityLogEntry extends ActivityLogPayload { 
     id: string;
-    timestamp: Timestamp;
+    createdAt: Date;
 }
-
 
 export async function logActivity(payload: ActivityLogPayload): Promise<void> {
   try {
-    await addDoc(collection(db, 'activityLogs'), {
-      ...payload,
-      timestamp: serverTimestamp(),
+    await prisma.activityLog.create({
+      data: {
+        actionType: payload.actionType,
+        description: payload.description,
+        userId: payload.actor?.id,
+        metadata: JSON.parse(JSON.stringify({
+          actor: payload.actor,
+          target: payload.target,
+          details: payload.details,
+        })),
+      },
     });
+    console.log('Activity logged successfully:', payload.actionType);
   } catch (error) {
     console.error("Error logging activity:", error);
+    // Don't throw the error - logging failures shouldn't break the main functionality
   }
 }
 

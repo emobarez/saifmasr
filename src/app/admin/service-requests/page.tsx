@@ -1,340 +1,366 @@
-
 "use client";
-import { useState, useEffect, useCallback, useMemo } from "react";
+
+import { useState } from "react";
 import { Card, CardHeader, CardTitle, CardDescription, CardContent } from "@/components/ui/card";
-import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from "@/components/ui/table";
-import { Badge } from "@/components/ui/badge";
-import { Loader2, AlertTriangle, Info, ThumbsUp, MinusCircle, Eye, Search, ClipboardList, Filter, Paperclip } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
-import { useToast } from "@/hooks/use-toast";
-import { db } from "@/lib/firebase";
-import { collection, getDocs, query, orderBy, Timestamp, doc, updateDoc } from "firebase/firestore";
-import { prioritizeClientRequest, PrioritizeClientRequestOutput } from "@/ai/flows/prioritize-client-request";
-import {
-  Select,
-  SelectContent,
-  SelectItem,
-  SelectTrigger,
-  SelectValue,
-} from "@/components/ui/select"
-import { useAuth } from "@/context/AuthContext";
-import { logActivity } from "@/lib/activityLogger";
-import { AdminServiceRequestDetailsDialog } from "@/components/admin/ServiceRequestDetailsDialog";
-import { Tooltip, TooltipContent, TooltipProvider, TooltipTrigger } from "@/components/ui/tooltip";
+import { Badge } from "@/components/ui/badge";
+import { 
+  Table, 
+  TableBody, 
+  TableCell, 
+  TableHead, 
+  TableHeader, 
+  TableRow 
+} from "@/components/ui/table";
+import { 
+  ClipboardList, 
+  Search, 
+  Filter, 
+  Eye, 
+  Edit3, 
+  Check, 
+  X,
+  Clock,
+  AlertTriangle,
+  User,
+  Calendar,
+  MapPin,
+  Phone
+} from "lucide-react";
+import Link from "next/link";
+import { formatEGPSimple } from "@/lib/egyptian-utils";
 
 interface ServiceRequest {
   id: string;
-  serviceType: string;
-  requestTitle: string;
-  requestDetails: string;
-  clientId: string;
   clientName: string;
-  clientEmail: string;
-  status: "جديد" | "قيد المعالجة" | "مكتمل" | "ملغى";
-  createdAt: Timestamp;
-  attachmentURL?: string;
-  attachmentFilename?: string;
+  clientPhone: string;
+  serviceType: string;
+  description: string;
+  location: string;
+  urgency: 'low' | 'medium' | 'high' | 'critical';
+  status: 'pending' | 'approved' | 'in-progress' | 'completed' | 'cancelled';
+  requestDate: string;
+  scheduledDate?: string;
+  estimatedCost: number;
+  assignedTo?: string;
 }
-
-interface ServiceRequestWithPriority extends ServiceRequest {
-  aiPriority?: PrioritizeClientRequestOutput["priority"];
-  aiReasoning?: PrioritizeClientRequestOutput["reasoning"];
-  aiError?: string;
-}
-
-type ServiceRequestStatus = "جديد" | "قيد المعالجة" | "مكتمل" | "ملغى";
-const statusOptions: ServiceRequestStatus[] = ["جديد", "قيد المعالجة", "مكتمل", "ملغى"];
-const filterStatusOptions: ("all" | ServiceRequestStatus)[] = ["all", ...statusOptions];
-
-
-const getServiceTypeName = (typeKey: string): string => {
-  const types: {[key: string]: string} = {
-      "consulting": "خدمات استشارية",
-      "security": "حلول أمنية",
-      "reports": "إدارة التقارير",
-      "audit": "التدقيق والمراجعة",
-      "other": "أخرى"
-  };
-  return types[typeKey] || typeKey;
-};
-
 
 export default function AdminServiceRequestsPage() {
-  const [requests, setRequests] = useState<ServiceRequestWithPriority[]>([]);
-  const [isLoading, setIsLoading] = useState(true);
-  const { toast } = useToast();
-  const { user: adminUser } = useAuth();
-  const [selectedRequest, setSelectedRequest] = useState<ServiceRequestWithPriority | null>(null);
-  const [isDetailsDialogOpen, setIsDetailsDialogOpen] = useState(false);
   const [searchTerm, setSearchTerm] = useState("");
-  const [statusFilter, setStatusFilter] = useState<"all" | ServiceRequestStatus>("all");
-
-  const fetchAndPrioritizeRequests = useCallback(async () => {
-    setIsLoading(true);
-    try {
-      const q = query(collection(db, "serviceRequests"), orderBy("createdAt", "desc"));
-      const querySnapshot = await getDocs(q);
-      const fetchedRequests = querySnapshot.docs.map(doc => ({ id: doc.id, ...doc.data() } as ServiceRequest));
-
-      const requestsWithPriorityPromises = fetchedRequests.map(async (req) => {
-        try {
-          const priorityResult = await prioritizeClientRequest({
-            requestTitle: req.requestTitle,
-            requestDetails: req.requestDetails,
-          });
-          return { ...req, aiPriority: priorityResult.priority, aiReasoning: priorityResult.reasoning };
-        } catch (aiError: any) {
-          console.error(`Error prioritizing request ${req.id}:`, aiError);
-          return { ...req, aiError: "فشل في تحديد الأولوية بالذكاء الاصطناعي" };
-        }
-      });
-
-      const settledRequests = await Promise.all(requestsWithPriorityPromises);
-      setRequests(settledRequests);
-
-    } catch (error) {
-      console.error("Error fetching service requests:", error);
-      toast({ title: "خطأ", description: "لم نتمكن من تحميل قائمة طلبات الخدمة.", variant: "destructive" });
-    } finally {
-      setIsLoading(false);
-    }
-  }, [toast]);
-
-  useEffect(() => {
-    fetchAndPrioritizeRequests();
-  }, [fetchAndPrioritizeRequests]);
-
-  const handleStatusChange = async (requestId: string, newStatus: ServiceRequest["status"]) => {
-    const originalRequest = requests.find(req => req.id === requestId);
-    if (!originalRequest) return;
-
-    try {
-      const requestRef = doc(db, "serviceRequests", requestId);
-      await updateDoc(requestRef, { status: newStatus });
-      
-      setRequests(prevRequests => 
-        prevRequests.map(req => req.id === requestId ? { ...req, status: newStatus } : req)
-      );
-      toast({ title: "تم التحديث", description: `تم تحديث حالة الطلب إلى ${newStatus}.` });
-
-      if (adminUser) {
-        await logActivity({
-          actionType: "SERVICE_REQUEST_STATUS_UPDATED",
-          description: `Admin ${adminUser.displayName || adminUser.email} updated status for request "${originalRequest.requestTitle}" to ${newStatus}.`,
-          actor: { id: adminUser.uid, role: "admin", name: adminUser.displayName },
-          target: { id: requestId, type: "serviceRequest", name: originalRequest.requestTitle },
-          details: { clientId: originalRequest.clientId, clientName: originalRequest.clientName, newStatus: newStatus, oldStatus: originalRequest.status },
-        });
-      }
-
-    } catch (error) {
-      console.error("Error updating request status:", error);
-      toast({ title: "خطأ", description: "لم نتمكن من تحديث حالة الطلب.", variant: "destructive" });
-    }
-  };
-
-  const handleViewDetails = (request: ServiceRequestWithPriority) => {
-    setSelectedRequest(request);
-    setIsDetailsDialogOpen(true);
-  };
-
-  const getStatusVariant = (status: ServiceRequest["status"]): "default" | "secondary" | "destructive" | "outline" => {
-    switch (status) {
-      case "جديد": return "default"; 
-      case "قيد المعالجة": return "secondary"; 
-      case "مكتمل": return "outline"; 
-      case "ملغى": return "destructive";
-      default: return "default";
-    }
-  };
+  const [statusFilter, setStatusFilter] = useState<string>("all");
   
-  const getPriorityIcon = (priority?: PrioritizeClientRequestOutput["priority"]) => {
-    if (!priority) return <MinusCircle className="h-5 w-5 text-muted-foreground" />;
-    switch (priority) {
-      case "عالية": return <AlertTriangle className="h-5 w-5 text-destructive" />;
-      case "متوسطة": return <Info className="h-5 w-5 text-yellow-500" />; 
-      case "منخفضة": return <ThumbsUp className="h-5 w-5 text-green-500" />; 
-      default: return <MinusCircle className="h-5 w-5 text-muted-foreground" />;
+  // Mock data - replace with real database queries
+  const requests: ServiceRequest[] = [
+    {
+      id: "REQ-001",
+      clientName: "أحمد محمد العلي",
+      clientPhone: "+20101234567",
+      serviceType: "حراسة شخصية",
+      description: "طلب حراسة شخصية لمدير الشركة لمدة 3 أشهر",
+      location: "القاهرة - حي المعادي",
+      urgency: "high",
+      status: "pending",
+      requestDate: "2024-12-01",
+      estimatedCost: 15000,
+    },
+    {
+      id: "REQ-002",
+      clientName: "فاطمة خالد السالم",
+      clientPhone: "+20107654321",
+      serviceType: "أنظمة مراقبة",
+      description: "تركيب نظام مراقبة متطور للمجمع السكني",
+      location: "الإسكندرية - حي سيدي جابر",
+      urgency: "medium",
+      status: "in-progress",
+      requestDate: "2024-11-28",
+      scheduledDate: "2024-12-05",
+      estimatedCost: 25000,
+      assignedTo: "محمد الأحمد"
+    },
+    {
+      id: "REQ-003",
+      clientName: "محمد عبدالله النمر",
+      clientPhone: "+20151234567",
+      serviceType: "أمن مباني",
+      description: "حماية أمنية شاملة لمركز تجاري جديد",
+      location: "الجيزة - حي المهندسين",
+      urgency: "critical",
+      status: "approved",
+      requestDate: "2024-11-30",
+      scheduledDate: "2024-12-03",
+      estimatedCost: 50000,
+      assignedTo: "فريق الأمن الرقم 1"
+    },
+    {
+      id: "REQ-004",
+      clientName: "سارة عبدالعزيز القحطاني",
+      clientPhone: "+20159876543",
+      serviceType: "تدريب أمني",
+      description: "دورة تدريبية في إدارة الأزمات لفريق العمل",
+      location: "أسوان",
+      urgency: "low",
+      status: "completed",
+      requestDate: "2024-11-20",
+      scheduledDate: "2024-11-25",
+      estimatedCost: 8000,
+      assignedTo: "د. عالي محمد"
+    }
+  ];
+
+  const filteredRequests = requests.filter(request => {
+    const matchesSearch = request.clientName.toLowerCase().includes(searchTerm.toLowerCase()) ||
+                         request.serviceType.toLowerCase().includes(searchTerm.toLowerCase()) ||
+                         request.id.toLowerCase().includes(searchTerm.toLowerCase());
+    const matchesStatus = statusFilter === "all" || request.status === statusFilter;
+    return matchesSearch && matchesStatus;
+  });
+
+  const getStatusBadge = (status: string) => {
+    switch (status) {
+      case 'pending':
+        return <Badge className="bg-orange-100 text-orange-800">معلق</Badge>;
+      case 'approved':
+        return <Badge className="bg-blue-100 text-blue-800">موافق عليه</Badge>;
+      case 'in-progress':
+        return <Badge className="bg-purple-100 text-purple-800">جاري</Badge>;
+      case 'completed':
+        return <Badge className="bg-green-100 text-green-800">مكتمل</Badge>;
+      case 'cancelled':
+        return <Badge className="bg-red-100 text-red-800">ملغي</Badge>;
+      default:
+        return <Badge variant="outline">{status}</Badge>;
     }
   };
 
-  const formatDate = (timestamp: Timestamp | Date | undefined): string => {
-    if (!timestamp) return "غير متوفر";
-    if (timestamp instanceof Timestamp) {
-      return timestamp.toDate().toLocaleDateString('ar-EG', { year: 'numeric', month: 'short', day: 'numeric', hour: '2-digit', minute: '2-digit' });
+  const getUrgencyBadge = (urgency: string) => {
+    switch (urgency) {
+      case 'critical':
+        return <Badge className="bg-red-500 text-white">عاجل جداً</Badge>;
+      case 'high':
+        return <Badge className="bg-orange-500 text-white">عاجل</Badge>;
+      case 'medium':
+        return <Badge className="bg-yellow-500 text-white">متوسط</Badge>;
+      case 'low':
+        return <Badge className="bg-green-500 text-white">عادي</Badge>;
+      default:
+        return <Badge variant="outline">{urgency}</Badge>;
     }
-     if (timestamp instanceof Date) { 
-      return timestamp.toLocaleDateString('ar-EG', { year: 'numeric', month: 'short', day: 'numeric', hour: '2-digit', minute: '2-digit' });
-    }
-    return "تاريخ غير صالح";
   };
 
-  const filteredRequests = useMemo(() => {
-    let tempRequests = requests;
-
-    if (searchTerm) {
-        const lowercasedFilter = searchTerm.toLowerCase();
-        tempRequests = tempRequests.filter(req => 
-            req.requestTitle.toLowerCase().includes(lowercasedFilter) ||
-            req.clientName.toLowerCase().includes(lowercasedFilter) ||
-            req.clientEmail.toLowerCase().includes(lowercasedFilter) ||
-            getServiceTypeName(req.serviceType).toLowerCase().includes(lowercasedFilter) ||
-            req.status.toLowerCase().includes(lowercasedFilter)
-        );
-    }
-
-    if (statusFilter !== "all") {
-        tempRequests = tempRequests.filter(req => req.status === statusFilter);
-    }
-
-    return tempRequests;
-  }, [requests, searchTerm, statusFilter]);
+  const statusStats = {
+    pending: requests.filter(r => r.status === 'pending').length,
+    approved: requests.filter(r => r.status === 'approved').length,
+    inProgress: requests.filter(r => r.status === 'in-progress').length,
+    completed: requests.filter(r => r.status === 'completed').length
+  };
 
   return (
     <div className="space-y-6">
+      {/* Header */}
+      <div className="flex justify-between items-center">
+        <div>
+          <h1 className="text-3xl font-bold flex items-center">
+            <ClipboardList className="h-8 w-8 mr-3 text-orange-600" />
+            طلبات الخدمة
+          </h1>
+          <p className="text-muted-foreground mt-1">
+            إدارة ومتابعة جميع طلبات الخدمة الواردة
+          </p>
+        </div>
+        <div className="flex space-x-2 space-x-reverse">
+          <Button variant="outline">
+            <Filter className="h-4 w-4 mr-2" />
+            تصدير تقرير
+          </Button>
+          <Button>
+            عرض الإحصائيات
+          </Button>
+        </div>
+      </div>
+
+      {/* Stats Cards */}
+      <div className="grid grid-cols-1 md:grid-cols-4 gap-4">
+        <Card>
+          <CardContent className="p-6">
+            <div className="flex items-center justify-between">
+              <div>
+                <p className="text-sm font-medium text-muted-foreground">طلبات معلقة</p>
+                <p className="text-2xl font-bold text-orange-600">{statusStats.pending}</p>
+              </div>
+              <Clock className="h-8 w-8 text-orange-500" />
+            </div>
+          </CardContent>
+        </Card>
+        <Card>
+          <CardContent className="p-6">
+            <div className="flex items-center justify-between">
+              <div>
+                <p className="text-sm font-medium text-muted-foreground">طلبات موافق عليها</p>
+                <p className="text-2xl font-bold text-blue-600">{statusStats.approved}</p>
+              </div>
+              <Check className="h-8 w-8 text-blue-500" />
+            </div>
+          </CardContent>
+        </Card>
+        <Card>
+          <CardContent className="p-6">
+            <div className="flex items-center justify-between">
+              <div>
+                <p className="text-sm font-medium text-muted-foreground">جاري التنفيذ</p>
+                <p className="text-2xl font-bold text-purple-600">{statusStats.inProgress}</p>
+              </div>
+              <AlertTriangle className="h-8 w-8 text-purple-500" />
+            </div>
+          </CardContent>
+        </Card>
+        <Card>
+          <CardContent className="p-6">
+            <div className="flex items-center justify-between">
+              <div>
+                <p className="text-sm font-medium text-muted-foreground">طلبات مكتملة</p>
+                <p className="text-2xl font-bold text-green-600">{statusStats.completed}</p>
+              </div>
+              <div className="h-8 w-8 bg-green-100 rounded-full flex items-center justify-center">
+                <Check className="h-5 w-5 text-green-600" />
+              </div>
+            </div>
+          </CardContent>
+        </Card>
+      </div>
+
+      {/* Search and Filters */}
       <Card>
-        <CardHeader>
-          <div className="flex items-center gap-2">
-            <ClipboardList className="h-7 w-7 text-primary" />
-            <CardTitle className="font-headline text-xl text-primary">طلبات الخدمة الواردة</CardTitle>
-          </div>
-          <CardDescription>عرض وإدارة طلبات الخدمة المقدمة من العملاء مع اقتراحات الأولوية من الذكاء الاصطناعي.</CardDescription>
-        </CardHeader>
-        <CardContent>
-           <div className="flex flex-col sm:flex-row gap-4 mb-4">
-            <div className="relative flex-grow sm:max-w-md">
-              <Input 
-                placeholder="ابحث عن طلب (بالعنوان، العميل، نوع الخدمة، الحالة)..." 
-                className="ps-10"
+        <CardContent className="p-6">
+          <div className="flex items-center space-x-4 space-x-reverse">
+            <div className="relative flex-1">
+              <Search className="absolute right-3 top-1/2 transform -translate-y-1/2 text-gray-400 h-4 w-4" />
+              <Input
+                placeholder="البحث في الطلبات..."
                 value={searchTerm}
                 onChange={(e) => setSearchTerm(e.target.value)}
+                className="pr-10"
               />
-              <Search className="absolute start-3 top-1/2 -translate-y-1/2 h-5 w-5 text-muted-foreground" />
             </div>
-            <div className="flex items-center gap-2">
-                <Filter className="h-5 w-5 text-muted-foreground"/>
-                <Select 
-                    value={statusFilter} 
-                    onValueChange={(value) => setStatusFilter(value as "all" | ServiceRequestStatus)}
-                    dir="rtl"
-                >
-                    <SelectTrigger className="w-full sm:w-[180px]">
-                    <SelectValue placeholder="تصفية بالحالة" />
-                    </SelectTrigger>
-                    <SelectContent>
-                    {filterStatusOptions.map(option => (
-                        <SelectItem key={option} value={option}>
-                        {option === "all" ? "الكل" : option}
-                        </SelectItem>
-                    ))}
-                    </SelectContent>
-                </Select>
+            <div className="flex space-x-2 space-x-reverse">
+              <Button 
+                variant={statusFilter === 'all' ? 'default' : 'outline'}
+                onClick={() => setStatusFilter('all')}
+                size="sm"
+              >
+                جميع الطلبات
+              </Button>
+              <Button 
+                variant={statusFilter === 'pending' ? 'default' : 'outline'}
+                onClick={() => setStatusFilter('pending')}
+                size="sm"
+              >
+                معلقة
+              </Button>
+              <Button 
+                variant={statusFilter === 'approved' ? 'default' : 'outline'}
+                onClick={() => setStatusFilter('approved')}
+                size="sm"
+              >
+                موافق عليها
+              </Button>
             </div>
-           </div>
-          {isLoading ? (
-            <div className="flex justify-center items-center py-8"><Loader2 className="h-8 w-8 animate-spin text-primary" /><p className="ms-2">جارٍ تحميل طلبات الخدمة...</p></div>
-          ) : filteredRequests.length > 0 ? (
-            <div className="overflow-x-auto">
-              <TooltipProvider>
-                <Table>
-                  <TableHeader>
-                    <TableRow>
-                      <TableHead className="min-w-[150px]">عنوان الطلب</TableHead>
-                      <TableHead className="min-w-[120px]">اسم العميل</TableHead>
-                      <TableHead className="min-w-[130px]">نوع الخدمة</TableHead>
-                      <TableHead className="min-w-[150px]">تاريخ التقديم</TableHead>
-                      <TableHead className="min-w-[100px]">الحالة</TableHead>
-                      <TableHead className="min-w-[130px]">الأولوية (AI)</TableHead>
-                      <TableHead className="min-w-[150px]">تغيير الحالة</TableHead>
-                      <TableHead className="min-w-[80px]">إجراءات</TableHead> 
-                    </TableRow>
-                  </TableHeader>
-                  <TableBody>
-                    {filteredRequests.map((request) => (
-                      <TableRow key={request.id} className="text-xs sm:text-sm align-top">
-                        <TableCell className="font-medium">
-                          {request.requestTitle}
-                          {request.attachmentURL && (
-                             <a 
-                              href={request.attachmentURL} 
-                              target="_blank" 
-                              rel="noopener noreferrer" 
-                              className="block text-xs text-primary hover:underline mt-1 items-center gap-1"
-                              title={request.attachmentFilename || 'عرض المرفق'}
-                            >
-                              <Paperclip className="h-3 w-3 inline me-0.5" />
-                              ({request.attachmentFilename || 'مرفق'})
-                            </a>
-                          )}
-                        </TableCell>
-                        <TableCell>{request.clientName}</TableCell>
-                        <TableCell>{getServiceTypeName(request.serviceType)}</TableCell>
-                        <TableCell>{formatDate(request.createdAt)}</TableCell>
-                        <TableCell><Badge variant={getStatusVariant(request.status)}>{request.status}</Badge></TableCell>
-                        <TableCell>
-                          <Tooltip>
-                            <TooltipTrigger asChild>
-                              <div className="flex items-center gap-2 cursor-default">
-                                {getPriorityIcon(request.aiPriority)}
-                                {request.aiPriority || request.aiError || "N/A"}
-                              </div>
-                            </TooltipTrigger>
-                            {(request.aiReasoning || request.aiError) && (
-                              <TooltipContent side="top" className="max-w-xs bg-popover p-3 shadow-lg rounded-md text-popover-foreground">
-                                <p className="text-xs whitespace-pre-wrap break-words">
-                                  {request.aiReasoning}
-                                  {request.aiReasoning && request.aiError && <br />}
-                                  {request.aiError && <span className="text-destructive">{request.aiError}</span>}
-                                </p>
-                              </TooltipContent>
-                            )}
-                          </Tooltip>
-                        </TableCell>
-                         <TableCell>
-                          <Select 
-                            value={request.status} 
-                            onValueChange={(value) => handleStatusChange(request.id, value as ServiceRequest["status"])}
-                            dir="rtl"
-                          >
-                            <SelectTrigger className="h-9 w-full text-xs">
-                              <SelectValue placeholder="تغيير الحالة" />
-                            </SelectTrigger>
-                            <SelectContent>
-                              {statusOptions.map(option => (
-                                <SelectItem key={option} value={option}>{option}</SelectItem>
-                              ))}
-                            </SelectContent>
-                          </Select>
-                        </TableCell>
-                        <TableCell>
-                          <Button variant="ghost" size="icon" onClick={() => handleViewDetails(request)} aria-label="عرض التفاصيل">
-                            <Eye className="h-5 w-5" />
-                          </Button>
-                        </TableCell>
-                      </TableRow>
-                    ))}
-                  </TableBody>
-                </Table>
-              </TooltipProvider>
-            </div>
-          ) : (
-             <p className="text-muted-foreground text-center py-8">
-               {searchTerm || statusFilter !== "all" ? "لم يتم العثور على طلبات تطابق معايير البحث والتصفية الحالية." : "لا توجد طلبات خدمة لعرضها حالياً."}
-            </p>
-          )}
+          </div>
         </CardContent>
       </Card>
 
-      {selectedRequest && (
-        <AdminServiceRequestDetailsDialog
-          request={selectedRequest}
-          isOpen={isDetailsDialogOpen}
-          onOpenChange={setIsDetailsDialogOpen}
-        />
-      )}
+      {/* Requests Table */}
+      <Card>
+        <CardHeader>
+          <CardTitle>قائمة طلبات الخدمة</CardTitle>
+          <CardDescription>
+            {filteredRequests.length} من أصل {requests.length} طلب
+          </CardDescription>
+        </CardHeader>
+        <CardContent>
+          <Table>
+            <TableHeader>
+              <TableRow>
+                <TableHead>رقم الطلب</TableHead>
+                <TableHead>معلومات العميل</TableHead>
+                <TableHead>نوع الخدمة</TableHead>
+                <TableHead>الموقع</TableHead>
+                <TableHead>الأولوية</TableHead>
+                <TableHead>الحالة</TableHead>
+                <TableHead>التكلفة المقدرة</TableHead>
+                <TableHead>الإجراءات</TableHead>
+              </TableRow>
+            </TableHeader>
+            <TableBody>
+              {filteredRequests.map((request) => (
+                <TableRow key={request.id}>
+                  <TableCell className="font-medium">
+                    <div>
+                      <div className="font-bold text-sm">{request.id}</div>
+                      <div className="text-xs text-muted-foreground flex items-center">
+                        <Calendar className="h-3 w-3 mr-1" />
+                        {new Date(request.requestDate).toLocaleDateString('ar-EG')}
+                      </div>
+                    </div>
+                  </TableCell>
+                  <TableCell>
+                    <div>
+                      <div className="font-medium flex items-center">
+                        <User className="h-4 w-4 mr-2 text-gray-400" />
+                        {request.clientName}
+                      </div>
+                      <div className="text-sm text-muted-foreground flex items-center mt-1">
+                        <Phone className="h-3 w-3 mr-1" />
+                        {request.clientPhone}
+                      </div>
+                    </div>
+                  </TableCell>
+                  <TableCell>
+                    <div>
+                      <div className="font-medium">{request.serviceType}</div>
+                      <div className="text-sm text-muted-foreground truncate max-w-xs">{request.description}</div>
+                    </div>
+                  </TableCell>
+                  <TableCell>
+                    <div className="flex items-center">
+                      <MapPin className="h-4 w-4 mr-1 text-gray-400" />
+                      <span className="text-sm">{request.location}</span>
+                    </div>
+                  </TableCell>
+                  <TableCell>{getUrgencyBadge(request.urgency)}</TableCell>
+                  <TableCell>{getStatusBadge(request.status)}</TableCell>
+                  <TableCell>
+                    <div className="font-medium">{formatEGPSimple(request.estimatedCost || 0)}</div>
+                    {request.assignedTo && (
+                      <div className="text-xs text-muted-foreground">معين لـ: {request.assignedTo}</div>
+                    )}
+                  </TableCell>
+                  <TableCell>
+                    <div className="flex items-center space-x-2 space-x-reverse">
+                      <Button variant="ghost" size="sm">
+                        <Eye className="h-4 w-4" />
+                      </Button>
+                      <Button variant="ghost" size="sm">
+                        <Edit3 className="h-4 w-4" />
+                      </Button>
+                      {request.status === 'pending' && (
+                        <>
+                          <Button variant="ghost" size="sm" className="text-green-600">
+                            <Check className="h-4 w-4" />
+                          </Button>
+                          <Button variant="ghost" size="sm" className="text-red-600">
+                            <X className="h-4 w-4" />
+                          </Button>
+                        </>
+                      )}
+                    </div>
+                  </TableCell>
+                </TableRow>
+              ))}
+            </TableBody>
+          </Table>
+        </CardContent>
+      </Card>
     </div>
   );
 }
-
-    

@@ -1,9 +1,7 @@
 
 "use client";
 
-import { useState, useEffect, useMemo } from 'react'; 
-import { db } from '@/lib/firebase'; // db might be undefined if Firebase init failed
-import { doc, getDoc } from 'firebase/firestore';
+import { useState, useEffect, useMemo } from 'react';
 
 const DEFAULT_PORTAL_NAME = "سيف مصر الوطنية للأمن";
 
@@ -87,72 +85,72 @@ export const DEFAULT_SETTINGS: SiteSettings = {
   companyAddress: "",
   publicEmail: "",
   
-  // Light Theme Defaults (Riplet CSS)
-  themeBackgroundLight: "220 60% 98%",
-  themeForegroundLight: "0 0% 20%",
-  themePrimaryLight: "208 100% 34%",
-  themePrimaryForegroundLight: "0 0% 100%",
-  themeAccentLight: "199 100% 50%",
-  themeAccentForegroundLight: "0 0% 100%",
-  themeCardLight: "0 0% 100%",
-  themeCardForegroundLight: "0 0% 20%",
-  themePopoverLight: "0 0% 100%",
-  themePopoverForegroundLight: "0 0% 20%",
-  themeSecondaryLight: "220 20% 94%",
-  themeSecondaryForegroundLight: "0 0% 20%",
-  themeMutedLight: "220 20% 94%",
-  themeMutedForegroundLight: "0 0% 40%",
-  themeBorderLight: "220 20% 88%",
-  themeInputLight: "220 20% 91%",
-  themeRingLight: "199 100% 50%",
-  themeDestructiveLight: "0 84.2% 60.2%",
-  themeDestructiveForegroundLight: "0 0% 98%",
+  // Light Theme - Elite Maritime Style
+  themeBackgroundLight: "210 25% 98%",
+  themeForegroundLight: "210 15% 20%",
+  themePrimaryLight: "195 100% 50%", // Bright teal/cyan
+  themePrimaryForegroundLight: "210 100% 98%",
+  themeAccentLight: "195 85% 45%", // Deeper teal
+  themeAccentForegroundLight: "210 100% 98%",
+  themeCardLight: "210 25% 100%",
+  themeCardForegroundLight: "210 15% 20%",
+  themePopoverLight: "210 25% 100%",
+  themePopoverForegroundLight: "210 15% 20%",
+  themeSecondaryLight: "210 25% 95%",
+  themeSecondaryForegroundLight: "210 15% 25%",
+  themeMutedLight: "210 25% 94%",
+  themeMutedForegroundLight: "210 15% 45%",
+  themeBorderLight: "210 25% 88%",
+  themeInputLight: "210 25% 92%",
+  themeRingLight: "195 100% 50%",
+  themeDestructiveLight: "0 84% 60%",
+  themeDestructiveForegroundLight: "210 100% 98%",
 
-  // Dark Theme Defaults (Riplet CSS derived)
-  themeBackgroundDark: "210 10% 15%",
-  themeForegroundDark: "210 20% 90%",
-  themePrimaryDark: "208 100% 70%",
-  themePrimaryForegroundDark: "208 100% 10%",
-  themeAccentDark: "199 100% 50%",
-  themeAccentForegroundDark: "210 100% 10%",
-  themeCardDark: "210 10% 20%",
-  themeCardForegroundDark: "210 20% 90%",
-  themePopoverDark: "210 10% 20%",
-  themePopoverForegroundDark: "210 20% 90%",
-  themeSecondaryDark: "210 10% 25%",
-  themeSecondaryForegroundDark: "210 20% 90%",
-  themeMutedDark: "210 10% 25%",
-  themeMutedForegroundDark: "210 20% 60%",
-  themeBorderDark: "210 10% 30%",
-  themeInputDark: "210 10% 30%",
-  themeRingDark: "199 100% 50%",
-  themeDestructiveDark: "0 72% 51%",
-  themeDestructiveForegroundDark: "0 0% 98%",
+  // Dark Theme - Elite Maritime Dark Style  
+  themeBackgroundDark: "210 25% 8%", // Very dark navy
+  themeForegroundDark: "210 15% 92%",
+  themePrimaryDark: "195 100% 65%", // Bright teal for dark mode
+  themePrimaryForegroundDark: "210 25% 8%",
+  themeAccentDark: "195 85% 55%", // Vibrant teal accent
+  themeAccentForegroundDark: "210 25% 8%",
+  themeCardDark: "210 25% 12%", // Dark navy cards
+  themeCardForegroundDark: "210 15% 92%",
+  themePopoverDark: "210 25% 15%",
+  themePopoverForegroundDark: "210 15% 92%",
+  themeSecondaryDark: "210 25% 18%",
+  themeSecondaryForegroundDark: "210 15% 88%",
+  themeMutedDark: "210 25% 18%",
+  themeMutedForegroundDark: "210 15% 65%",
+  themeBorderDark: "210 25% 22%",
+  themeInputDark: "210 25% 20%",
+  themeRingDark: "195 100% 65%",
+  themeDestructiveDark: "0 75% 58%",
+  themeDestructiveForegroundDark: "210 15% 92%",
 
   socialFacebookUrl: "",
   socialTwitterUrl: "",
   socialLinkedinUrl: "",
   socialInstagramUrl: "",
 
-  // Sidebar Light Theme Defaults (Riplet CSS derived)
-  themeSidebarBackgroundLight: "0 0% 98%",
-  themeSidebarForegroundLight: "0 0% 20%",
-  themeSidebarPrimaryLight: "208 100% 34%",
-  themeSidebarPrimaryForegroundLight: "0 0% 100%",
-  themeSidebarAccentLight: "199 100% 50%",
-  themeSidebarAccentForegroundLight: "0 0% 100%",
-  themeSidebarBorderLight: "220 20% 88%",
-  themeSidebarRingLight: "199 100% 50%",
+  // Sidebar Light Theme - Elite Style
+  themeSidebarBackgroundLight: "210 30% 96%",
+  themeSidebarForegroundLight: "210 15% 25%",
+  themeSidebarPrimaryLight: "195 100% 50%",
+  themeSidebarPrimaryForegroundLight: "210 100% 98%",
+  themeSidebarAccentLight: "195 85% 45%",
+  themeSidebarAccentForegroundLight: "210 100% 98%",
+  themeSidebarBorderLight: "210 25% 85%",
+  themeSidebarRingLight: "195 100% 50%",
 
-  // Sidebar Dark Theme Defaults (Riplet CSS derived)
-  themeSidebarBackgroundDark: "210 10% 18%",
-  themeSidebarForegroundDark: "210 20% 90%",
-  themeSidebarPrimaryDark: "208 100% 70%",
-  themeSidebarPrimaryForegroundDark: "208 100% 10%",
-  themeSidebarAccentDark: "199 100% 50%",
-  themeSidebarAccentForegroundDark: "210 100% 10%",
-  themeSidebarBorderDark: "210 10% 30%",
-  themeSidebarRingDark: "199 100% 50%",
+  // Sidebar Dark Theme - Elite Maritime Dark
+  themeSidebarBackgroundDark: "210 30% 5%", // Darker navy for sidebar
+  themeSidebarForegroundDark: "210 15% 88%",
+  themeSidebarPrimaryDark: "195 100% 65%",
+  themeSidebarPrimaryForegroundDark: "210 30% 5%",
+  themeSidebarAccentDark: "195 85% 55%",
+  themeSidebarAccentForegroundDark: "210 30% 5%",
+  themeSidebarBorderDark: "210 25% 18%",
+  themeSidebarRingDark: "195 100% 65%",
 };
 
 export function useSiteSettings() {
@@ -162,31 +160,31 @@ export function useSiteSettings() {
   useEffect(() => {
     let isMounted = true;
     const fetchSettings = async () => {
-      if (!db) {
-        console.warn(
-          "useSiteSettings: Firestore instance (db) is not available. " +
-          "Site settings will use defaults and Firestore will not be connected for settings."
-        );
-        if (isMounted) {
-          setSiteSettings(DEFAULT_SETTINGS);
-          setIsLoadingSiteSettings(false);
-        }
-        return;
-      }
-      
-      const settingsDocRef = doc(db, "systemSettings", "general");
       try {
-        const docSnap = await getDoc(settingsDocRef);
+        const response = await fetch('/api/settings');
+        if (!response.ok) {
+          throw new Error('Failed to fetch settings');
+        }
+        const dbSettings = await response.json();
         if (isMounted) {
-          if (docSnap.exists()) {
-            const data = docSnap.data() as Partial<SiteSettings>;
-            setSiteSettings(prev => ({ ...DEFAULT_SETTINGS, ...prev, ...data }));
-          } else {
-            setSiteSettings(DEFAULT_SETTINGS);
-          }
+          // Transform database settings to match SiteSettings interface
+          const settings: Partial<SiteSettings> = {
+            portalName: dbSettings.portalName,
+            maintenanceMode: dbSettings.maintenanceMode,
+            adminEmail: dbSettings.adminEmail,
+            companyPhone: dbSettings.companyPhone || undefined,
+            companyAddress: dbSettings.companyAddress || undefined,
+            publicEmail: dbSettings.publicEmail || undefined,
+            // Add theme settings if they exist
+            themeBackgroundLight: dbSettings.themeBackgroundLight || undefined,
+            themeForegroundLight: dbSettings.themeForegroundLight || undefined,
+            themePrimaryLight: dbSettings.themePrimaryLight || undefined,
+            // Add other theme properties as needed
+          };
+          setSiteSettings(prev => ({ ...DEFAULT_SETTINGS, ...prev, ...settings }));
         }
       } catch (error) {
-        console.error("useSiteSettings: Error fetching site settings with getDoc:", error);
+        console.error("useSiteSettings: Error fetching site settings:", error);
         if (isMounted) {
           setSiteSettings(DEFAULT_SETTINGS);
         }

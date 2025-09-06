@@ -24,7 +24,7 @@ export function Header() {
 
   const handleAuthAction = () => {
     if (user) {
-      if (user.role === 'admin') {
+      if (user.role === 'ADMIN') {
         router.push('/admin/dashboard');
       } else {
         router.push('/client/dashboard');
@@ -46,9 +46,9 @@ export function Header() {
   };
 
   return (
-    <header className="sticky top-0 z-50 w-full border-b bg-white text-gray-900">
+    <header className="sticky top-0 z-50 w-full border-b bg-card text-foreground">
       <div className="container flex h-16 max-w-screen-2xl items-center justify-between">
-        <Link href="/" className="flex items-center gap-2 font-headline text-lg font-semibold text-gray-900">
+        <Link href="/" className="flex items-center gap-2 font-headline text-lg font-semibold text-foreground">
           <ShieldHalf className="h-7 w-7 text-primary" />
           <span>{displayPortalName}</span>
         </Link>
@@ -58,7 +58,7 @@ export function Header() {
             <Link
               key={link.href}
               href={link.href}
-              className="text-gray-600 transition-colors hover:text-gray-900"
+              className="text-muted-foreground transition-colors hover:text-foreground"
             >
               {link.label}
             </Link>
@@ -66,16 +66,18 @@ export function Header() {
         </nav>
 
         <div className="flex items-center gap-2">
-          <ThemeSwitcher className="text-gray-600 hover:text-gray-900" />
-          <Button onClick={handleAuthAction} variant="default" size="sm" className="font-semibold bg-black text-white hover:bg-black/90" disabled={authLoading}>
+          <ThemeSwitcher className="!text-foreground" />
+          <Button onClick={handleAuthAction} variant="default" size="sm" className="font-semibold !bg-primary !text-primary-foreground hover:!bg-primary/90" disabled={authLoading}>
             {getAuthButtonLabel()}
           </Button>
           {user && !authLoading && (
-            <Button onClick={() => { signOut(); setIsMobileMenuOpen(false); }} variant="outline" size="sm">تسجيل الخروج</Button>
+            <Button onClick={() => { signOut(); setIsMobileMenuOpen(false); }} variant="outline" size="sm" className="text-foreground border-border hover:bg-muted">
+              تسجيل الخروج
+            </Button>
           )}
           <Sheet open={isMobileMenuOpen} onOpenChange={setIsMobileMenuOpen}>
             <SheetTrigger asChild>
-              <Button variant="outline" size="icon" className="md:hidden" onClick={() => setIsMobileMenuOpen(true)}>
+              <Button variant="outline" size="icon" className="md:hidden text-foreground border-border" onClick={() => setIsMobileMenuOpen(true)}>
                 <Menu className="h-5 w-5" />
                 <span className="sr-only">فتح القائمة</span>
               </Button>

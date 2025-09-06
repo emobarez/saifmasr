@@ -1,0 +1,327 @@
+// Enhanced Prisma Schema for Complete Admin System
+// Add these models to your existing schema.prisma file
+
+// Invoice Management
+model Invoice {
+  id              String   @id @default(cuid())
+  invoiceNumber   String   @unique
+  clientId        String
+  serviceRequestId String?
+  
+  // Financial Details
+  subtotal        Float
+  taxRate         Float    @default(0.15) // 15% VAT in Saudi Arabia
+  taxAmount       Float
+  discountAmount  Float    @default(0)
+  totalAmount     Float
+  
+  // Status and Dates
+  status          InvoiceStatus @default(DRAFT)
+  issueDate       DateTime @default(now())
+  dueDate         DateTime
+  paidDate        DateTime?
+  
+  // Payment Information
+  paymentMethod   String?
+  paymentReference String?
+  
+  // Relationships
+  client          User     @relation(fields: [clientId], references: [id])
+  serviceRequest  ServiceRequest? @relation(fields: [serviceRequestId], references: [id])
+  invoiceItems    InvoiceItem[]
+  
+  // Metadata
+  createdAt       DateTime @default(now())
+  updatedAt       DateTime @updatedAt
+  
+  @@map("invoices")
+}
+
+model InvoiceItem {
+  id          String  @id @default(cuid())
+  invoiceId   String
+  serviceId   String?
+  
+  description String
+  quantity    Int     @default(1)
+  unitPrice   Float
+  totalPrice  Float
+  
+  // Relationships
+  invoice     Invoice @relation(fields: [invoiceId], references: [id], onDelete: Cascade)
+  service     Service? @relation(fields: [serviceId], references: [id])
+  
+  @@map("invoice_items")
+}
+
+// Employee Management
+model Employee {
+  id              String   @id @default(cuid())
+  employeeNumber  String   @unique
+  userId          String?  @unique
+  
+  // Personal Information
+  firstName       String
+  lastName        String
+  email           String   @unique
+  phone           String?
+  nationalId      String?  @unique
+  
+  // Employment Details
+  position        String
+  department      String
+  hireDate        DateTime @default(now())
+  salary          Float?
+  status          EmployeeStatus @default(ACTIVE)
+  
+  // Work Information
+  shift           WorkShift @default(DAY)
+  certifications  String[] // JSON array of certifications
+  experience      Int      @default(0) // Years of experience
+  
+  // Emergency Contact
+  emergencyContact String?
+  emergencyPhone   String?
+  
+  // Address
+  address         String?
+  city            String?
+  
+  // Relationships
+  user            User?    @relation(fields: [userId], references: [id])
+  assignments     Assignment[]
+  
+  // Metadata
+  createdAt       DateTime @default(now())
+  updatedAt       DateTime @updatedAt
+  
+  @@map("employees")
+}
+
+// Assignment Management
+model Assignment {
+  id          String   @id @default(cuid())
+  employeeId  String
+  serviceRequestId String?
+  clientId    String
+  
+  title       String
+  description String?
+  location    String?
+  
+  // Schedule
+  startDate   DateTime
+  endDate     DateTime?
+  startTime   String? // "09:00"
+  endTime     String? // "17:00"
+  
+  status      AssignmentStatus @default(ASSIGNED)
+  priority    Priority @default(MEDIUM)
+  
+  // Relationships
+  employee    Employee @relation(fields: [employeeId], references: [id])
+  serviceRequest ServiceRequest? @relation(fields: [serviceRequestId], references: [id])
+  client      User     @relation(fields: [clientId], references: [id])
+  
+  // Metadata
+  createdAt   DateTime @default(now())
+  updatedAt   DateTime @updatedAt
+  
+  @@map("assignments")
+}
+
+// Enhanced Service Model (add to existing)
+model ServiceCategory {
+  id          String    @id @default(cuid())
+  name        String    @unique
+  description String?
+  icon        String?
+  color       String?
+  order       Int       @default(0)
+  
+  services    Service[]
+  
+  createdAt   DateTime  @default(now())
+  updatedAt   DateTime  @updatedAt
+  
+  @@map("service_categories")
+}
+
+// Equipment Management
+model Equipment {
+  id              String   @id @default(cuid())
+  name            String
+  type            String
+  serialNumber    String?  @unique
+  model           String?
+  manufacturer    String?
+  
+  // Status
+  status          EquipmentStatus @default(AVAILABLE)
+  condition       String? // "Excellent", "Good", "Fair", "Poor"
+  
+  // Assignment
+  assignedTo      String?
+  assignedDate    DateTime?
+  location        String?
+  
+  // Maintenance
+  lastMaintenance DateTime?
+  nextMaintenance DateTime?
+  
+  // Purchase Information
+  purchaseDate    DateTime?
+  purchasePrice   Float?
+  warrantyExpiry  DateTime?
+  
+  // Relationships
+  employee        Employee? @relation(fields: [assignedTo], references: [id])
+  
+  // Metadata
+  createdAt       DateTime @default(now())
+  updatedAt       DateTime @updatedAt
+  
+  @@map("equipment")
+}
+
+// Report Management
+model Report {
+  id          String     @id @default(cuid())
+  title       String
+  type        ReportType
+  description String?
+  
+  // Content
+  data        Json? // Report data as JSON
+  parameters  Json? // Generation parameters
+  
+  // File Information
+  fileName    String?
+  fileSize    Int?
+  downloadUrl String?
+  
+  // Status
+  status      ReportStatus @default(GENERATING)
+  
+  // Relationships
+  generatedBy String
+  user        User       @relation(fields: [generatedBy], references: [id])
+  
+  // Metadata
+  createdAt   DateTime   @default(now())
+  updatedAt   DateTime   @updatedAt
+  
+  @@map("reports")
+}
+
+// Notification System
+model Notification {
+  id          String           @id @default(cuid())
+  title       String
+  message     String
+  type        NotificationType @default(INFO)
+  
+  // Recipients
+  userId      String?
+  userRole    Role?
+  
+  // Status
+  isRead      Boolean @default(false)
+  readAt      DateTime?
+  
+  // Action
+  actionUrl   String?
+  actionText  String?
+  
+  // Relationships
+  user        User?   @relation(fields: [userId], references: [id])
+  
+  // Metadata
+  createdAt   DateTime @default(now())
+  updatedAt   DateTime @updatedAt
+  
+  @@map("notifications")
+}
+
+// Enhanced Enums
+enum InvoiceStatus {
+  DRAFT
+  SENT
+  PAID
+  OVERDUE
+  CANCELLED
+  REFUNDED
+}
+
+enum EmployeeStatus {
+  ACTIVE
+  INACTIVE
+  TERMINATED
+  ON_LEAVE
+  SUSPENDED
+}
+
+enum WorkShift {
+  MORNING    // 6:00 - 14:00
+  DAY        // 8:00 - 16:00
+  EVENING    // 14:00 - 22:00
+  NIGHT      // 22:00 - 6:00
+  FLEXIBLE
+}
+
+enum AssignmentStatus {
+  ASSIGNED
+  IN_PROGRESS
+  COMPLETED
+  CANCELLED
+  ON_HOLD
+}
+
+enum EquipmentStatus {
+  AVAILABLE
+  ASSIGNED
+  MAINTENANCE
+  DAMAGED
+  RETIRED
+}
+
+enum ReportType {
+  REVENUE
+  CLIENTS
+  SERVICES
+  EMPLOYEES
+  ASSIGNMENTS
+  CUSTOM
+}
+
+enum ReportStatus {
+  GENERATING
+  READY
+  FAILED
+  EXPIRED
+}
+
+enum NotificationType {
+  INFO
+  SUCCESS
+  WARNING
+  ERROR
+  SECURITY
+}
+
+// Add relationships to existing models
+// Add these fields to your existing User model:
+// invoices        Invoice[]
+// assignments     Assignment[]
+// reports         Report[]
+// notifications   Notification[]
+// employee        Employee?
+
+// Add these fields to your existing Service model:
+// categoryId      String?
+// category        ServiceCategory? @relation(fields: [categoryId], references: [id])
+// invoiceItems    InvoiceItem[]
+
+// Add these fields to your existing ServiceRequest model:
+// invoices        Invoice[]
+// assignments     Assignment[]

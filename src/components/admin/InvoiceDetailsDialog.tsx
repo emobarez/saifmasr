@@ -4,7 +4,7 @@
 import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogDescription, DialogFooter, DialogClose } from "@/components/ui/dialog";
 import { Button } from "@/components/ui/button";
 import { Badge } from "@/components/ui/badge";
-import { Timestamp } from "firebase/firestore";
+
 import { Separator } from "@/components/ui/separator";
 
 interface Invoice {
@@ -12,12 +12,12 @@ interface Invoice {
   clientId: string;
   clientName: string; 
   invoiceNumber: string;
-  issueDate: Timestamp;
-  dueDate: Timestamp;
+  issueDate: Date;
+  dueDate: Date;
   totalAmount: number;
   status: "مستحقة" | "مدفوعة" | "متأخرة" | "ملغاة";
   description: string;
-  createdAt: Timestamp;
+  createdAt: Date;
 }
 
 interface InvoiceDetailsDialogProps {
@@ -26,17 +26,10 @@ interface InvoiceDetailsDialogProps {
   onOpenChange: (isOpen: boolean) => void;
 }
 
-const formatDateForDialog = (dateValue: Timestamp | Date | undefined): string => {
-  if (!dateValue) return "غير متوفر";
-  let date: Date;
-  if (dateValue instanceof Timestamp) {
-    date = dateValue.toDate();
-  } else if (dateValue instanceof Date) {
-    date = dateValue;
-  } else {
-    return "تاريخ غير صالح";
-  }
-  return new Intl.DateTimeFormat('ar-EG', { year: 'numeric', month: 'long', day: 'numeric', hour: '2-digit', minute: '2-digit' }).format(date);
+const formatDateForDialog = (date: Date | string | undefined): string => {
+  if (!date) return "غير متوفر";
+  const dateObj = date instanceof Date ? date : new Date(date);
+  return dateObj.toLocaleDateString('ar-EG', { year: 'numeric', month: 'long', day: 'numeric' });
 };
 
 const formatCurrencyForDialog = (amount: number): string => {
@@ -55,7 +48,7 @@ export function InvoiceDetailsDialog({ invoice, isOpen, onOpenChange }: InvoiceD
   if (!invoice) return null;
 
   return (
-    <Dialog open={isOpen} onOpenChange={onOpenChange} dir="rtl">
+    <Dialog open={isOpen} onOpenChange={onOpenChange}>
       <DialogContent className="sm:max-w-lg bg-card/90 backdrop-blur-lg shadow-xl">
         <DialogHeader>
           <DialogTitle className="font-headline text-xl text-primary">تفاصيل الفاتورة: {invoice.invoiceNumber}</DialogTitle>

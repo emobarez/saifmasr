@@ -3,6 +3,7 @@ import { ShieldHalf } from "lucide-react";
 import Image from "next/image";
 import Link from "next/link";
 import { useSiteSettings } from '@/hooks/useSiteSettings'; // Updated import
+import { ThemeSwitcher } from "./ThemeSwitcher";
 
 interface AuthLayoutProps {
   children: React.ReactNode;
@@ -16,6 +17,11 @@ export function AuthLayout({ children, title, description }: AuthLayoutProps) {
 
   return (
     <div className="min-h-screen flex flex-col lg:flex-row bg-background">
+      {/* Theme Switcher - Fixed Position */}
+      <div className="fixed top-4 right-4 z-50">
+        <ThemeSwitcher className="text-foreground hover:text-primary hover:bg-accent rounded-md p-2 border border-border bg-background/80 backdrop-blur-sm" />
+      </div>
+      
       <div className="lg:w-1/2 flex flex-col items-center justify-center p-8 order-2 lg:order-1">
         <div className="w-full max-w-md space-y-6">
           <div className="text-center lg:text-start">

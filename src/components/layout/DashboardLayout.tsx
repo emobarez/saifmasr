@@ -91,12 +91,21 @@ export function DashboardLayout({ children, navItems }: DashboardLayoutProps) {
     );
   }
 
-  const filteredNavItems = navItems.filter(item => item.allowedRoles.includes(user.role!));
+  const normalizedRole = (user.role === 'ADMIN' ? 'admin' : 'client') as 'admin' | 'client';
+  const filteredNavItems = navItems.filter(item => item.allowedRoles.includes(normalizedRole));
   const displaySidebarPortalName = isLoadingSiteSettings ? "..." : portalName.split(" ").slice(0, 2).join(" ");
 
 
   return (
-      <div className="flex min-h-screen bg-background">
+      <div className="flex min-h-screen bg-background relative">
+        {/* Fixed Theme Switcher Button - Always Visible */}
+        <div className="fixed top-4 right-4 z-[9999] bg-gradient-to-r from-purple-500 to-pink-500 text-white px-6 py-3 rounded-full shadow-2xl border-4 border-white hover:scale-110 transition-all duration-300 cursor-pointer">
+          <div className="flex items-center gap-3">
+            <span className="text-sm font-bold">تبديل المظهر</span>
+            <ThemeSwitcher className="text-white hover:text-white/80 bg-white/20 rounded-full p-2" />
+          </div>
+        </div>
+
         <Sidebar collapsible="icon" side="right"> {/* Sidebar will use useSidebar().isMobile internally */}
           <SidebarHeader className="p-4 border-b border-sidebar-border">
             <div className="flex items-center gap-3">
@@ -114,7 +123,7 @@ export function DashboardLayout({ children, navItems }: DashboardLayoutProps) {
                   <SidebarMenuItem key={item.href}>
                     <SidebarMenuButton
                       asChild
-                      isActive={pathname === item.href || (item.href !== (user?.role === 'admin' ? "/admin/dashboard" : "/client/dashboard") && pathname.startsWith(item.href))}
+                      isActive={pathname === item.href || (item.href !== (normalizedRole === 'admin' ? "/admin/dashboard" : "/client/dashboard") && pathname.startsWith(item.href))}
                       tooltip={{ children: item.label, side: 'left' }}
                     >
                       <Link href={item.href}>
@@ -130,16 +139,18 @@ export function DashboardLayout({ children, navItems }: DashboardLayoutProps) {
           <SidebarFooter className="p-4 border-t border-sidebar-border space-y-2">
              <div className="flex items-center gap-3 group-data-[collapsible=icon]:justify-center">
                 <Avatar className="h-9 w-9">
-                  <AvatarImage src={user?.photoURL || undefined} alt={user?.displayName || "User"} />
-                  <AvatarFallback>{getInitials(user?.displayName)}</AvatarFallback>
+                  <AvatarImage src={user?.image || undefined} alt={user?.name || "User"} />
+                  <AvatarFallback>{getInitials(user?.name)}</AvatarFallback>
                 </Avatar>
                 <div className="group-data-[collapsible=icon]:hidden">
-                  <p className="text-sm font-medium text-sidebar-foreground">{user?.displayName || "مستخدم"}</p>
+                  <p className="text-sm font-medium text-sidebar-foreground">{user?.name || "مستخدم"}</p>
                   <p className="text-xs text-muted-foreground">{user?.email}</p>
                 </div>
               </div>
             <div className="flex items-center justify-between group-data-[collapsible=icon]:flex-col group-data-[collapsible=icon]:gap-2">
-              <ThemeSwitcher className="text-sidebar-foreground hover:text-sidebar-accent-foreground hover:bg-sidebar-accent" />
+              <div className="bg-primary text-primary-foreground rounded-lg p-2 shadow-md">
+                <ThemeSwitcher className="text-primary-foreground hover:text-primary-foreground/80 hover:bg-primary-foreground/20" />
+              </div>
               <SidebarMenuButton
                 onClick={signOut}
                 tooltip={{ children: "تسجيل الخروج", side: 'left' }}
@@ -153,11 +164,22 @@ export function DashboardLayout({ children, navItems }: DashboardLayoutProps) {
         </Sidebar>
 
         <main className="flex-1 flex flex-col">
-          <header className="sticky top-0 z-40 bg-background/80 backdrop-blur-sm border-b border-border h-16 flex items-center px-6">
-            <SidebarTrigger className="me-4 md:hidden" />
-            <h1 className="text-xl font-semibold font-headline text-primary">
-              {filteredNavItems.find(item => pathname === item.href || (item.href !== (user?.role === 'admin' ? "/admin/dashboard" : "/client/dashboard") && pathname.startsWith(item.href)))?.label || "لوحة التحكم"}
-            </h1>
+          <header className="sticky top-0 z-50 bg-background border-b border-border h-16 flex items-center justify-between px-6 shadow-md">
+            <div className="flex items-center">
+              <SidebarTrigger className="me-4 md:hidden" />
+              <h1 className="text-xl font-semibold font-headline text-primary">
+                {filteredNavItems.find(item => pathname === item.href || (item.href !== (normalizedRole === 'admin' ? "/admin/dashboard" : "/client/dashboard") && pathname.startsWith(item.href)))?.label || "لوحة التحكم"}
+              </h1>
+            </div>
+            <div className="flex items-center gap-4">
+              {/* Prominent Theme Switcher Button */}
+              <div className="bg-gradient-to-r from-blue-500 to-teal-500 text-white px-6 py-3 rounded-full shadow-lg hover:shadow-xl transition-all duration-200 border-2 border-white/20">
+                <div className="flex items-center gap-3">
+                  <span className="text-sm font-bold">تبديل المظهر</span>
+                  <ThemeSwitcher className="text-white hover:text-white/80 hover:bg-white/20 rounded-full p-1" />
+                </div>
+              </div>
+            </div>
           </header>
           <div className="flex-grow p-4 sm:p-6 overflow-auto">
             {children}

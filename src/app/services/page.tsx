@@ -1,172 +1,148 @@
-
 "use client";
-import { useState, useEffect } from "react";
-import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card";
-import { Badge } from "@/components/ui/badge";
-import { Accordion, AccordionContent, AccordionItem, AccordionTrigger } from "@/components/ui/accordion";
-import { Briefcase, Loader2, Tag, CreditCard, HelpCircle, Phone, ArrowLeftCircle } from "lucide-react";
-import Image from "next/image";
-import { db } from "@/lib/firebase";
-import { collection, query, where, getDocs, orderBy, Timestamp } from "firebase/firestore";
-import { useToast } from "@/hooks/use-toast";
+
+import { Card, CardHeader, CardTitle, CardDescription, CardContent } from "@/components/ui/card";
 import { Header } from "@/components/layout/Header";
 import { Footer } from "@/components/layout/Footer";
-import { Button } from "@/components/ui/button";
-import Link from "next/link";
+import { Shield, Camera, Users, Building, Car, HeadphonesIcon } from "lucide-react";
 
-interface FAQItem {
-  question: string;
-  answer: string;
-}
-
-interface Service {
-  id: string;
-  name: string;
-  category: string;
-  price: string;
-  description: string;
-  status: "متاحة" | "قيد التطوير" | "متوقفة مؤقتاً";
-  createdAt: Timestamp | Date;
-  faqs?: FAQItem[];
-}
-
-export default function PublicServicesPage() {
-  const [services, setServices] = useState<Service[]>([]);
-  const [isLoading, setIsLoading] = useState(true);
-  const { toast } = useToast();
-
-  useEffect(() => {
-    const fetchServices = async () => {
-      setIsLoading(true);
-      try {
-        const q = query(
-          collection(db, "services"),
-          where("status", "==", "متاحة"),
-          orderBy("createdAt", "desc")
-        );
-        const querySnapshot = await getDocs(q);
-        const fetchedServices = querySnapshot.docs.map(doc => ({ id: doc.id, ...doc.data() } as Service));
-        setServices(fetchedServices);
-      } catch (error) {
-        console.error("Error fetching services:", error);
-        toast({ title: "خطأ", description: "لم نتمكن من تحميل قائمة الخدمات المتاحة.", variant: "destructive" });
-      } finally {
-        setIsLoading(false);
-      }
-    };
-    fetchServices();
-  }, [toast]);
-
-  const getServiceImageHint = (category: string) => {
-    if (!category) return "business service";
-    return category.split(' ').slice(0, 2).join(' ').toLowerCase();
-  };
+export default function ServicesPage() {
+  const services = [
+    {
+      icon: Shield,
+      title: "خدمات الحراسة الأمنية",
+      description: "حراسة متخصصة للمنشآت والممتلكات على مدار الساعة",
+      features: [
+        "حراسة المباني والمنشآت",
+        "حراسة المناسبات والفعاليات",
+        "حراسة شخصية للشخصيات المهمة",
+        "خدمة حراسة على مدار 24 ساعة"
+      ]
+    },
+    {
+      icon: Camera,
+      title: "أنظمة المراقبة والحماية",
+      description: "تركيب وصيانة أحدث أنظمة كاميرات المراقبة",
+      features: [
+        "كاميرات مراقبة عالية الدقة",
+        "أنظمة إنذار متطورة",
+        "مراقبة عن بُعد",
+        "تسجيل وحفظ المشاهد"
+      ]
+    },
+    {
+      icon: Users,
+      title: "التدريب الأمني",
+      description: "برامج تدريبية متخصصة لرفع مستوى الوعي الأمني",
+      features: [
+        "تدريب الحراس الأمنيين",
+        "برامج السلامة المهنية",
+        "تدريب إدارة الأزمات",
+        "شهادات معتمدة"
+      ]
+    },
+    {
+      icon: Building,
+      title: "أمن المباني والمنشآت",
+      description: "حلول أمنية شاملة للمجمعات السكنية والتجارية",
+      features: [
+        "أنظمة التحكم في الدخول",
+        "أمن المجمعات السكنية",
+        "حماية المراكز التجارية",
+        "أمن المكاتب والشركات"
+      ]
+    },
+    {
+      icon: Car,
+      title: "خدمات النقل الآمن",
+      description: "نقل آمن للأشخاص والبضائع القيمة",
+      features: [
+        "نقل الأموال والمعادن الثمينة",
+        "خدمة المرافقة الأمنية",
+        "سيارات مدرعة",
+        "سائقين مدربين أمنياً"
+      ]
+    },
+    {
+      icon: HeadphonesIcon,
+      title: "الاستشارات الأمنية",
+      description: "استشارات متخصصة لتقييم وتطوير الأنظمة الأمنية",
+      features: [
+        "تقييم المخاطر الأمنية",
+        "وضع خطط الطوارئ",
+        "استشارات أمنية متخصصة",
+        "تطوير السياسات الأمنية"
+      ]
+    }
+  ];
 
   return (
-    <div className="flex flex-col min-h-screen">
+    <>
       <Header />
-      <main className="flex-grow py-12 md:py-20 bg-gradient-to-br from-primary/5 via-background to-background/50">
-        <div className="container mx-auto px-6">
-          <div className="text-center mb-12 md:mb-16">
-            <h1 className="text-4xl md:text-5xl font-bold font-headline text-primary mb-4">
-              خدماتنا المقدمة
-            </h1>
-            <p className="text-lg md:text-xl text-foreground/80 max-w-2xl mx-auto">
-              اكتشف مجموعة خدماتنا المصممة لتلبية احتياجاتك المتنوعة بأعلى معايير الجودة والاحترافية.
+      <main className="container mx-auto px-4 py-8">
+        <div className="space-y-8">
+          <div className="text-center">
+            <h1 className="text-4xl font-bold mb-4">خدماتنا</h1>
+            <p className="text-xl text-muted-foreground max-w-2xl mx-auto">
+              نقدم مجموعة شاملة من خدمات الأمن والحماية المتميزة لضمان سلامة وأمان عملائنا
             </p>
           </div>
 
-          {isLoading ? (
-            <div className="flex justify-center items-center py-20">
-              <Loader2 className="h-12 w-12 animate-spin text-primary" />
-              <p className="ms-3 text-lg text-muted-foreground">جارٍ تحميل الخدمات...</p>
-            </div>
-          ) : services.length > 0 ? (
-            <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-8">
-              {services.map((service) => (
-                <Card key={service.id} className="shadow-lg hover:shadow-xl transition-shadow duration-300 flex flex-col overflow-hidden">
-                  <Link href={`/services/${service.id}`} className="block relative h-56 w-full group">
-                    <Image
-                      src={`https://placehold.co/600x400.png`}
-                      alt={service.name}
-                      fill
-                      style={{objectFit: "cover"}}
-                      className="bg-muted group-hover:opacity-90 transition-opacity"
-                      data-ai-hint={getServiceImageHint(service.category)}
-                    />
-                  </Link>
-                  <CardHeader className="pb-3">
-                    <div className="flex items-center gap-2 mb-2">
-                      <Briefcase className="h-5 w-5 text-primary" />
-                      <CardTitle className="font-headline text-xl text-primary">
-                        <Link href={`/services/${service.id}`} className="hover:underline">
-                          {service.name}
-                        </Link>
-                      </CardTitle>
+          <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">
+            {services.map((service, index) => {
+              const IconComponent = service.icon;
+              return (
+                <Card key={index} className="h-full hover:shadow-lg transition-shadow">
+                  <CardHeader>
+                    <div className="flex items-center gap-3 mb-2">
+                      <div className="p-2 bg-primary/10 rounded-lg">
+                        <IconComponent className="h-6 w-6 text-primary" />
+                      </div>
+                      <CardTitle className="text-lg">{service.title}</CardTitle>
                     </div>
-                    <div className="flex flex-wrap gap-2 text-xs">
-                        <Badge variant="secondary" className="flex items-center gap-1">
-                            <Tag className="h-3 w-3" /> {service.category}
-                        </Badge>
-                        <Badge variant="outline" className="flex items-center gap-1">
-                           <CreditCard className="h-3 w-3" /> {service.price}
-                        </Badge>
-                    </div>
+                    <CardDescription>{service.description}</CardDescription>
                   </CardHeader>
-                  <CardContent className="flex-grow flex flex-col justify-between">
-                    <div>
-                        <CardDescription className="mb-4 text-sm leading-relaxed line-clamp-3">{service.description}</CardDescription>
-                        {service.faqs && service.faqs.length > 0 && (
-                          <div className="mt-auto mb-4">
-                            <Accordion type="single" collapsible className="w-full">
-                              <AccordionItem value="faqs" className="border-t pt-2">
-                                <AccordionTrigger className="text-sm font-medium hover:no-underline text-primary/80">
-                                  <div className="flex items-center gap-2">
-                                    <HelpCircle className="h-4 w-4" />
-                                    الأسئلة الشائعة ({service.faqs.length})
-                                  </div>
-                                </AccordionTrigger>
-                                <AccordionContent className="pt-2 space-y-2 max-h-32 overflow-y-auto">
-                                  {service.faqs.map((faq, index) => (
-                                    <div key={index} className="text-xs p-2 bg-secondary/50 rounded-md">
-                                      <p className="font-semibold text-foreground/90">{faq.question}</p>
-                                      <p className="text-muted-foreground">{faq.answer}</p>
-                                    </div>
-                                  ))}
-                                </AccordionContent>
-                              </AccordionItem>
-                            </Accordion>
-                          </div>
-                        )}
-                    </div>
-                    <Button asChild size="sm" variant="outline" className="w-full mt-auto">
-                        <Link href={`/services/${service.id}`}>
-                            تفاصيل الخدمة <ArrowLeftCircle className="ms-2 h-4 w-4" />
-                        </Link>
-                    </Button>
+                  <CardContent>
+                    <ul className="space-y-2">
+                      {service.features.map((feature, featureIndex) => (
+                        <li key={featureIndex} className="flex items-center gap-2 text-sm">
+                          <div className="w-1.5 h-1.5 bg-primary rounded-full flex-shrink-0"></div>
+                          {feature}
+                        </li>
+                      ))}
+                    </ul>
                   </CardContent>
                 </Card>
-              ))}
-            </div>
-          ) : (
-            <div className="text-center py-20">
-              <Briefcase className="h-16 w-16 text-primary/30 mx-auto mb-6" />
-              <p className="text-xl font-semibold text-foreground/90 mb-2">لا توجد خدمات متاحة حالياً.</p>
-              <p className="text-md text-muted-foreground mb-6 max-w-md mx-auto">
-                نعمل باستمرار على تحديث وإضافة خدمات جديدة. يرجى التحقق مرة أخرى لاحقًا أو التواصل معنا إذا كان لديك استفسار محدد.
-              </p>
-              <Button asChild>
-                <Link href="/#contact">
-                  <Phone className="me-2 h-5 w-5" />
-                  تواصل معنا
-                </Link>
-              </Button>
-            </div>
-          )}
+              );
+            })}
+          </div>
+
+          <div className="text-center mt-12">
+            <Card className="bg-gradient-to-r from-primary/5 to-primary/10 border-primary/20">
+              <CardContent className="pt-6">
+                <h2 className="text-2xl font-bold mb-4">هل تحتاج إلى استشارة أمنية؟</h2>
+                <p className="text-muted-foreground mb-6">
+                  فريقنا من الخبراء جاهز لتقديم الاستشارة والمساعدة في اختيار الحل الأمني المناسب لك
+                </p>
+                <div className="flex flex-col sm:flex-row gap-4 justify-center">
+                  <a 
+                    href="/auth/login" 
+                    className="inline-flex items-center justify-center px-6 py-3 bg-primary text-primary-foreground rounded-lg hover:bg-primary/90 transition-colors"
+                  >
+                    طلب خدمة
+                  </a>
+                  <a 
+                    href="/contact" 
+                    className="inline-flex items-center justify-center px-6 py-3 border border-primary text-primary rounded-lg hover:bg-primary/5 transition-colors"
+                  >
+                    اتصل بنا
+                  </a>
+                </div>
+              </CardContent>
+            </Card>
+          </div>
         </div>
       </main>
       <Footer />
-    </div>
+    </>
   );
 }
-

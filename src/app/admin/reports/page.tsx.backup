@@ -1,0 +1,461 @@
+"use client";
+
+import { useState, useEffect } from "react";
+import { Card, CardHeader, CardTitle, CardDescription, CardContent } from "@/components/ui/card";
+import { Button } from "@/components/ui/button";
+import { Badge } from "@/components/ui/badge";
+import { 
+  FilePieChart, 
+  Download, 
+  Calendar, 
+  TrendingUp, 
+  TrendingDown,
+  Users,
+  DollarSign,
+  ShieldCheck,
+  Clock,
+  BarChart3,
+  PieChart,
+  FileText,
+  Filter,
+  AlertTriangle,
+  Loader2,
+  RefreshCw
+} from "lucide-react";
+
+interface ReportData {
+  overview: {
+    totalRevenue: number;
+    totalClients: number;
+    activeServices: number;
+    completedTasks: number;
+    revenueGrowth: number;
+    clientGrowth: number;
+    serviceGrowth: number;
+  };
+  monthlyRevenue: Array<{
+    month: string;
+    revenue: number;
+    clients: number;
+  }>;
+  serviceDistribution: Array<{
+    name: string;
+    value: number;
+    percentage: number;
+  }>;
+  regionPerformance: Array<{
+    region: string;
+    revenue: number;
+    clients: number;
+    growth: number;
+  }>;
+}
+
+export default function AdminReportsPage() {
+  const [selectedPeriod, setSelectedPeriod] = useState("month");
+  const [reportData, setReportData] = useState<ReportData | null>(null);
+  const [loading, setLoading] = useState(true);
+  const [error, setError] = useState<string | null>(null);
+  const [refreshing, setRefreshing] = useState(false);
+
+  // Fetch reports data
+  const fetchReportsData = async () => {
+    try {
+      const response = await fetch('/api/reports');
+      
+      if (!response.ok) {
+        throw new Error('Failed to fetch reports data');
+      }
+      
+      const data = await response.json();
+      setReportData(data);
+      setError(null);
+    } catch (err) {
+      console.error('Error fetching reports:', err);
+      setError('Failed to load reports data');
+      
+      // Fallback to mock data
+      setReportData({
+        revenueData: [
+          { month: "2024-01", revenue: 180000, clients: 45, services: 12, requests: 89 },
+          { month: "2024-02", revenue: 195000, clients: 52, services: 14, requests: 95 }
+        ],
+        regionData: [
+          { region: 'الرياض', revenue: 150000, clients: 45, growth: 12.5 },
+          { region: 'جدة', revenue: 120000, clients: 38, growth: 8.3 }
+        ],
+        serviceData: [
+          { service: 'خدمة الحراسة الأمنية', revenue: 180000, clients: 65, requests: 145 }
+        ],
+        employeeData: [
+          { name: 'خالد أحمد الزهراني', department: 'الأمن والحراسة', rating: 4.8, assignments: 23 }
+        ],
+        financialSummary: {
+          totalRevenue: 520000,
+          monthlyGrowth: 11.2,
+          outstandingInvoices: 75000,
+          paidInvoices: 445000,
+          averageInvoiceValue: 8500,
+          collectionRate: 94.3
+        },
+        satisfactionData: {
+          averageRating: 4.6,
+          totalReviews: 156,
+          breakdown: { 5: 78, 4: 52, 3: 18, 2: 6, 1: 2 }
+        },
+        generatedAt: new Date().toISOString(),
+        period: new Date().toISOString().slice(0, 7)
+      });
+    } finally {
+      setLoading(false);
+      setRefreshing(false);
+    }
+  };
+
+  useEffect(() => {
+    fetchReportsData();
+  }, []);
+
+  const handleRefresh = async () => {
+    setRefreshing(true);
+    await fetchReportsData();
+  };
+
+  const handleDownloadReport = async (reportType: string) => {
+    try {
+      const response = await fetch('/api/reports', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({
+          reportType,
+          dateFrom: new Date(Date.now() - 30 * 24 * 60 * 60 * 1000).toISOString(),
+          dateTo: new Date().toISOString(),
+          filters: { period: selectedPeriod }
+        })
+      });
+      
+      if (response.ok) {
+        const result = await response.json();
+        console.log('Report generated:', result);
+        // In a real app, this would trigger a download
+        alert(`تم إنشاء التقرير: ${result.id}`);
+      }
+    } catch (error) {
+      console.error('Error generating report:', error);
+      alert('فشل في إنشاء التقرير');
+    }
+  };
+  
+  // Mock data - replace with real database queries
+  const mockData: ReportData = {
+    overview: {
+      totalRevenue: 245000,
+      totalClients: 156,
+      activeServices: 89,
+      completedTasks: 234,
+      revenueGrowth: 15.2,
+      clientGrowth: 8.5,
+      serviceGrowth: 12.3
+    },
+    monthlyRevenue: [
+      { month: "يناير", revenue: 180000, clients: 45 },
+      { month: "فبراير", revenue: 195000, clients: 52 },
+      { month: "مارس", revenue: 210000, clients: 58 },
+      { month: "أبريل", revenue: 225000, clients: 63 },
+      { month: "مايو", revenue: 235000, clients: 67 },
+      { month: "يونيو", revenue: 245000, clients: 72 }
+    ],
+    serviceDistribution: [
+      { service: "حراسة شخصية", count: 35, revenue: 175000 },
+      { service: "أنظمة مراقبة", count: 28, revenue: 140000 },
+      { service: "أمن مباني", count: 15, revenue: 120000 },
+      { service: "تدريب أمني", count: 8, revenue: 32000 },
+      { service: "نقل آمن", count: 3, revenue: 18000 }
+    ],
+    regionPerformance: [
+      { region: "الرياض", clients: 68, revenue: 136000 },
+      { region: "جدة", clients: 45, revenue: 90000 },
+      { region: "الدمام", clients: 25, revenue: 50000 },
+      { region: "مكة المكرمة", clients: 12, revenue: 24000 },
+      { region: "المدينة المنورة", clients: 6, revenue: 12000 }
+    ]
+  };
+
+  const availableReports = [
+    {
+      title: "تقرير الإيرادات الشهري",
+      description: "تحليل مفصل للإيرادات والمبيعات الشهرية",
+      icon: DollarSign,
+      color: "bg-green-500",
+      generated: "2024-12-01"
+    },
+    {
+      title: "تقرير أداء الموظفين",
+      description: "تقييم أداء الموظفين والإنتاجية",
+      icon: Users,
+      color: "bg-blue-500",
+      generated: "2024-11-30"
+    },
+    {
+      title: "تقرير رضا العملاء",
+      description: "استطلاع آراء ومستوى رضا العملاء",
+      icon: ShieldCheck,
+      color: "bg-purple-500",
+      generated: "2024-11-28"
+    },
+    {
+      title: "تقرير الحوادث الأمنية",
+      description: "تحليل الحوادث والمخاطر الأمنية",
+      icon: AlertTriangle,
+      color: "bg-red-500",
+      generated: "2024-11-25"
+    },
+    {
+      title: "تقرير استخدام المعدات",
+      description: "كفاءة استخدام المعدات والأجهزة الأمنية",
+      icon: Clock,
+      color: "bg-orange-500",
+      generated: "2024-11-20"
+    }
+  ];
+
+  return (
+    <div className="space-y-6">
+      {/* Header */}
+      <div className="flex justify-between items-center">
+        <div>
+          <h1 className="text-3xl font-bold flex items-center">
+            <FilePieChart className="h-8 w-8 mr-3 text-indigo-600" />
+            التقارير والإحصائيات
+          </h1>
+          <p className="text-muted-foreground mt-1">
+            تحليل شامل لأداء الأعمال والعمليات
+          </p>
+        </div>
+        <div className="flex space-x-2 space-x-reverse">
+          <Button variant="outline">
+            <Filter className="h-4 w-4 mr-2" />
+            تخصيص التقرير
+          </Button>
+          <Button>
+            <Download className="h-4 w-4 mr-2" />
+            تصدير جميع التقارير
+          </Button>
+        </div>
+      </div>
+
+      {/* Period Selection */}
+      <Card>
+        <CardContent className="p-6">
+          <div className="flex items-center justify-between">
+            <h3 className="text-lg font-semibold">فترة التقرير</h3>
+            <div className="flex space-x-2 space-x-reverse">
+              {[
+                { key: "week", label: "أسبوعي" },
+                { key: "month", label: "شهري" },
+                { key: "quarter", label: "ربع سنوي" },
+                { key: "year", label: "سنوي" }
+              ].map((period) => (
+                <Button
+                  key={period.key}
+                  variant={selectedPeriod === period.key ? "default" : "outline"}
+                  onClick={() => setSelectedPeriod(period.key)}
+                  size="sm"
+                >
+                  {period.label}
+                </Button>
+              ))}
+            </div>
+          </div>
+        </CardContent>
+      </Card>
+
+      {/* Overview Stats */}
+      <div className="grid grid-cols-1 md:grid-cols-4 gap-4">
+        <Card>
+          <CardContent className="p-6">
+            <div className="flex items-center justify-between">
+              <div>
+                <p className="text-sm font-medium text-muted-foreground">إجمالي الإيرادات</p>
+                <p className="text-2xl font-bold">{reportData.overview.totalRevenue.toLocaleString()} ريال</p>
+                <p className="text-xs text-green-600 flex items-center mt-1">
+                  <TrendingUp className="h-3 w-3 mr-1" />
+                  +{reportData.overview.revenueGrowth}% هذا الشهر
+                </p>
+              </div>
+              <DollarSign className="h-8 w-8 text-green-500" />
+            </div>
+          </CardContent>
+        </Card>
+
+        <Card>
+          <CardContent className="p-6">
+            <div className="flex items-center justify-between">
+              <div>
+                <p className="text-sm font-medium text-muted-foreground">إجمالي العملاء</p>
+                <p className="text-2xl font-bold">{reportData.overview.totalClients}</p>
+                <p className="text-xs text-green-600 flex items-center mt-1">
+                  <TrendingUp className="h-3 w-3 mr-1" />
+                  +{reportData.overview.clientGrowth}% هذا الشهر
+                </p>
+              </div>
+              <Users className="h-8 w-8 text-blue-500" />
+            </div>
+          </CardContent>
+        </Card>
+
+        <Card>
+          <CardContent className="p-6">
+            <div className="flex items-center justify-between">
+              <div>
+                <p className="text-sm font-medium text-muted-foreground">الخدمات النشطة</p>
+                <p className="text-2xl font-bold">{reportData.overview.activeServices}</p>
+                <p className="text-xs text-green-600 flex items-center mt-1">
+                  <TrendingUp className="h-3 w-3 mr-1" />
+                  +{reportData.overview.serviceGrowth}% هذا الشهر
+                </p>
+              </div>
+              <ShieldCheck className="h-8 w-8 text-purple-500" />
+            </div>
+          </CardContent>
+        </Card>
+
+        <Card>
+          <CardContent className="p-6">
+            <div className="flex items-center justify-between">
+              <div>
+                <p className="text-sm font-medium text-muted-foreground">المهام المكتملة</p>
+                <p className="text-2xl font-bold">{reportData.overview.completedTasks}</p>
+                <p className="text-xs text-green-600 flex items-center mt-1">
+                  <Clock className="h-3 w-3 mr-1" />
+                  معدل إنجاز ممتاز
+                </p>
+              </div>
+              <BarChart3 className="h-8 w-8 text-orange-500" />
+            </div>
+          </CardContent>
+        </Card>
+      </div>
+
+      {/* Charts Section */}
+      <div className="grid grid-cols-1 lg:grid-cols-2 gap-6">
+        {/* Revenue Chart */}
+        <Card>
+          <CardHeader>
+            <CardTitle className="flex items-center">
+              <TrendingUp className="h-5 w-5 mr-2" />
+              نمو الإيرادات الشهرية
+            </CardTitle>
+            <CardDescription>تطور الإيرادات خلال الأشهر الستة الماضية</CardDescription>
+          </CardHeader>
+          <CardContent>
+            <div className="space-y-4">
+              {reportData.monthlyRevenue.map((item, index) => (
+                <div key={index} className="flex items-center justify-between">
+                  <div className="flex items-center space-x-3 space-x-reverse">
+                    <div className="w-3 h-3 bg-blue-500 rounded-full"></div>
+                    <span className="font-medium">{item.month}</span>
+                  </div>
+                  <div className="text-right">
+                    <div className="font-bold">{item.revenue.toLocaleString()} ريال</div>
+                    <div className="text-sm text-muted-foreground">{item.clients} عميل</div>
+                  </div>
+                </div>
+              ))}
+            </div>
+          </CardContent>
+        </Card>
+
+        {/* Service Distribution */}
+        <Card>
+          <CardHeader>
+            <CardTitle className="flex items-center">
+              <PieChart className="h-5 w-5 mr-2" />
+              توزيع الخدمات
+            </CardTitle>
+            <CardDescription>نسب الخدمات المقدمة والإيرادات</CardDescription>
+          </CardHeader>
+          <CardContent>
+            <div className="space-y-4">
+              {reportData.serviceDistribution.map((item, index) => (
+                <div key={index} className="flex items-center justify-between">
+                  <div className="flex items-center space-x-3 space-x-reverse">
+                    <div className={`w-3 h-3 rounded-full ${
+                      index === 0 ? 'bg-blue-500' :
+                      index === 1 ? 'bg-green-500' :
+                      index === 2 ? 'bg-purple-500' :
+                      index === 3 ? 'bg-orange-500' : 'bg-gray-500'
+                    }`}></div>
+                    <span className="font-medium">{item.service}</span>
+                  </div>
+                  <div className="text-right">
+                    <div className="font-bold">{item.count} خدمة</div>
+                    <div className="text-sm text-muted-foreground">{item.revenue.toLocaleString()} ريال</div>
+                  </div>
+                </div>
+              ))}
+            </div>
+          </CardContent>
+        </Card>
+      </div>
+
+      {/* Regional Performance */}
+      <Card>
+        <CardHeader>
+          <CardTitle>أداء المناطق</CardTitle>
+          <CardDescription>توزيع العملاء والإيرادات حسب المنطقة</CardDescription>
+        </CardHeader>
+        <CardContent>
+          <div className="grid grid-cols-1 md:grid-cols-5 gap-4">
+            {reportData.regionPerformance.map((region, index) => (
+              <div key={index} className="text-center p-4 bg-gray-50 rounded-lg">
+                <div className="text-lg font-bold text-blue-600">{region.clients}</div>
+                <div className="text-sm font-medium">{region.region}</div>
+                <div className="text-xs text-muted-foreground">{region.revenue.toLocaleString()} ريال</div>
+              </div>
+            ))}
+          </div>
+        </CardContent>
+      </Card>
+
+      {/* Available Reports */}
+      <Card>
+        <CardHeader>
+          <CardTitle className="flex items-center">
+            <FileText className="h-5 w-5 mr-2" />
+            التقارير المتاحة
+          </CardTitle>
+          <CardDescription>التقارير التفصيلية الجاهزة للتحميل</CardDescription>
+        </CardHeader>
+        <CardContent>
+          <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-4">
+            {availableReports.map((report, index) => (
+              <Card key={index} className="cursor-pointer hover:shadow-md transition-shadow">
+                <CardContent className="p-6">
+                  <div className="flex items-start space-x-4 space-x-reverse">
+                    <div className={`p-3 rounded-lg ${report.color} text-white`}>
+                      <report.icon className="h-6 w-6" />
+                    </div>
+                    <div className="flex-1 min-w-0">
+                      <h3 className="font-semibold text-sm mb-1">{report.title}</h3>
+                      <p className="text-xs text-muted-foreground mb-3">{report.description}</p>
+                      <div className="flex items-center justify-between">
+                        <Badge variant="outline" className="text-xs">
+                          <Calendar className="h-3 w-3 mr-1" />
+                          {report.generated}
+                        </Badge>
+                        <Button size="sm" variant="ghost">
+                          <Download className="h-4 w-4" />
+                        </Button>
+                      </div>
+                    </div>
+                  </div>
+                </CardContent>
+              </Card>
+            ))}
+          </div>
+        </CardContent>
+      </Card>
+    </div>
+  );
+}

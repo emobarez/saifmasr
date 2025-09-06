@@ -4,7 +4,7 @@
 import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogDescription, DialogFooter, DialogClose } from "@/components/ui/dialog";
 import { Button } from "@/components/ui/button";
 import { Badge } from "@/components/ui/badge";
-import { Timestamp } from "firebase/firestore";
+
 import { Separator } from "@/components/ui/separator";
 import { Paperclip, AlertTriangle, Info, ThumbsUp, MinusCircle } from "lucide-react";
 import type { PrioritizeClientRequestOutput } from "@/ai/flows/prioritize-client-request";
@@ -18,7 +18,7 @@ interface ServiceRequest {
   clientName: string;
   clientEmail: string;
   status: "جديد" | "قيد المعالجة" | "مكتمل" | "ملغى";
-  createdAt: Timestamp;
+  createdAt: Date;
   attachmentURL?: string;
   attachmentFilename?: string;
   aiPriority?: PrioritizeClientRequestOutput["priority"];
@@ -32,17 +32,10 @@ interface AdminServiceRequestDetailsDialogProps {
   onOpenChange: (isOpen: boolean) => void;
 }
 
-const formatDate = (timestamp: Timestamp | Date | undefined): string => {
-  if (!timestamp) return "غير متوفر";
-  let date: Date;
-  if (timestamp instanceof Timestamp) {
-    date = timestamp.toDate();
-  } else if (timestamp instanceof Date) {
-    date = timestamp;
-  } else {
-    return "تاريخ غير صالح";
-  }
-  return new Intl.DateTimeFormat('ar-EG', { year: 'numeric', month: 'long', day: 'numeric', hour: '2-digit', minute: '2-digit' }).format(date);
+const formatDate = (date: Date | string | undefined): string => {
+  if (!date) return "غير متوفر";
+  const dateObj = date instanceof Date ? date : new Date(date);
+  return dateObj.toLocaleDateString('ar-EG', { year: 'numeric', month: 'long', day: 'numeric', hour: '2-digit', minute: '2-digit' });
 };
 
 const getServiceTypeName = (typeKey: string): string => {
@@ -80,7 +73,7 @@ export function AdminServiceRequestDetailsDialog({ request, isOpen, onOpenChange
   if (!request) return null;
 
   return (
-    <Dialog open={isOpen} onOpenChange={onOpenChange} dir="rtl">
+    <Dialog open={isOpen} onOpenChange={onOpenChange}>
       <DialogContent className="sm:max-w-xl md:max-w-2xl">
         <DialogHeader>
           <DialogTitle className="font-headline text-xl text-primary">{request.requestTitle}</DialogTitle>

@@ -1,0 +1,446 @@
+"use client";
+
+import { useState, useEffect } from "react";
+import { Card, CardHeader, CardTitle, CardDescription, CardContent } from "@/components/ui/card";
+import { Button } from "@/components/ui/button";
+import { Input } from "@/components/ui/input";
+import { Badge } from "@/components/ui/badge";
+import { 
+  Table, 
+  TableBody,                 variant={statusFilter === 'OVERDUE' ? 'default' : 'outline'}
+                onClick={() => setStatusFilter('OVERDUE')}  TableCell, 
+  TableHead, 
+  TableHeader, 
+  TableRow 
+} from "@/components/ui/table";
+import { 
+  Receipt, 
+  Search, 
+  Plus, 
+  Eye, 
+  Download, 
+  Send,
+  DollarSign,
+  Calendar,
+  User,
+  AlertCircle,
+  CheckCircle,
+  Clock,
+  Filter,
+  Loader2,
+  RefreshCw
+} from "lucide-react";
+import Link from "next/link";
+
+interface Invoice {
+  id: string;
+  clientId: string;
+  clientName: string;
+  amount: number;
+  status: 'PAID' | 'PENDING' | 'OVERDUE';
+  createdAt: string;
+  dueDate: string;
+  paidAt?: string | null;
+  services: string[];
+}
+
+export default function AdminInvoicesPage() {
+  const [searchTerm, setSearchTerm] = useState("");
+  const [invoices, setInvoices] = useState<Invoice[]>([]);
+  const [loading, setLoading] = useState(true);
+  const [error, setError] = useState<string | null>(null);
+  const [refreshing, setRefreshing] = useState(false);
+
+  // Fetch invoices from database
+  const fetchInvoices = async () => {
+    try {
+      const response = await fetch('/api/invoices');
+      
+      if (!response.ok) {
+        throw new Error('Failed to fetch invoices');
+      }
+      
+      const data = await response.json();
+      setInvoices(data);
+      setError(null);
+    } catch (err) {
+      console.error('Error fetching invoices:', err);
+      setError('Failed to load invoices');
+      
+      // Fallback to mock data
+      setInvoices([
+        {
+          id: "INV-001",
+          clientId: "1",
+          clientName: "أحمد محمد العلي",
+          amount: 15000,
+          status: "PAID",
+          createdAt: "2024-11-01T10:00:00Z",
+          dueDate: "2024-11-15T10:00:00Z",
+          paidAt: "2024-11-10T14:30:00Z",
+          services: ["خدمة الحراسة الأمنية", "مراقبة المداخل"]
+        }
+      ]);
+    } finally {
+      setLoading(false);
+      setRefreshing(false);
+    }
+  };
+
+  useEffect(() => {
+    fetchInvoices();
+  }, []);
+
+  const handleRefresh = async () => {
+    setRefreshing(true);
+    await fetchInvoices();
+  };
+
+  const filteredInvoices = invoices.filter(invoice =>
+    invoice.clientName.toLowerCase().includes(searchTerm.toLowerCase()) ||
+    invoice.id.toLowerCase().includes(searchTerm.toLowerCase())
+  );
+
+export default function AdminInvoicesPage() {
+  const [searchTerm, setSearchTerm] = useState("");
+  const [statusFilter, setStatusFilter] = useState<string>("all");
+  
+  // Mock data - replace with real database queries
+  const invoices: Invoice[] = [
+    {
+      id: "1",
+      invoiceNumber: "INV-2024-001",
+      clientName: "أحمد محمد العلي",
+      clientEmail: "ahmed@company.com",
+      serviceType: "حراسة شخصية",
+      amount: 15000,
+      tax: 2250,
+      totalAmount: 17250,
+      status: "PAID",
+      issueDate: "2024-11-01",
+      dueDate: "2024-11-30",
+      paidDate: "2024-11-25",
+      paymentMethod: "تحويل بنكي"
+    },
+    {
+      id: "2",
+      invoiceNumber: "INV-2024-002",
+      clientName: "فاطمة خالد السالم",
+      clientEmail: "fatima@security.com",
+      serviceType: "أنظمة مراقبة",
+      amount: 25000,
+      tax: 3750,
+      totalAmount: 28750,
+      status: "PENDING",
+      issueDate: "2024-11-15",
+      dueDate: "2024-12-15"
+    },
+    {
+      id: "3",
+      invoiceNumber: "INV-2024-003",
+      clientName: "محمد عبدالله النمر",
+      clientEmail: "mohammed@shield.com",
+      serviceType: "أمن مباني",
+      amount: 50000,
+      tax: 7500,
+      totalAmount: 57500,
+      status: "OVERDUE",
+      issueDate: "2024-10-01",
+      dueDate: "2024-10-31"
+    },
+    {
+      id: "4",
+      invoiceNumber: "INV-2024-004",
+      clientName: "سارة عبدالعزيز القحطاني",
+      clientEmail: "sara@training.com",
+      serviceType: "تدريب أمني",
+      amount: 8000,
+      tax: 1200,
+      totalAmount: 9200,
+      status: "PENDING",
+      issueDate: "2024-12-01",
+      dueDate: "2024-12-31"
+    },
+    {
+      id: "5",
+      invoiceNumber: "INV-2024-005",
+      clientName: "عبدالرحمن محمد القرشي",
+      clientEmail: "abdulrahman@corp.com",
+      serviceType: "خدمات أمنية متنوعة",
+      amount: 30000,
+      tax: 4500,
+      totalAmount: 34500,
+      status: "PAID",
+      issueDate: "2024-11-20",
+      dueDate: "2024-12-20",
+      paidDate: "2024-12-01",
+      paymentMethod: "بطاقة ائتمان"
+    }
+  ];
+
+  const filteredInvoices = invoices.filter(invoice => {
+    const matchesSearch = invoice.clientName.toLowerCase().includes(searchTerm.toLowerCase()) ||
+                         invoice.invoiceNumber.toLowerCase().includes(searchTerm.toLowerCase()) ||
+                         invoice.serviceType.toLowerCase().includes(searchTerm.toLowerCase());
+    const matchesStatus = statusFilter === "all" || invoice.status === statusFilter;
+    return matchesSearch && matchesStatus;
+  });
+
+  const getStatusBadge = (status: string) => {
+    switch (status) {
+      case 'draft':
+        return <Badge className="bg-gray-100 text-gray-800">مسودة</Badge>;
+      case 'sent':
+        return <Badge className="bg-blue-100 text-blue-800">مرسلة</Badge>;
+      case 'paid':
+        return <Badge className="bg-green-100 text-green-800">مدفوعة</Badge>;
+      case 'overdue':
+        return <Badge className="bg-red-100 text-red-800">متأخرة</Badge>;
+      case 'cancelled':
+        return <Badge className="bg-orange-100 text-orange-800">ملغاة</Badge>;
+      default:
+        return <Badge variant="outline">{status}</Badge>;
+    }
+  };
+
+  const getStatusIcon = (status: string) => {
+    switch (status) {
+      case 'paid':
+        return <CheckCircle className="h-4 w-4 text-green-600" />;
+      case 'overdue':
+        return <AlertCircle className="h-4 w-4 text-red-600" />;
+      case 'sent':
+        return <Clock className="h-4 w-4 text-blue-600" />;
+      default:
+        return <Clock className="h-4 w-4 text-gray-600" />;
+    }
+  };
+
+  const invoiceStats = {
+    total: invoices.length,
+    paid: invoices.filter(i => i.status === 'PAID').length,
+    overdue: invoices.filter(i => i.status === 'OVERDUE').length,
+    totalRevenue: invoices.filter(i => i.status === 'PAID').reduce((sum, i) => sum + i.totalAmount, 0),
+    pendingAmount: invoices.filter(i => i.status === 'PENDING' || i.status === 'OVERDUE').reduce((sum, i) => sum + i.totalAmount, 0)
+  };
+
+  return (
+    <div className="space-y-6">
+      {/* Header */}
+      <div className="flex justify-between items-center">
+        <div>
+          <h1 className="text-3xl font-bold flex items-center">
+            <Receipt className="h-8 w-8 mr-3 text-purple-600" />
+            إدارة الفواتير
+          </h1>
+          <p className="text-muted-foreground mt-1">
+            إدارة ومتابعة جميع فواتير العملاء
+          </p>
+        </div>
+        <div className="flex space-x-2 space-x-reverse">
+          <Button variant="outline">
+            <Download className="h-4 w-4 mr-2" />
+            تصدير تقرير
+          </Button>
+          <Button asChild>
+            <Link href="/admin/invoices/new">
+              <Plus className="h-4 w-4 mr-2" />
+              إنشاء فاتورة جديدة
+            </Link>
+          </Button>
+        </div>
+      </div>
+
+      {/* Stats Cards */}
+      <div className="grid grid-cols-1 md:grid-cols-5 gap-4">
+        <Card>
+          <CardContent className="p-6">
+            <div className="flex items-center justify-between">
+              <div>
+                <p className="text-sm font-medium text-muted-foreground">إجمالي الفواتير</p>
+                <p className="text-2xl font-bold">{invoiceStats.total}</p>
+              </div>
+              <Receipt className="h-8 w-8 text-purple-500" />
+            </div>
+          </CardContent>
+        </Card>
+        <Card>
+          <CardContent className="p-6">
+            <div className="flex items-center justify-between">
+              <div>
+                <p className="text-sm font-medium text-muted-foreground">فواتير مدفوعة</p>
+                <p className="text-2xl font-bold text-green-600">{invoiceStats.paid}</p>
+              </div>
+              <CheckCircle className="h-8 w-8 text-green-500" />
+            </div>
+          </CardContent>
+        </Card>
+        <Card>
+          <CardContent className="p-6">
+            <div className="flex items-center justify-between">
+              <div>
+                <p className="text-sm font-medium text-muted-foreground">فواتير متأخرة</p>
+                <p className="text-2xl font-bold text-red-600">{invoiceStats.overdue}</p>
+              </div>
+              <AlertCircle className="h-8 w-8 text-red-500" />
+            </div>
+          </CardContent>
+        </Card>
+        <Card>
+          <CardContent className="p-6">
+            <div className="flex items-center justify-between">
+              <div>
+                <p className="text-sm font-medium text-muted-foreground">إجمالي الإيرادات</p>
+                <p className="text-xl font-bold text-green-600">{invoiceStats.totalRevenue.toLocaleString()}</p>
+                <p className="text-xs text-muted-foreground">ريال سعودي</p>
+              </div>
+              <DollarSign className="h-8 w-8 text-green-500" />
+            </div>
+          </CardContent>
+        </Card>
+        <Card>
+          <CardContent className="p-6">
+            <div className="flex items-center justify-between">
+              <div>
+                <p className="text-sm font-medium text-muted-foreground">مبالغ معلقة</p>
+                <p className="text-xl font-bold text-orange-600">{invoiceStats.pendingAmount.toLocaleString()}</p>
+                <p className="text-xs text-muted-foreground">ريال سعودي</p>
+              </div>
+              <Clock className="h-8 w-8 text-orange-500" />
+            </div>
+          </CardContent>
+        </Card>
+      </div>
+
+      {/* Search and Filters */}
+      <Card>
+        <CardContent className="p-6">
+          <div className="flex items-center space-x-4 space-x-reverse">
+            <div className="relative flex-1">
+              <Search className="absolute right-3 top-1/2 transform -translate-y-1/2 text-gray-400 h-4 w-4" />
+              <Input
+                placeholder="البحث في الفواتير..."
+                value={searchTerm}
+                onChange={(e) => setSearchTerm(e.target.value)}
+                className="pr-10"
+              />
+            </div>
+            <div className="flex space-x-2 space-x-reverse">
+              <Button 
+                variant={statusFilter === 'all' ? 'default' : 'outline'}
+                onClick={() => setStatusFilter('all')}
+                size="sm"
+              >
+                جميع الفواتير
+              </Button>
+              <Button 
+                variant={statusFilter === 'PAID' ? 'default' : 'outline'}
+                onClick={() => setStatusFilter('PAID')}
+                size="sm"
+              >
+                مدفوعة
+              </Button>
+              <Button 
+                variant={statusFilter === 'overdue' ? 'default' : 'outline'}
+                onClick={() => setStatusFilter('overdue')}
+                size="sm"
+              >
+                متأخرة
+              </Button>
+            </div>
+          </div>
+        </CardContent>
+      </Card>
+
+      {/* Invoices Table */}
+      <Card>
+        <CardHeader>
+          <CardTitle>قائمة الفواتير</CardTitle>
+          <CardDescription>
+            {filteredInvoices.length} من أصل {invoices.length} فاتورة
+          </CardDescription>
+        </CardHeader>
+        <CardContent>
+          <Table>
+            <TableHeader>
+              <TableRow>
+                <TableHead>رقم الفاتورة</TableHead>
+                <TableHead>العميل</TableHead>
+                <TableHead>نوع الخدمة</TableHead>
+                <TableHead>المبلغ</TableHead>
+                <TableHead>الضريبة</TableHead>
+                <TableHead>الإجمالي</TableHead>
+                <TableHead>تاريخ الاستحقاق</TableHead>
+                <TableHead>الحالة</TableHead>
+                <TableHead>الإجراءات</TableHead>
+              </TableRow>
+            </TableHeader>
+            <TableBody>
+              {filteredInvoices.map((invoice) => (
+                <TableRow key={invoice.id}>
+                  <TableCell className="font-medium">
+                    <div>
+                      <div className="font-bold">{invoice.invoiceNumber}</div>
+                      <div className="text-xs text-muted-foreground flex items-center">
+                        <Calendar className="h-3 w-3 mr-1" />
+                        {new Date(invoice.issueDate).toLocaleDateString('ar-SA')}
+                      </div>
+                    </div>
+                  </TableCell>
+                  <TableCell>
+                    <div>
+                      <div className="font-medium flex items-center">
+                        <User className="h-4 w-4 mr-2 text-gray-400" />
+                        {invoice.clientName}
+                      </div>
+                      <div className="text-sm text-muted-foreground">{invoice.clientEmail}</div>
+                    </div>
+                  </TableCell>
+                  <TableCell>{invoice.serviceType}</TableCell>
+                  <TableCell>{invoice.amount.toLocaleString()} ريال</TableCell>
+                  <TableCell>{invoice.tax.toLocaleString()} ريال</TableCell>
+                  <TableCell className="font-bold">{invoice.totalAmount.toLocaleString()} ريال</TableCell>
+                  <TableCell>
+                    <div className="flex items-center">
+                      <Calendar className="h-4 w-4 mr-1 text-gray-400" />
+                      {new Date(invoice.dueDate).toLocaleDateString('ar-SA')}
+                    </div>
+                    {invoice.paidDate && (
+                      <div className="text-xs text-green-600">
+                        دفع في: {new Date(invoice.paidDate).toLocaleDateString('ar-SA')}
+                      </div>
+                    )}
+                  </TableCell>
+                  <TableCell>
+                    <div className="flex items-center space-x-2 space-x-reverse">
+                      {getStatusIcon(invoice.status)}
+                      {getStatusBadge(invoice.status)}
+                    </div>
+                    {invoice.paymentMethod && (
+                      <div className="text-xs text-muted-foreground mt-1">{invoice.paymentMethod}</div>
+                    )}
+                  </TableCell>
+                  <TableCell>
+                    <div className="flex items-center space-x-2 space-x-reverse">
+                      <Button variant="ghost" size="sm">
+                        <Eye className="h-4 w-4" />
+                      </Button>
+                      <Button variant="ghost" size="sm">
+                        <Download className="h-4 w-4" />
+                      </Button>
+                      {invoice.status === 'PENDING' && (
+                        <Button variant="ghost" size="sm" className="text-blue-600">
+                          <Send className="h-4 w-4" />
+                        </Button>
+                      )}
+                    </div>
+                  </TableCell>
+                </TableRow>
+              ))}
+            </TableBody>
+          </Table>
+        </CardContent>
+      </Card>
+    </div>
+  );
+}

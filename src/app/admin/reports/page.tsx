@@ -1,406 +1,388 @@
-
 "use client";
-import { useState, useEffect, useMemo } from "react";
+
+import { useState, useEffect } from "react";
 import { Card, CardHeader, CardTitle, CardDescription, CardContent } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
-import { Input } from "@/components/ui/input";
-import { Textarea } from "@/components/ui/textarea";
-import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from "@/components/ui/table";
 import { Badge } from "@/components/ui/badge";
-import { PlusCircle, Edit, Trash2, Loader2, FilePieChart, Search, Eye, Filter } from "lucide-react"; 
-import { Dialog, DialogContent, DialogDescription, DialogFooter, DialogHeader, DialogTitle, DialogTrigger } from "@/components/ui/dialog";
-import { useForm } from "react-hook-form";
-import { zodResolver } from "@hookform/resolvers/zod";
-import * as z from "zod";
-import { Form, FormControl, FormField, FormItem, FormLabel, FormMessage } from "@/components/ui/form";
-import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
-import { useToast } from "@/hooks/use-toast";
-import { db } from "@/lib/firebase";
-import { collection, addDoc, getDocs, serverTimestamp, Timestamp, query, orderBy, deleteDoc, doc, updateDoc } from "firebase/firestore";
-import Link from "next/link";
-import { ReportDetailsDialog } from "@/components/admin/ReportDetailsDialog"; 
-import { useAuth } from "@/context/AuthContext";
-import { logActivity } from "@/lib/activityLogger";
+import { 
+  BarChart, 
+  Bar, 
+  XAxis, 
+  YAxis, 
+  CartesianGrid, 
+  Tooltip, 
+  Legend, 
+  PieChart, 
+  Pie, 
+  Cell, 
+  ResponsiveContainer 
+} from 'recharts';
+import { 
+  TrendingUp, 
+  TrendingDown, 
+  Users, 
+  DollarSign, 
+  Shield, 
+  Activity, 
+  Download, 
+  RefreshCw,
+  Calendar,
+  FileText,
+  Eye
+} from "lucide-react";
+import { formatEGPSimple } from "@/lib/egyptian-utils";
 
-interface Report {
-  id: string;
-  title: string;
-  description: string;
-  content: string; 
-  status: "مسودة" | "قيد المراجعة" | "منشور" | "مؤرشف";
-  createdAt: Timestamp;
-  updatedAt: Timestamp;
+interface ReportData {
+  overview: {
+    totalRevenue: number;
+    totalClients: number;
+    activeServices: number;
+    completedTasks: number;
+    revenueGrowth: number;
+    clientGrowth: number;
+    serviceGrowth: number;
+  };
+  monthlyRevenue: Array<{
+    month: string;
+    revenue: number;
+    clients: number;
+  }>;
+  serviceDistribution: Array<{
+    name: string;
+    value: number;
+    percentage: number;
+  }>;
+  regionPerformance: Array<{
+    region: string;
+    revenue: number;
+    clients: number;
+    growth: number;
+  }>;
 }
 
-type ReportStatus = Report["status"];
-const reportStatusOptions: ReportStatus[] = ["مسودة", "قيد المراجعة", "منشور", "مؤرشف"];
-const filterReportStatusOptions: ("all" | ReportStatus)[] = ["all", ...reportStatusOptions];
-
-
-const reportSchema = z.object({
-  title: z.string().min(3, { message: "عنوان التقرير يجب أن لا يقل عن 3 أحرف" }),
-  description: z.string().min(10, { message: "وصف التقرير يجب أن لا يقل عن 10 أحرف" }).max(500, { message: "وصف التقرير يجب أن لا يتجاوز 500 حرف" }),
-  content: z.string().optional(), 
-  status: z.enum(["مسودة", "قيد المراجعة", "منشور", "مؤرشف"], { required_error: "يرجى اختيار حالة التقرير" }),
-});
-
-type ReportFormValues = z.infer<typeof reportSchema>;
-
 export default function AdminReportsPage() {
-  const [reports, setReports] = useState<Report[]>([]);
-  const [isLoadingReports, setIsLoadingReports] = useState(true);
-  const [isAddReportDialogOpen, setIsAddReportDialogOpen] = useState(false);
-  const [isEditReportDialogOpen, setIsEditReportDialogOpen] = useState(false);
-  const [editingReport, setEditingReport] = useState<Report | null>(null);
-  const [viewingReport, setViewingReport] = useState<Report | null>(null); 
-  const [isViewReportDialogOpen, setIsViewReportDialogOpen] = useState(false); 
-  const [searchTerm, setSearchTerm] = useState("");
-  const [statusFilter, setStatusFilter] = useState<"all" | ReportStatus>("all");
-  const { toast } = useToast();
-  const { user: adminUser } = useAuth();
+  const [selectedPeriod, setSelectedPeriod] = useState("month");
+  const [reportData, setReportData] = useState<ReportData>({
+    overview: {
+      totalRevenue: 0,
+      totalClients: 0,
+      activeServices: 0,
+      completedTasks: 0,
+      revenueGrowth: 0,
+      clientGrowth: 0,
+      serviceGrowth: 0
+    },
+    monthlyRevenue: [],
+    serviceDistribution: [],
+    regionPerformance: []
+  });
+  const [loading, setLoading] = useState(true);
+  const [error, setError] = useState<string | null>(null);
+  const [refreshing, setRefreshing] = useState(false);
 
-  const fetchReports = async () => {
-    setIsLoadingReports(true);
+  // Mock data - replace with real database queries
+  const mockData: ReportData = {
+    overview: {
+      totalRevenue: 245000,
+      totalClients: 156,
+      activeServices: 89,
+      completedTasks: 234,
+      revenueGrowth: 15.2,
+      clientGrowth: 8.5,
+      serviceGrowth: 12.3
+    },
+    monthlyRevenue: [
+      { month: "يناير", revenue: 180000, clients: 45 },
+      { month: "فبراير", revenue: 195000, clients: 52 },
+      { month: "مارس", revenue: 210000, clients: 58 },
+      { month: "أبريل", revenue: 225000, clients: 62 },
+      { month: "مايو", revenue: 240000, clients: 68 },
+      { month: "يونيو", revenue: 255000, clients: 72 }
+    ],
+    serviceDistribution: [
+      { name: "حراسة شخصية", value: 35, percentage: 39.3 },
+      { name: "أنظمة مراقبة", value: 28, percentage: 31.5 },
+      { name: "أمن مباني", value: 15, percentage: 16.9 },
+      { name: "تدريب أمني", value: 8, percentage: 9.0 },
+      { name: "نقل آمن", value: 3, percentage: 3.4 }
+    ],
+    regionPerformance: [
+      { region: "القاهرة الكبرى", clients: 68, revenue: 136000, growth: 15.2 },
+      { region: "الإسكندرية", clients: 45, revenue: 90000, growth: 12.8 },
+      { region: "الجيزة", clients: 25, revenue: 50000, growth: 8.5 },
+      { region: "القليوبية", clients: 12, revenue: 24000, growth: 6.2 },
+      { region: "أسوان", clients: 6, revenue: 12000, growth: 4.1 }
+    ]
+  };
+
+  // Fetch reports data
+  const fetchReportsData = async () => {
     try {
-      const q = query(collection(db, "reports"), orderBy("createdAt", "desc"));
-      const querySnapshot = await getDocs(q);
-      const reportsData = querySnapshot.docs.map(doc => ({ id: doc.id, ...doc.data() } as Report));
-      setReports(reportsData);
+      const response = await fetch('/api/reports');
+      
+      if (!response.ok) {
+        throw new Error('Failed to fetch reports data');
+      }
+      
+      const data = await response.json();
+      setReportData(data);
     } catch (error) {
-      console.error("Error fetching reports:", error);
-      toast({ title: "خطأ", description: "لم نتمكن من تحميل قائمة التقارير.", variant: "destructive" });
+      console.error('Error fetching reports:', error);
+      setError('Failed to load reports data');
+      // Fallback to mock data
+      setReportData(mockData);
     } finally {
-      setIsLoadingReports(false);
+      setLoading(false);
     }
   };
 
   useEffect(() => {
-    fetchReports();
-  }, []);
+    fetchReportsData();
+  }, [selectedPeriod]);
 
-  const addReportForm = useForm<ReportFormValues>({
-    resolver: zodResolver(reportSchema),
-    defaultValues: { title: "", description: "", content: "", status: "مسودة" },
-  });
-
-  const editReportForm = useForm<ReportFormValues>({
-    resolver: zodResolver(reportSchema),
-  });
-
-  const handleAddReportSubmit = async (data: ReportFormValues) => {
-    try {
-      const docRef = await addDoc(collection(db, "reports"), {
-        ...data,
-        createdAt: serverTimestamp(),
-        updatedAt: serverTimestamp(),
-      });
-      toast({ title: "تم بنجاح", description: `تم إنشاء التقرير "${data.title}" بنجاح.` });
-
-      if (adminUser) {
-        await logActivity({
-          actionType: "REPORT_CREATED",
-          description: `Admin ${adminUser.displayName || adminUser.email} created report: ${data.title}.`,
-          actor: { id: adminUser.uid, role: adminUser.role, name: adminUser.displayName },
-          target: { id: docRef.id, type: "report", name: data.title },
-          details: { status: data.status },
-        });
-      }
-
-      addReportForm.reset();
-      setIsAddReportDialogOpen(false);
-      fetchReports(); 
-    } catch (error) {
-      console.error("Error adding report:", error);
-      toast({ title: "خطأ", description: "حدث خطأ أثناء إنشاء التقرير.", variant: "destructive" });
-    }
+  const handleRefresh = async () => {
+    setRefreshing(true);
+    await fetchReportsData();
+    setRefreshing(false);
   };
 
-  const handleEditReportSubmit = async (data: ReportFormValues) => {
-    if (!editingReport) return;
-    try {
-      const reportRef = doc(db, "reports", editingReport.id);
-      await updateDoc(reportRef, {
-        ...data,
-        updatedAt: serverTimestamp(),
-      });
-      toast({ title: "تم التعديل بنجاح", description: `تم تعديل بيانات التقرير "${data.title}".` });
+  const COLORS = ['#0088FE', '#00C49F', '#FFBB28', '#FF8042', '#8884D8'];
 
-      if (adminUser) {
-        await logActivity({
-          actionType: "REPORT_UPDATED",
-          description: `Admin ${adminUser.displayName || adminUser.email} updated report: ${data.title}.`,
-          actor: { id: adminUser.uid, role: adminUser.role, name: adminUser.displayName },
-          target: { id: editingReport.id, type: "report", name: data.title },
-          details: { status: data.status },
-        });
-      }
+  if (loading) {
+    return (
+      <div className="p-6">
+        <div className="flex items-center justify-center min-h-[400px]">
+          <div className="text-center">
+            <RefreshCw className="h-8 w-8 animate-spin mx-auto mb-4 text-blue-600" />
+            <p>جاري تحميل التقارير...</p>
+          </div>
+        </div>
+      </div>
+    );
+  }
 
-      setIsEditReportDialogOpen(false);
-      setEditingReport(null);
-      fetchReports();
-    } catch (error) {
-      console.error("Error updating report:", error);
-      toast({ title: "خطأ", description: "حدث خطأ أثناء تعديل بيانات التقرير.", variant: "destructive" });
-    }
-  };
-  
-  const openEditDialog = (report: Report) => {
-    setEditingReport(report);
-    editReportForm.reset({
-      title: report.title,
-      description: report.description,
-      content: report.content || "", 
-      status: report.status,
-    });
-    setIsEditReportDialogOpen(true);
-  };
+  if (error && !reportData) {
+    return (
+      <div className="p-6">
+        <div className="text-center">
+          <div className="text-red-600 mb-4">{error}</div>
+          <Button onClick={handleRefresh}>إعادة المحاولة</Button>
+        </div>
+      </div>
+    );
+  }
 
-  const openViewDialog = (report: Report) => {
-    setViewingReport(report);
-    setIsViewReportDialogOpen(true);
-  };
-
-  const handleDeleteReport = async (reportId: string, reportTitle: string) => {
-    if (!window.confirm('هل أنت متأكد أنك تريد حذف التقرير "' + reportTitle + '"؟')) return;
-    try {
-      await deleteDoc(doc(db, "reports", reportId));
-      toast({ title: "تم الحذف", description: 'تم حذف التقرير "' + reportTitle + '" بنجاح.' });
-
-      if (adminUser) {
-        await logActivity({
-          actionType: "REPORT_DELETED",
-          description: 'Admin ' + (adminUser.displayName || adminUser.email || 'N/A') + ' deleted report: ' + reportTitle + '.',
-          actor: { id: adminUser.uid, role: adminUser.role, name: adminUser.displayName },
-          target: { id: reportId, type: "report", name: reportTitle },
-        });
-      }
-      fetchReports();
-    } catch (error) {
-      console.error("Error deleting report:", error);
-      toast({ title: "خطأ", description: "حدث خطأ أثناء حذف التقرير.", variant: "destructive" });
-    }
-  };
-  
-  const getStatusVariant = (status: Report["status"]): "default" | "secondary" | "destructive" | "outline" => {
-    if (status === "منشور") return "outline";
-    if (status === "قيد المراجعة") return "secondary";
-    if (status === "مسودة") return "default";
-    if (status === "مؤرشف") return "destructive";
-    return "default";
-  };
-
-  const formatDate = (timestamp: Timestamp | Date | undefined): string => {
-    if (!timestamp) return "غير متوفر";
-    let date: Date;
-    if (timestamp instanceof Timestamp) {
-      date = timestamp.toDate();
-    } else if (timestamp instanceof Date) {
-      date = timestamp;
-    } else {
-      return "تاريخ غير صالح";
-    }
-    return new Intl.DateTimeFormat('ar-EG', { year: 'numeric', month: 'short', day: 'numeric', hour: '2-digit', minute: '2-digit' }).format(date);
-  };
-
-  const filteredReports = useMemo(() => {
-    let tempReports = reports;
-    if (searchTerm) {
-      const lowercasedFilter = searchTerm.toLowerCase();
-      tempReports = tempReports.filter(report =>
-        report.title.toLowerCase().includes(lowercasedFilter) ||
-        report.description.toLowerCase().includes(lowercasedFilter)
-      );
-    }
-    if (statusFilter !== "all") {
-      tempReports = tempReports.filter(report => report.status === statusFilter);
-    }
-    return tempReports;
-  }, [reports, searchTerm, statusFilter]);
-
-  const renderReportFormFields = (formInstance: typeof addReportForm | typeof editReportForm) => (
-    <>
-      <FormField control={formInstance.control} name="title" render={({ field }) => (
-        <FormItem><FormLabel>عنوان التقرير</FormLabel><FormControl><Input placeholder="مثال: التقرير الأمني للربع الأول" {...field} /></FormControl><FormMessage /></FormItem>
-      )} />
-      <FormField control={formInstance.control} name="description" render={({ field }) => (
-        <FormItem><FormLabel>وصف موجز للتقرير</FormLabel><FormControl><Textarea placeholder="وصف قصير لمحتوى التقرير والغرض منه..." {...field} rows={3} /></FormControl><FormMessage /></FormItem>
-      )} />
-      <FormField control={formInstance.control} name="content" render={({ field }) => (
-        <FormItem><FormLabel>محتوى التقرير</FormLabel><FormControl><Textarea placeholder="أدخل محتوى التقرير هنا..." {...field} rows={15} /></FormControl><FormMessage /></FormItem>
-      )} />
-      <FormField control={formInstance.control} name="status" render={({ field }) => (
-        <FormItem><FormLabel>حالة التقرير</FormLabel>
-          <Select onValueChange={field.onChange} defaultValue={field.value} dir="rtl">
-            <FormControl><SelectTrigger><SelectValue placeholder="اختر حالة التقرير" /></SelectTrigger></FormControl>
-            <SelectContent>
-              <SelectItem value="مسودة">مسودة</SelectItem>
-              <SelectItem value="قيد المراجعة">قيد المراجعة</SelectItem>
-              <SelectItem value="منشور">منشور</SelectItem>
-              <SelectItem value="مؤرشف">مؤرشف</SelectItem>
-            </SelectContent>
-          </Select><FormMessage />
-        </FormItem>
-      )} />
-    </>
-  );
+  if (!reportData) {
+    return null;
+  }
 
   return (
     <div className="space-y-6">
+      {/* Header */}
+      <div className="flex justify-between items-center">
+        <div>
+          <h1 className="text-3xl font-bold">تقارير الأداء</h1>
+          <p className="text-muted-foreground">إحصائيات شاملة عن أداء الشركة</p>
+        </div>
+        <div className="flex gap-2">
+          <Button 
+            onClick={handleRefresh} 
+            variant="outline" 
+            disabled={refreshing}
+            className="flex items-center gap-2"
+          >
+            <RefreshCw className={`h-4 w-4 ${refreshing ? 'animate-spin' : ''}`} />
+            تحديث
+          </Button>
+          <Button className="flex items-center gap-2">
+            <Download className="h-4 w-4" />
+            تصدير PDF
+          </Button>
+        </div>
+      </div>
+
+      {/* Period Selector */}
       <Card>
-        <CardHeader className="flex flex-col md:flex-row justify-between items-start md:items-center">
-          <div>
-            <CardTitle className="font-headline text-xl text-primary flex items-center gap-2"><FilePieChart className="h-6 w-6"/> إدارة التقارير</CardTitle>
-            <CardDescription>إنشاء، عرض، وتعديل التقارير الخاصة بالنظام.</CardDescription>
-          </div>
-          <div className="flex flex-col sm:flex-row gap-2 mt-4 md:mt-0">
-            <Button asChild variant="outline">
-              <Link href="/admin/ai-tool">
-                أداة إنشاء التقارير (AI)
-              </Link>
+        <CardContent className="p-6">
+          <div className="flex gap-2">
+            <Button
+              variant={selectedPeriod === 'week' ? 'default' : 'outline'}
+              onClick={() => setSelectedPeriod('week')}
+              size="sm"
+            >
+              أسبوعي
             </Button>
-            <Dialog open={isAddReportDialogOpen} onOpenChange={setIsAddReportDialogOpen}>
-              <DialogTrigger asChild>
-                <Button>
-                  <PlusCircle className="me-2 h-5 w-5" />
-                  إنشاء تقرير جديد
-                </Button>
-              </DialogTrigger>
-              <DialogContent className="sm:max-w-2xl" dir="rtl">
-                <DialogHeader>
-                  <DialogTitle>إنشاء تقرير جديد</DialogTitle>
-                  <DialogDescription>
-                    املأ النموذج أدناه لإنشاء تقرير جديد.
-                  </DialogDescription>
-                </DialogHeader>
-                <Form {...addReportForm}>
-                  <form onSubmit={addReportForm.handleSubmit(handleAddReportSubmit)} className="space-y-4 py-4 max-h-[70vh] overflow-y-auto px-2">
-                    {renderReportFormFields(addReportForm)}
-                    <DialogFooter className="pt-4 sticky bottom-0 bg-card pb-4">
-                      <Button type="button" variant="outline" onClick={() => setIsAddReportDialogOpen(false)} disabled={addReportForm.formState.isSubmitting}>إلغاء</Button>
-                      <Button type="submit" disabled={addReportForm.formState.isSubmitting}>
-                        {addReportForm.formState.isSubmitting && <Loader2 className="me-2 h-4 w-4 animate-spin" />}
-                        إنشاء التقرير
-                      </Button>
-                    </DialogFooter>
-                  </form>
-                </Form>
-              </DialogContent>
-            </Dialog>
+            <Button
+              variant={selectedPeriod === 'month' ? 'default' : 'outline'}
+              onClick={() => setSelectedPeriod('month')}
+              size="sm"
+            >
+              شهري
+            </Button>
+            <Button
+              variant={selectedPeriod === 'quarter' ? 'default' : 'outline'}
+              onClick={() => setSelectedPeriod('quarter')}
+              size="sm"
+            >
+              ربع سنوي
+            </Button>
+            <Button
+              variant={selectedPeriod === 'year' ? 'default' : 'outline'}
+              onClick={() => setSelectedPeriod('year')}
+              size="sm"
+            >
+              سنوي
+            </Button>
           </div>
-        </CardHeader>
-        <CardContent>
-          <div className="flex flex-col sm:flex-row gap-4 mb-4">
-            <div className="relative flex-grow sm:max-w-md">
-                <Input 
-                placeholder="ابحث عن تقرير (بالعنوان، الوصف)..." 
-                className="ps-10"
-                value={searchTerm}
-                onChange={(e) => setSearchTerm(e.target.value)}
-                />
-                <Search className="absolute start-3 top-1/2 -translate-y-1/2 h-5 w-5 text-muted-foreground" />
-            </div>
-            <div className="flex items-center gap-2">
-                <Filter className="h-5 w-5 text-muted-foreground"/>
-                <Select 
-                    value={statusFilter} 
-                    onValueChange={(value) => setStatusFilter(value as "all" | ReportStatus)}
-                    dir="rtl"
-                >
-                    <SelectTrigger className="w-full sm:w-[180px]">
-                    <SelectValue placeholder="تصفية بالحالة" />
-                    </SelectTrigger>
-                    <SelectContent>
-                    {filterReportStatusOptions.map(option => (
-                        <SelectItem key={option} value={option}>
-                        {option === "all" ? "الكل" : option}
-                        </SelectItem>
-                    ))}
-                    </SelectContent>
-                </Select>
-            </div>
-           </div>
-          {isLoadingReports ? (
-            <div className="flex justify-center items-center py-8"><Loader2 className="h-8 w-8 animate-spin text-primary" /><p className="ms-2">جارٍ تحميل التقارير...</p></div>
-          ) : filteredReports.length > 0 ? (
-            <div className="overflow-x-auto">
-              <Table>
-                <TableHeader>
-                  <TableRow>
-                    <TableHead className="min-w-[200px]">عنوان التقرير</TableHead>
-                    <TableHead className="min-w-[150px]">الحالة</TableHead>
-                    <TableHead className="min-w-[180px]">تاريخ الإنشاء</TableHead>
-                    <TableHead className="min-w-[180px]">آخر تحديث</TableHead>
-                    <TableHead className="min-w-[150px]">إجراءات</TableHead>
-                  </TableRow>
-                </TableHeader>
-                <TableBody>
-                  {filteredReports.map((report) => (
-                    <TableRow key={report.id} className="text-xs sm:text-sm">
-                      <TableCell className="font-medium">{report.title}</TableCell>
-                      <TableCell><Badge variant={getStatusVariant(report.status)}>{report.status}</Badge></TableCell>
-                      <TableCell>{formatDate(report.createdAt)}</TableCell>
-                      <TableCell>{formatDate(report.updatedAt)}</TableCell>
-                      <TableCell className="space-x-1 space-x-reverse">
-                        <Button variant="ghost" size="icon" aria-label="عرض التقرير" onClick={() => openViewDialog(report)}>
-                          <Eye className="h-5 w-5" />
-                        </Button>
-                        <Button variant="ghost" size="icon" aria-label="تعديل التقرير" onClick={() => openEditDialog(report)}>
-                          <Edit className="h-5 w-5" />
-                        </Button>
-                        <Button variant="ghost" size="icon" aria-label="حذف التقرير" className="text-destructive hover:text-destructive" onClick={() => handleDeleteReport(report.id, report.title)}>
-                          <Trash2 className="h-5 w-5" />
-                        </Button>
-                      </TableCell>
-                    </TableRow>
-                  ))}
-                </TableBody>
-              </Table>
-            </div>
-          ) : (
-             <p className="text-muted-foreground text-center py-8">
-                {searchTerm || statusFilter !== "all" ? "لم يتم العثور على تقارير تطابق معايير البحث والتصفية الحالية." : "لا توجد تقارير لعرضها حالياً."}
-            </p>
-          )}
         </CardContent>
       </Card>
 
-      <Dialog open={isEditReportDialogOpen} onOpenChange={setIsEditReportDialogOpen}>
-        <DialogContent className="sm:max-w-2xl" dir="rtl">
-          <DialogHeader>
-            <DialogTitle>تعديل بيانات التقرير</DialogTitle>
-            <DialogDescription>
-              قم بتحديث بيانات التقرير "{editingReport?.title}".
-            </DialogDescription>
-          </DialogHeader>
-          {editingReport && (
-            <Form {...editReportForm}>
-              <form onSubmit={editReportForm.handleSubmit(handleEditReportSubmit)} className="space-y-4 py-4 max-h-[70vh] overflow-y-auto px-2">
-                {renderReportFormFields(editReportForm)}
-                <DialogFooter className="pt-4 sticky bottom-0 bg-card pb-4">
-                  <Button type="button" variant="outline" onClick={() => setIsEditReportDialogOpen(false)} disabled={editReportForm.formState.isSubmitting}>إلغاء</Button>
-                  <Button type="submit" disabled={editReportForm.formState.isSubmitting}>
-                    {editReportForm.formState.isSubmitting && <Loader2 className="me-2 h-4 w-4 animate-spin" />}
-                    حفظ التعديلات
-                  </Button>
-                </DialogFooter>
-              </form>
-            </Form>
-          )}
-        </DialogContent>
-      </Dialog>
+      {/* Overview Statistics */}
+      <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-4">
+        <Card>
+          <CardContent className="p-6">
+            <div className="flex items-center">
+              <DollarSign className="h-8 w-8 text-green-600" />
+              <div className="mr-4">
+                <p className="text-sm font-medium text-muted-foreground">إجمالي الإيرادات</p>
+                <p className="text-2xl font-bold">{formatEGPSimple(reportData?.overview?.totalRevenue || 0)}</p>
+                <p className="text-xs text-muted-foreground">
+                  +{reportData?.overview?.revenueGrowth || 0}% هذا الشهر
+                </p>
+              </div>
+            </div>
+          </CardContent>
+        </Card>
 
-      {viewingReport && (
-        <ReportDetailsDialog
-          report={viewingReport}
-          isOpen={isViewReportDialogOpen}
-          onOpenChange={setIsViewReportDialogOpen}
-        />
-      )}
+        <Card>
+          <CardContent className="p-6">
+            <div className="flex items-center">
+              <Users className="h-8 w-8 text-blue-600" />
+              <div className="mr-4">
+                <p className="text-sm font-medium text-muted-foreground">إجمالي العملاء</p>
+                <p className="text-2xl font-bold">{reportData?.overview?.totalClients || 0}</p>
+                <p className="text-xs text-muted-foreground">
+                  +{reportData?.overview?.clientGrowth || 0}% هذا الشهر
+                </p>
+              </div>
+            </div>
+          </CardContent>
+        </Card>
+
+        <Card>
+          <CardContent className="p-6">
+            <div className="flex items-center">
+              <Shield className="h-8 w-8 text-purple-600" />
+              <div className="mr-4">
+                <p className="text-sm font-medium text-muted-foreground">الخدمات النشطة</p>
+                <p className="text-2xl font-bold">{reportData?.overview?.activeServices || 0}</p>
+                <p className="text-xs text-muted-foreground">
+                  +{reportData?.overview?.serviceGrowth || 0}% هذا الشهر
+                </p>
+              </div>
+            </div>
+          </CardContent>
+        </Card>
+
+        <Card>
+          <CardContent className="p-6">
+            <div className="flex items-center">
+              <Activity className="h-8 w-8 text-orange-600" />
+              <div className="mr-4">
+                <p className="text-sm font-medium text-muted-foreground">المهام المكتملة</p>
+                <p className="text-2xl font-bold">{reportData?.overview?.completedTasks || 0}</p>
+              </div>
+            </div>
+          </CardContent>
+        </Card>
+      </div>
+
+      {/* Charts Section */}
+      <div className="grid grid-cols-1 lg:grid-cols-2 gap-6">
+        {/* Monthly Revenue Chart */}
+        <Card>
+          <CardHeader>
+            <CardTitle>الإيرادات الشهرية</CardTitle>
+            <CardDescription>تطور الإيرادات خلال الأشهر الماضية</CardDescription>
+          </CardHeader>
+          <CardContent>
+            <ResponsiveContainer width="100%" height={300}>
+              <BarChart data={reportData?.monthlyRevenue || []}>
+                <CartesianGrid strokeDasharray="3 3" />
+                <XAxis dataKey="month" />
+                <YAxis />
+                <Tooltip />
+                <Legend />
+                <Bar dataKey="revenue" fill="#8884d8" name="الإيرادات" />
+              </BarChart>
+            </ResponsiveContainer>
+          </CardContent>
+        </Card>
+
+        {/* Service Distribution Chart */}
+        <Card>
+          <CardHeader>
+            <CardTitle>توزيع الخدمات</CardTitle>
+            <CardDescription>النسبة المئوية لكل نوع خدمة</CardDescription>
+          </CardHeader>
+          <CardContent>
+            <ResponsiveContainer width="100%" height={300}>
+              <PieChart>
+                <Pie
+                  data={reportData?.serviceDistribution || []}
+                  cx="50%"
+                  cy="50%"
+                  labelLine={false}
+                  label={({ name, percentage }) => `${name}: ${percentage}%`}
+                  outerRadius={80}
+                  fill="#8884d8"
+                  dataKey="value"
+                >
+                  {(reportData?.serviceDistribution || []).map((entry, index) => (
+                    <Cell key={`cell-${index}`} fill={COLORS[index % COLORS.length]} />
+                  ))}
+                </Pie>
+                <Tooltip />
+              </PieChart>
+            </ResponsiveContainer>
+          </CardContent>
+        </Card>
+      </div>
+
+      {/* Regional Performance */}
+      <Card>
+        <CardHeader>
+          <CardTitle>الأداء الإقليمي</CardTitle>
+          <CardDescription>إحصائيات العملاء والإيرادات حسب المنطقة</CardDescription>
+        </CardHeader>
+        <CardContent>
+          <div className="space-y-4">
+            {(reportData?.regionPerformance || []).map((region, index) => (
+              <div key={index} className="flex items-center justify-between p-4 border rounded-lg">
+                <div className="flex items-center space-x-4">
+                  <div className="text-right">
+                    <p className="font-medium">{region.region}</p>
+                    <p className="text-sm text-muted-foreground">{region.clients} عميل</p>
+                  </div>
+                </div>
+                <div className="text-right">
+                  <p className="font-bold">{formatEGPSimple(region.revenue || 0)}</p>
+                  <div className="flex items-center">
+                    {region.growth > 0 ? (
+                      <TrendingUp className="h-4 w-4 text-green-500 ml-1" />
+                    ) : (
+                      <TrendingDown className="h-4 w-4 text-red-500 ml-1" />
+                    )}
+                    <span className={`text-sm ${region.growth > 0 ? 'text-green-500' : 'text-red-500'}`}>
+                      {region.growth}%
+                    </span>
+                  </div>
+                </div>
+              </div>
+            ))}
+          </div>
+        </CardContent>
+      </Card>
     </div>
   );
 }
-    
-
-    
-
-    

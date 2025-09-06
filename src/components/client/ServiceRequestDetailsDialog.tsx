@@ -4,7 +4,6 @@
 import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogDescription, DialogFooter, DialogClose } from "@/components/ui/dialog";
 import { Button } from "@/components/ui/button";
 import { Badge } from "@/components/ui/badge";
-import { Timestamp } from "firebase/firestore";
 import { Separator } from "@/components/ui/separator";
 import { Paperclip } from "lucide-react";
 
@@ -14,7 +13,7 @@ interface ServiceRequest {
   requestTitle: string;
   requestDetails: string;
   status: "جديد" | "قيد المعالجة" | "مكتمل" | "ملغى";
-  createdAt: Timestamp;
+  createdAt: Date;
   attachmentURL?: string;
   attachmentFilename?: string;
 }
@@ -25,15 +24,10 @@ interface ServiceRequestDetailsDialogProps {
   onOpenChange: (isOpen: boolean) => void;
 }
 
-const formatDate = (timestamp: Timestamp | Date | undefined): string => {
-  if (!timestamp) return "غير متوفر";
-  if (timestamp instanceof Timestamp) {
-    return timestamp.toDate().toLocaleDateString('ar-EG', { year: 'numeric', month: 'long', day: 'numeric', hour: '2-digit', minute: '2-digit' });
-  }
-  if (timestamp instanceof Date) {
-    return timestamp.toLocaleDateString('ar-EG', { year: 'numeric', month: 'long', day: 'numeric', hour: '2-digit', minute: '2-digit' });
-  }
-  return "تاريخ غير صالح";
+const formatDate = (date: Date | string | undefined): string => {
+  if (!date) return "غير متوفر";
+  const dateObj = date instanceof Date ? date : new Date(date);
+  return dateObj.toLocaleDateString('ar-EG', { year: 'numeric', month: 'long', day: 'numeric', hour: '2-digit', minute: '2-digit' });
 };
 
 const getServiceTypeName = (typeKey: string): string => {
@@ -61,7 +55,7 @@ export function ServiceRequestDetailsDialog({ request, isOpen, onOpenChange }: S
   if (!request) return null;
 
   return (
-    <Dialog open={isOpen} onOpenChange={onOpenChange} dir="rtl">
+    <Dialog open={isOpen} onOpenChange={onOpenChange}>
       <DialogContent className="sm:max-w-lg">
         <DialogHeader>
           <DialogTitle className="font-headline text-xl text-primary">{request.requestTitle}</DialogTitle>
