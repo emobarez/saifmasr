@@ -137,10 +137,11 @@ export default function AdminDashboardPage() {
   ];
 
   return (
-    <div className="space-y-4 sm:space-y-6 lg:space-y-8 min-h-screen">
-      {/* Header */}
-      <div className="flex justify-between items-start mb-3 sm:mb-5 lg:mb-8">
-        <div className="space-y-2">
+    <div className="overflow-x-auto overflow-y-auto force-scrollbar" style={{minHeight: '100vh', minWidth: '100vw'}}>
+      <div className="space-y-4 sm:space-y-6 lg:space-y-8 min-h-screen force-scrollbar" style={{minWidth: '800px', paddingBottom: '2rem'}}>
+        {/* Header */}
+        <div className="flex justify-between items-start mb-3 sm:mb-5 lg:mb-8">
+          <div className="space-y-2">
           <h1 className="text-2xl sm:text-3xl lg:text-4xl font-bold text-slate-800 dark:text-slate-100 tracking-tight">لوحة التحكم الإدارية</h1>
           <p className="text-slate-600 dark:text-slate-400 text-sm sm:text-base lg:text-lg">
             مرحباً {user?.name || 'المدير'} - آخر تحديث: {new Date().toLocaleDateString('ar-EG')}
@@ -380,6 +381,7 @@ export default function AdminDashboardPage() {
             </Button>
           </CardContent>
         </Card>
+      </div>
       </div>
     </div>
   );

@@ -207,9 +207,10 @@ export default function AdminServicesPage() {
   }
 
   return (
-    <div className="space-y-6 force-scrollbar" style={{minHeight: '100vh', paddingBottom: '2rem'}}>
-      {/* Header */}
-      <div className="flex justify-between items-center">
+    <div className="overflow-x-auto overflow-y-auto force-scrollbar" style={{minHeight: '100vh', minWidth: '100vw'}}>
+      <div className="space-y-6 force-scrollbar" style={{minHeight: '100vh', minWidth: '800px', paddingBottom: '2rem'}}>
+        {/* Header */}
+        <div className="flex justify-between items-center">
         <div>
           <h1 className="text-3xl font-bold">إدارة الخدمات</h1>
           <p className="text-muted-foreground">إدارة وتحديث خدمات الشركة الأمنية</p>
@@ -337,11 +338,6 @@ export default function AdminServicesPage() {
         <CardContent>
           {/* Mobile horizontal scroll container with visual indicators */}
           <div className="relative">
-            {/* Scroll hint for mobile */}
-            <div className="md:hidden text-xs text-muted-foreground mb-2 flex items-center">
-              <span className="mr-2">👈 اسحب للجانب لرؤية المزيد</span>
-            </div>
-            
             <div className="overflow-x-auto border rounded-lg horizontal-scroll force-scrollbar" style={{maxHeight: '70vh'}}>
               <div className="min-w-[800px] md:min-w-0">
                 <Table>
@@ -426,6 +422,7 @@ export default function AdminServicesPage() {
           )}
         </CardContent>
       </Card>
+      </div>
     </div>
   );
 }

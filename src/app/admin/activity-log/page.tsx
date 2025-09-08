@@ -243,9 +243,10 @@ export default function AdminActivityLogPage() {
   }
 
   return (
-    <div className="space-y-6">
-      {/* Header */}
-      <div className="flex justify-between items-center">
+    <div className="overflow-x-auto overflow-y-auto force-scrollbar" style={{minHeight: '100vh', minWidth: '100vw'}}>
+      <div className="space-y-6 force-scrollbar" style={{minHeight: '100vh', minWidth: '800px', paddingBottom: '2rem'}}>
+        {/* Header */}
+        <div className="flex justify-between items-center">
         <div className="flex items-center space-x-2 space-x-reverse">
           <Activity className="h-8 w-8 text-primary" />
           <h1 className="text-3xl font-bold">سجل النشاطات</h1>
@@ -438,6 +439,7 @@ export default function AdminActivityLogPage() {
           )}
         </CardContent>
       </Card>
+      </div>
     </div>
   );
 }

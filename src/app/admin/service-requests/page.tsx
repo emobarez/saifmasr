@@ -157,10 +157,11 @@ export default function AdminServiceRequestsPage() {
   };
 
   return (
-    <div className="space-y-6">
-      {/* Header */}
-      <div className="flex justify-between items-center">
-        <div>
+    <div className="overflow-x-auto overflow-y-auto force-scrollbar" style={{minHeight: '100vh', minWidth: '100vw'}}>
+      <div className="space-y-6 force-scrollbar" style={{minHeight: '100vh', minWidth: '800px', paddingBottom: '2rem'}}>
+        {/* Header */}
+        <div className="flex justify-between items-center">
+          <div>
           <h1 className="text-3xl font-bold flex items-center">
             <ClipboardList className="h-8 w-8 mr-3 text-orange-600" />
             طلبات الخدمة
@@ -368,6 +369,7 @@ export default function AdminServiceRequestsPage() {
           </Table>
         </CardContent>
       </Card>
+      </div>
     </div>
   );
 }

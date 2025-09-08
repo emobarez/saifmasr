@@ -177,9 +177,10 @@ export default function AdminReportsPage() {
   }
 
   return (
-    <div className="space-y-6">
-      {/* Header */}
-      <div className="flex justify-between items-center">
+    <div className="overflow-x-auto overflow-y-auto force-scrollbar" style={{minHeight: '100vh', minWidth: '100vw'}}>
+      <div className="space-y-6 force-scrollbar" style={{minHeight: '100vh', minWidth: '800px', paddingBottom: '2rem'}}>
+        {/* Header */}
+        <div className="flex justify-between items-center">
         <div>
           <h1 className="text-3xl font-bold">تقارير الأداء</h1>
           <p className="text-muted-foreground">إحصائيات شاملة عن أداء الشركة</p>
@@ -383,6 +384,7 @@ export default function AdminReportsPage() {
           </div>
         </CardContent>
       </Card>
+      </div>
     </div>
   );
 }
