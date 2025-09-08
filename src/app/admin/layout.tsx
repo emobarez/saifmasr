@@ -33,9 +33,9 @@ export default function AdminLayout({
             <ThemeSwitcher className="!bg-primary !text-primary-foreground hover:!bg-primary/90" />
           </div>
         </header>
-        <main className="flex-1 overflow-y-auto overscroll-y-contain touch-pan-y bg-background">
+        <main className="flex-1 overflow-y-auto overscroll-y-contain touch-pan-y bg-background" style={{height: 'calc(100vh - 48px)'}}>
           {/* Compact mobile padding; larger on desktop */}
-          <div className="container mx-auto px-3 py-3 sm:px-4 sm:py-4 md:px-6 md:py-8">
+          <div className="container mx-auto px-3 py-3 sm:px-4 sm:py-4 md:px-6 md:py-8 min-h-full">
             {children}
           </div>
         </main>

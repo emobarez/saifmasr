@@ -207,7 +207,7 @@ export default function AdminServicesPage() {
   }
 
   return (
-    <div className="space-y-6">
+    <div className="space-y-6 force-scrollbar" style={{minHeight: '100vh', paddingBottom: '2rem'}}>
       {/* Header */}
       <div className="flex justify-between items-center">
         <div>
@@ -342,7 +342,7 @@ export default function AdminServicesPage() {
               <span className="mr-2">👈 اسحب للجانب لرؤية المزيد</span>
             </div>
             
-            <div className="overflow-x-auto border rounded-lg">
+            <div className="overflow-x-auto border rounded-lg horizontal-scroll force-scrollbar" style={{maxHeight: '70vh'}}>
               <div className="min-w-[800px] md:min-w-0">
                 <Table>
             <TableHeader>
