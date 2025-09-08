@@ -77,8 +77,8 @@ export default function ServicesPage() {
 
   return (
     <>
-      <Header />
-      <main className="container mx-auto px-4 py-8">
+  <Header />
+  <main className="w-full px-4 lg:px-8 py-8">
         <div className="space-y-8">
           <div className="text-center">
             <h1 className="text-4xl font-bold mb-4">خدماتنا</h1>

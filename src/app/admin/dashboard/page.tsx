@@ -137,8 +137,8 @@ export default function AdminDashboardPage() {
   ];
 
   return (
-    <div className="overflow-x-auto overflow-y-auto force-scrollbar" style={{minHeight: '100vh', minWidth: '100vw'}}>
-      <div className="space-y-4 sm:space-y-6 lg:space-y-8 min-h-screen force-scrollbar" style={{minWidth: '800px', paddingBottom: '2rem'}}>
+    <div className="w-full overflow-x-auto md:overflow-x-visible force-scrollbar">
+      <div className="space-y-3 xs:space-y-4 sm:space-y-6 lg:space-y-8 min-h-screen min-w-[800px] md:min-w-0 p-2 xs:p-3 sm:p-4 md:p-6 lg:p-8">
         {/* Header */}
         <div className="flex justify-between items-start mb-3 sm:mb-5 lg:mb-8">
           <div className="space-y-2">

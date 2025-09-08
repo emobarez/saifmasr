@@ -10,9 +10,9 @@ export default function AdminLayout({
 }) {
   return (
     <div className="flex min-h-svh bg-background">
-      {/* Desktop Sidebar */}
-      <div className="hidden md:flex md:w-64 md:flex-col md:fixed md:inset-y-0">
-        <div className="flex flex-col flex-grow border-r border-sidebar-border bg-sidebar overflow-y-auto">
+      {/* Desktop Sidebar (right-aligned) */}
+  <div className="hidden md:flex md:w-64 md:flex-col md:fixed md:inset-y-0 md:right-0 md:z-[70]">
+        <div className="flex flex-col flex-grow border-l border-sidebar-border bg-sidebar overflow-y-auto">
           <AdminSidebar />
         </div>
       </div>
@@ -25,20 +25,17 @@ export default function AdminLayout({
         </div>
       </div>
 
-      {/* Main Content */}
+  {/* Main Content (offset for right sidebar) */}
       <div className="flex flex-col flex-1 md:mr-64">
         {/* Desktop Top Bar with Theme Switcher */}
-        <header className="hidden md:flex sticky top-0 z-50 bg-card border-b shadow-sm">
-          <div className="container mx-auto px-4 py-3 md:px-6 flex items-center justify-end gap-3">
+          <header className="hidden md:flex sticky top-0 z-50 bg-card border-b shadow-sm">
+            <div className="w-full px-4 py-3 md:px-6 flex items-center justify-end gap-3">
             <ThemeSwitcher className="!bg-primary !text-primary-foreground hover:!bg-primary/90" />
           </div>
         </header>
-        <main className="flex-1 overflow-y-auto overscroll-y-contain touch-pan-y bg-background" style={{height: 'calc(100vh - 48px)'}}>
-          {/* Compact mobile padding; larger on desktop */}
-          <div className="container mx-auto px-3 py-3 sm:px-4 sm:py-4 md:px-6 md:py-8 min-h-full">
+          <main className="flex-1 min-h-0 overflow-x-auto overflow-y-auto overscroll-y-contain touch-pan-x touch-pan-y bg-background">
             {children}
-          </div>
-        </main>
+          </main>
       </div>
     </div>
   );

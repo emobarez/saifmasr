@@ -99,7 +99,7 @@ export function AdminSidebar({ className }: AdminSidebarProps) {
   const { user, signOut } = useAuth();
 
   return (
-    <div className={cn("pb-24 relative", className)}>
+    <div className={cn("pb-24 relative z-[70]", className)}>
       <div className="space-y-4 py-4">
         <div className="px-3 py-2">
           <div className="rounded-2xl p-3 bg-gradient-to-b from-sidebar/60 to-sidebar/80 border border-sidebar-border shadow-sm">

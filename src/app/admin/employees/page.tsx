@@ -162,8 +162,8 @@ export default function AdminEmployeesPage() {
   };
 
   return (
-    <div className="overflow-x-auto overflow-y-auto force-scrollbar" style={{minHeight: '100vh', minWidth: '100vw'}}>
-      <div className="space-y-6 force-scrollbar" style={{minHeight: '100vh', minWidth: '800px', paddingBottom: '2rem'}}>
+    <div className="w-full overflow-x-auto md:overflow-x-visible force-scrollbar">
+      <div className="space-y-3 xs:space-y-4 sm:space-y-6 lg:space-y-8 min-h-screen min-w-[800px] md:min-w-0 p-2 xs:p-3 sm:p-4 md:p-6 lg:p-8">
         {/* Header */}
         <div className="flex justify-between items-center">
         <div>
@@ -268,7 +268,9 @@ export default function AdminEmployeesPage() {
           </CardDescription>
         </CardHeader>
         <CardContent>
-          <Table>
+          <div className="w-full overflow-auto border rounded-lg force-scrollbar" style={{maxHeight: '75vh', minHeight: '400px'}}>
+            <div className="min-w-[1200px]">
+              <Table className="w-full">
             <TableHeader>
               <TableRow>
                 <TableHead>معلومات الموظف</TableHead>
@@ -349,6 +351,8 @@ export default function AdminEmployeesPage() {
               ))}
             </TableBody>
           </Table>
+              </div>
+            </div>
         </CardContent>
       </Card>
 

@@ -47,7 +47,7 @@ export function Header() {
 
   return (
     <header className="sticky top-0 z-50 w-full border-b bg-card text-foreground">
-      <div className="container flex h-16 max-w-screen-2xl items-center justify-between">
+      <div className="w-full flex h-16 items-center justify-between px-4 sm:px-6 lg:px-8">
         <Link href="/" className="flex items-center gap-2 font-headline text-lg font-semibold text-foreground">
           <ShieldHalf className="h-7 w-7 text-primary" />
           <span>{displayPortalName}</span>
@@ -65,7 +65,7 @@ export function Header() {
           ))}
         </nav>
 
-        <div className="flex items-center gap-2">
+  <div className="flex items-center gap-2">
           <ThemeSwitcher className="!text-foreground" />
           <Button onClick={handleAuthAction} variant="default" size="sm" className="font-semibold !bg-primary !text-primary-foreground hover:!bg-primary/90" disabled={authLoading}>
             {getAuthButtonLabel()}

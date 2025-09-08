@@ -52,7 +52,7 @@ export default function LandingPage() {
       <main className="flex-grow">
         {/* Hero Section */}
         <section className="py-20 md:py-32 bg-card">
-          <div className="container mx-auto px-6 text-center">
+          <div className="w-full px-6 lg:px-8 text-center">
             <h1 className="text-4xl md:text-6xl font-bold font-headline mb-6 text-foreground">
               سيف مصر الوطنية للأمن
             </h1>
@@ -72,7 +72,7 @@ export default function LandingPage() {
 
         {/* Services Section */}
         <section id="services" className="py-16 md:py-24 bg-background">
-          <div className="container mx-auto px-6">
+          <div className="w-full px-6 lg:px-8">
             <h2 className="text-3xl md:text-4xl font-bold font-headline text-center mb-4 text-foreground">
               خدماتنا المتميزة
             </h2>
@@ -118,7 +118,7 @@ export default function LandingPage() {
 
         {/* About Us Section */}
         <section id="about" className="py-16 md:py-24 bg-secondary">
-          <div className="container mx-auto px-6">
+          <div className="w-full px-6 lg:px-8">
             <div className="grid md:grid-cols-2 gap-12 items-center">
               <div>
                 <h2 className="text-3xl md:text-4xl font-bold font-headline mb-6 text-primary">
@@ -150,7 +150,7 @@ export default function LandingPage() {
 
         {/* Contact/CTA Section */}
         <section id="contact" className="py-16 md:py-24 bg-primary text-primary-foreground">
-          <div className="container mx-auto px-6 text-center">
+          <div className="w-full px-6 lg:px-8 text-center">
             <h2 className="text-3xl md:text-4xl font-bold font-headline mb-6">
               هل أنت مستعد للارتقاء بأعمالك؟
             </h2>

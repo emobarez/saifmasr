@@ -38,7 +38,7 @@ export default function TestUserPage() {
   };
 
   return (
-    <div className="container mx-auto p-8">
+    <div className="w-full px-4 lg:px-8 py-8 mx-auto">
       <Card>
         <CardHeader>
           <CardTitle>Test User Management</CardTitle>

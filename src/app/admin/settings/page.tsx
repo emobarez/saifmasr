@@ -95,9 +95,10 @@ export default function AdminSettingsPage() {
   };
 
   return (
-    <div className="space-y-6">
-      {/* Header */}
-      <div className="flex justify-between items-center">
+    <div className="w-full overflow-x-auto md:overflow-x-visible force-scrollbar">
+      <div className="space-y-3 xs:space-y-4 sm:space-y-6 lg:space-y-8 min-h-screen min-w-[800px] md:min-w-0 p-2 xs:p-3 sm:p-4 md:p-6 lg:p-8">
+        {/* Header */}
+        <div className="flex justify-between items-center">
         <div>
           <h1 className="text-3xl font-bold flex items-center">
             <Settings className="h-8 w-8 mr-3 text-gray-600" />
@@ -577,6 +578,7 @@ export default function AdminSettingsPage() {
           </Card>
         </TabsContent>
       </Tabs>
+      </div>
     </div>
   );
 }

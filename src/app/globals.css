@@ -184,9 +184,13 @@ body {
     }
   }
   
-  /* Prevent horizontal scroll on mobile */
-  html, body {
-    overflow-x: hidden;
+  /* Allow horizontal scroll on mobile/tablet so wide content can be accessed */
+  @media (max-width: 1024px) {
+    html, body {
+      overflow-x: auto;
+      -webkit-overflow-scrolling: touch;
+      scrollbar-gutter: stable both-edges;
+    }
   }
   
   /* Smooth scrolling */
@@ -249,6 +253,16 @@ body {
     overflow: auto !important;
     scrollbar-width: auto;
     -webkit-overflow-scrolling: touch;
+  }
+
+  /* On small screens, always show both horizontal and vertical scrollbars inside scroll containers */
+  @media (max-width: 640px) {
+    .force-scrollbar {
+      overflow-x: scroll !important;
+      overflow-y: scroll !important;
+      /* Reserve space for scrollbars where supported to avoid layout shift */
+      scrollbar-gutter: stable both-edges;
+    }
   }
   
   .force-scrollbar::-webkit-scrollbar {

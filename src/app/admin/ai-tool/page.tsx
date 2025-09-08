@@ -219,8 +219,8 @@ export default function AdminAIToolPage() {
   };
 
   return (
-    <div className="container mx-auto px-4 py-6 md:px-6 md:py-8">
-      <div className="space-y-6">
+    <div className="w-full overflow-x-auto md:overflow-x-visible force-scrollbar">
+      <div className="space-y-3 xs:space-y-4 sm:space-y-6 lg:space-y-8 min-h-screen min-w-[800px] md:min-w-0 p-2 xs:p-3 sm:p-4 md:p-6 lg:p-8">
         {/* Header */}
         <div className="flex items-center space-x-4 space-x-reverse">
           <div className="p-3 bg-gradient-to-br from-purple-500 to-blue-600 rounded-2xl">

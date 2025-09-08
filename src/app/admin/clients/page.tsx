@@ -108,23 +108,24 @@ export default function AdminClientsPage() {
   };
 
   return (
-    <div className="overflow-x-auto overflow-y-auto force-scrollbar" style={{minHeight: '100vh', minWidth: '100vw'}}>
-      <div className="space-y-6 force-scrollbar" style={{minHeight: '100vh', minWidth: '800px', paddingBottom: '2rem'}}>
-        {/* Header */}
-        <div className="flex justify-between items-center">
+    <div className="w-full overflow-x-auto md:overflow-x-visible force-scrollbar">
+      <div className="space-y-3 xs:space-y-4 sm:space-y-6 lg:space-y-8 min-h-screen min-w-[800px] md:min-w-0 p-2 xs:p-3 sm:p-4 md:p-6 lg:p-8">
+  {/* Header */}
+  <div className="flex flex-col xs:flex-row justify-between items-start xs:items-center gap-3 xs:gap-4 flex-wrap">
         <div>
-          <h1 className="text-3xl font-bold flex items-center">
-            <Users className="h-8 w-8 mr-3 text-blue-600" />
+          <h1 className="text-xl xs:text-2xl sm:text-3xl font-bold flex items-center">
+            <Users className="h-6 w-6 xs:h-7 xs:w-7 sm:h-8 sm:w-8 mr-2 xs:mr-3 text-blue-600" />
             إدارة العملاء
           </h1>
           <p className="text-muted-foreground mt-1">
             إدارة قاعدة عملاء الشركة ومعلوماتهم
           </p>
         </div>
-        <Button asChild>
+  <Button asChild className="w-full xs:w-auto order-first xs:order-none">
           <Link href="/admin/clients/new">
             <Plus className="h-4 w-4 mr-2" />
-            إضافة عميل جديد
+            <span className="hidden xs:inline">إضافة عميل جديد</span>
+            <span className="xs:hidden">إضافة</span>
           </Link>
         </Button>
       </div>
@@ -135,7 +136,7 @@ export default function AdminClientsPage() {
           <div className="grid grid-cols-1 md:grid-cols-4 gap-4">
             {[...Array(4)].map((_, i) => (
               <Card key={i} className="animate-pulse">
-                <CardContent className="p-6">
+                <CardContent className="p-3 xs:p-4 sm:p-6">
                   <div className="h-4 bg-gray-300 rounded w-3/4 mb-2"></div>
                   <div className="h-8 bg-gray-300 rounded w-1/2"></div>
                 </CardContent>
@@ -145,7 +146,7 @@ export default function AdminClientsPage() {
           
           {/* Loading Table */}
           <Card>
-            <CardContent className="p-6">
+            <CardContent className="p-3 xs:p-4 sm:p-6">
               <div className="space-y-4">
                 {[...Array(5)].map((_, i) => (
                   <div key={i} className="h-12 bg-gray-300 rounded animate-pulse"></div>
@@ -156,7 +157,7 @@ export default function AdminClientsPage() {
         </div>
       ) : error ? (
         <Card>
-          <CardContent className="p-6 text-center">
+          <CardContent className="p-3 xs:p-4 sm:p-6 text-center">
             <p className="text-red-600 mb-4">{error}</p>
             <Button onClick={() => window.location.reload()}>
               إعادة المحاولة
@@ -248,10 +249,10 @@ export default function AdminClientsPage() {
           </CardDescription>
         </CardHeader>
         <CardContent>
-          {/* Mobile horizontal scroll container */}
-          <div className="overflow-x-auto">
-            <div className="min-w-[900px] md:min-w-0">
-              <Table>
+          {/* Enhanced scrollable table container */}
+          <div className="w-full overflow-auto border rounded-lg force-scrollbar" style={{maxHeight: '75vh', minHeight: '400px'}}>
+            <div className="min-w-[1200px]">
+              <Table className="w-full">
             <TableHeader>
               <TableRow>
                 <TableHead className="min-w-[250px]">معلومات العميل</TableHead>
@@ -327,8 +328,8 @@ export default function AdminClientsPage() {
               ))}
             </TableBody>
           </Table>
+              </div>
             </div>
-          </div>
         </CardContent>
       </Card>
       </>
