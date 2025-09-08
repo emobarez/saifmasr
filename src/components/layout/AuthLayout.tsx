@@ -23,6 +23,14 @@ export function AuthLayout({ children, title, description }: AuthLayoutProps) {
       </div>
       
       <div className="lg:w-1/2 flex flex-col items-center justify-center p-8 order-2 lg:order-1">
+        {/* Security Badge for Mobile */}
+        <div className="lg:hidden mb-8 text-center">
+          <div className="inline-flex items-center justify-center w-20 h-20 bg-primary/10 rounded-full mb-4">
+            <ShieldHalf className="h-10 w-10 text-primary" />
+          </div>
+          <p className="text-sm text-muted-foreground">خدمات أمنية متقدمة ومتكاملة</p>
+        </div>
+        
         <div className="w-full max-w-md space-y-6">
           <div className="text-center lg:text-start">
             <Link href="/" className="inline-flex items-center gap-2 text-primary font-headline text-2xl font-semibold mb-6">
@@ -37,17 +45,34 @@ export function AuthLayout({ children, title, description }: AuthLayoutProps) {
       </div>
       <div className="lg:w-1/2 relative order-1 lg:order-2 hidden lg:block">
         <Image
-          src="https://placehold.co/1000x1200.png"
-          alt="Authentication Background"
+          src="https://images.unsplash.com/photo-1560472354-b33ff0c44a43?ixlib=rb-4.0.3&ixid=M3wxMjA3fDB8MHxwaG90by1wYWdlfHx8fGVufDB8fHx8fA%3D%3D&auto=format&fit=crop&w=1226&q=80"
+          alt="شركة الأمن - حراسة مهنية وحماية متقدمة"
           fill 
           style={{objectFit:"cover"}} 
-          data-ai-hint="modern office"
+          className="brightness-75"
         />
         <div className="absolute inset-0 bg-primary/70 flex flex-col items-center justify-center p-12 text-primary-foreground text-center">
-          <h2 className="text-4xl font-bold font-headline mb-4">مرحباً بك في {displayPortalName}</h2>
-          <p className="text-xl opacity-90">
-            منصة متكاملة لجميع خدماتك. آمنة، سهلة، وفعالة.
+          <div className="mb-6">
+            <ShieldHalf className="h-20 w-20 mx-auto mb-4 drop-shadow-lg" />
+          </div>
+          <h2 className="text-4xl font-bold font-headline mb-4 drop-shadow-lg">مرحباً بك في {displayPortalName}</h2>
+          <p className="text-xl opacity-90 drop-shadow-md max-w-md">
+            منصة متكاملة لجميع خدماتك الأمنية. آمنة، سهلة، وفعالة.
           </p>
+          <div className="mt-8 grid grid-cols-3 gap-6 text-center">
+            <div className="space-y-2">
+              <div className="text-2xl font-bold">24/7</div>
+              <div className="text-sm opacity-75">خدمة مستمرة</div>
+            </div>
+            <div className="space-y-2">
+              <div className="text-2xl font-bold">100%</div>
+              <div className="text-sm opacity-75">أمان وثقة</div>
+            </div>
+            <div className="space-y-2">
+              <div className="text-2xl font-bold">∞</div>
+              <div className="text-sm opacity-75">حلول متقدمة</div>
+            </div>
+          </div>
         </div>
       </div>
     </div>
