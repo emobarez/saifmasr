@@ -335,57 +335,71 @@ export default function AdminServicesPage() {
           </CardDescription>
         </CardHeader>
         <CardContent>
-          <Table>
+          {/* Mobile horizontal scroll container with visual indicators */}
+          <div className="relative">
+            {/* Scroll hint for mobile */}
+            <div className="md:hidden text-xs text-muted-foreground mb-2 flex items-center">
+              <span className="mr-2">👈 اسحب للجانب لرؤية المزيد</span>
+            </div>
+            
+            <div className="overflow-x-auto border rounded-lg">
+              <div className="min-w-[800px] md:min-w-0">
+                <Table>
             <TableHeader>
               <TableRow>
-                <TableHead>اسم الخدمة</TableHead>
-                <TableHead>الفئة</TableHead>
-                <TableHead>الوصف</TableHead>
-                <TableHead>السعر</TableHead>
-                <TableHead>المدة</TableHead>
-                <TableHead>العملاء</TableHead>
-                <TableHead>الحالة</TableHead>
-                <TableHead>تاريخ الإنشاء</TableHead>
-                <TableHead>الإجراءات</TableHead>
+                <TableHead className="min-w-[180px]">اسم الخدمة</TableHead>
+                <TableHead className="min-w-[100px]">الفئة</TableHead>
+                <TableHead className="min-w-[200px] hidden sm:table-cell">الوصف</TableHead>
+                <TableHead className="min-w-[100px]">السعر</TableHead>
+                <TableHead className="min-w-[80px] hidden md:table-cell">المدة</TableHead>
+                <TableHead className="min-w-[80px]">العملاء</TableHead>
+                <TableHead className="min-w-[100px]">الحالة</TableHead>
+                <TableHead className="min-w-[120px] hidden lg:table-cell">تاريخ الإنشاء</TableHead>
+                <TableHead className="min-w-[100px]">إجراءات</TableHead>
               </TableRow>
             </TableHeader>
             <TableBody>
               {filteredServices.map((service) => (
                 <TableRow key={service.id}>
-                  <TableCell>
-                    <div className="flex items-center space-x-3">
-                      {getCategoryIcon(service.category)}
-                      <div>
-                        <div className="font-medium">{service.name}</div>
+                  <TableCell className="min-w-[180px]">
+                    <div className="flex items-start space-x-2 space-x-reverse">
+                      <div className="flex-shrink-0">
+                        {getCategoryIcon(service.category)}
+                      </div>
+                      <div className="min-w-0 flex-1">
+                        <div className="font-medium text-sm leading-tight">{service.name}</div>
+                        <div className="text-xs text-muted-foreground sm:hidden mt-1 line-clamp-2">
+                          {service.description}
+                        </div>
                       </div>
                     </div>
                   </TableCell>
-                  <TableCell>
-                    <Badge variant="outline">{service.category}</Badge>
+                  <TableCell className="min-w-[100px]">
+                    <Badge variant="outline" className="text-xs">{service.category}</Badge>
                   </TableCell>
-                  <TableCell className="max-w-xs truncate">
+                  <TableCell className="min-w-[200px] max-w-xs truncate hidden sm:table-cell">
                     {service.description}
                   </TableCell>
-                  <TableCell className="font-bold">
+                  <TableCell className="min-w-[100px] font-bold text-sm">
                     {formatEGPSimple(service.price || 0)}
                   </TableCell>
-                  <TableCell>{service.duration}</TableCell>
-                  <TableCell>
+                  <TableCell className="min-w-[80px] hidden md:table-cell text-sm">{service.duration}</TableCell>
+                  <TableCell className="min-w-[80px]">
                     <div className="flex items-center">
-                      <Users className="h-4 w-4 mr-1 text-gray-500" />
-                      {service.clients || 0}
+                      <Users className="h-3 w-3 mr-1 text-gray-500" />
+                      <span className="text-sm">{service.clients || 0}</span>
                     </div>
                   </TableCell>
-                  <TableCell>{getStatusBadge(service.status)}</TableCell>
-                  <TableCell>
+                  <TableCell className="min-w-[100px]">{getStatusBadge(service.status)}</TableCell>
+                  <TableCell className="min-w-[120px] hidden lg:table-cell text-sm">
                     {new Date(service.createdDate).toLocaleDateString('ar-EG')}
                   </TableCell>
-                  <TableCell>
-                    <div className="flex items-center gap-2">
-                      <Button variant="ghost" size="sm">
+                  <TableCell className="min-w-[100px]">
+                    <div className="flex items-center gap-1">
+                      <Button variant="ghost" size="sm" className="h-8 w-8 p-0">
                         <Eye className="h-4 w-4" />
                       </Button>
-                      <Button variant="ghost" size="sm">
+                      <Button variant="ghost" size="sm" className="h-8 w-8 p-0">
                         <Edit className="h-4 w-4" />
                       </Button>
                     </div>
@@ -394,6 +408,14 @@ export default function AdminServicesPage() {
               ))}
             </TableBody>
           </Table>
+              </div>
+            </div>
+            
+            {/* Right scroll indicator for mobile */}
+            <div className="md:hidden absolute top-12 right-0 bg-gradient-to-l from-white to-transparent w-8 h-full pointer-events-none flex items-center justify-end">
+              <div className="text-gray-400 text-xs">→</div>
+            </div>
+          </div>
 
           {filteredServices.length === 0 && (
             <div className="text-center py-12">

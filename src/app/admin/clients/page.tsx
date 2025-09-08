@@ -247,60 +247,77 @@ export default function AdminClientsPage() {
           </CardDescription>
         </CardHeader>
         <CardContent>
-          <Table>
+          {/* Mobile horizontal scroll container */}
+          <div className="overflow-x-auto">
+            <div className="min-w-[900px] md:min-w-0">
+              <Table>
             <TableHeader>
               <TableRow>
-                <TableHead>معلومات العميل</TableHead>
-                <TableHead>الشركة</TableHead>
-                <TableHead>الموقع</TableHead>
-                <TableHead>الحالة</TableHead>
-                <TableHead>الخدمات</TableHead>
-                <TableHead>تاريخ الانضمام</TableHead>
-                <TableHead>الإجراءات</TableHead>
+                <TableHead className="min-w-[250px]">معلومات العميل</TableHead>
+                <TableHead className="min-w-[150px] hidden sm:table-cell">الشركة</TableHead>
+                <TableHead className="min-w-[120px] hidden md:table-cell">الموقع</TableHead>
+                <TableHead className="min-w-[100px]">الحالة</TableHead>
+                <TableHead className="min-w-[80px]">الخدمات</TableHead>
+                <TableHead className="min-w-[120px] hidden lg:table-cell">تاريخ الانضمام</TableHead>
+                <TableHead className="min-w-[120px]">إجراءات</TableHead>
               </TableRow>
             </TableHeader>
             <TableBody>
               {filteredClients.map((client) => (
                 <TableRow key={client.id}>
-                  <TableCell>
+                  <TableCell className="min-w-[250px]">
                     <div>
                       <div className="font-medium">{client.name}</div>
                       <div className="text-sm text-muted-foreground flex items-center mt-1">
                         <Mail className="h-3 w-3 mr-1" />
-                        {client.email}
+                        <span className="truncate">{client.email}</span>
                       </div>
                       <div className="text-sm text-muted-foreground flex items-center">
                         <Phone className="h-3 w-3 mr-1" />
                         {client.phone}
                       </div>
+                      {/* Show company and location on mobile when columns are hidden */}
+                      <div className="sm:hidden text-xs text-muted-foreground mt-1">
+                        {client.company && (
+                          <div className="flex items-center">
+                            <span className="font-medium">شركة:</span> {client.company}
+                          </div>
+                        )}
+                        {client.location && (
+                          <div className="flex items-center mt-0.5">
+                            <MapPin className="h-3 w-3 mr-1" />
+                            {client.location}
+                          </div>
+                        )}
+                      </div>
                     </div>
                   </TableCell>
-                  <TableCell>{client.company}</TableCell>
-                  <TableCell>
+                  <TableCell className="min-w-[150px] hidden sm:table-cell">{client.company}</TableCell>
+                  <TableCell className="min-w-[120px] hidden md:table-cell">
                     <div className="flex items-center">
                       <MapPin className="h-4 w-4 mr-1 text-gray-400" />
                       {client.location}
                     </div>
                   </TableCell>
-                  <TableCell>{getStatusBadge(client.status)}</TableCell>
-                  <TableCell>
-                    <Badge variant="outline">{client.totalServices} خدمة</Badge>
+                  <TableCell className="min-w-[100px]">{getStatusBadge(client.status)}</TableCell>
+                  <TableCell className="min-w-[80px]">
+                    <Badge variant="outline" className="text-xs">{client.totalServices} خدمة</Badge>
                   </TableCell>
-                  <TableCell>
+                  <TableCell className="min-w-[120px] hidden lg:table-cell">
                     <div className="flex items-center text-sm text-muted-foreground">
                       <Calendar className="h-4 w-4 mr-1" />
                       {new Date(client.createdAt).toLocaleDateString('ar-EG')}
                     </div>
                   </TableCell>
-                  <TableCell>
-                    <div className="flex items-center space-x-2 space-x-reverse">
-                      <Button variant="ghost" size="sm">
+                  <TableCell className="min-w-[120px]">
+                    <div className="flex items-center space-x-1 space-x-reverse">
+                      <Button variant="ghost" size="sm" className="h-8 w-8 p-0">
                         <Eye className="h-4 w-4" />
                       </Button>
-                      <Button variant="ghost" size="sm">
+                      <Button variant="ghost" size="sm" className="h-8 w-8 p-0">
                         <Edit3 className="h-4 w-4" />
                       </Button>
-                      <Button variant="ghost" size="sm" className="text-red-600 hover:text-red-800">
+                      <Button variant="ghost" size="sm" className="h-8 w-8 p-0 text-red-600 hover:text-red-800">
                         <Trash2 className="h-4 w-4" />
                       </Button>
                     </div>
@@ -309,6 +326,8 @@ export default function AdminClientsPage() {
               ))}
             </TableBody>
           </Table>
+            </div>
+          </div>
         </CardContent>
       </Card>
       </>
