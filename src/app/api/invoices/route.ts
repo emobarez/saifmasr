@@ -33,24 +33,26 @@ export async function POST(request: NextRequest) {
     }
 
     const { 
-      userId, 
       clientId, 
       amount, 
       description, 
       dueDate, 
       taxAmount,
+      status,
+      paymentMethod,
       items 
     } = await request.json();
 
-    if (!userId || !clientId || !amount) {
+    if (!clientId || !amount) {
       return NextResponse.json(
-        { error: "User ID, client ID, and amount are required" },
+        { error: "Client ID and amount are required" },
         { status: 400 }
       );
     }
 
+    // Create invoice with the service (which auto-generates invoice number)
     const invoice = await invoiceService.create({
-      userId,
+      userId: session.user.id, // Creator of the invoice
       clientId,
       amount: parseFloat(amount),
       currency: "EGP", // Egyptian Pounds
@@ -59,6 +61,15 @@ export async function POST(request: NextRequest) {
       taxAmount: taxAmount ? parseFloat(taxAmount) : undefined,
       items
     });
+
+    // If status or paymentMethod were provided, update the invoice
+    if (status || paymentMethod) {
+      const updatedInvoice = await invoiceService.update(invoice.id, {
+        status,
+        paymentMethod
+      });
+      return NextResponse.json(updatedInvoice, { status: 201 });
+    }
 
     return NextResponse.json(invoice, { status: 201 });
   } catch (error) {

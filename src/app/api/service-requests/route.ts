@@ -12,17 +12,22 @@ export async function POST(request: NextRequest) {
       return NextResponse.json({ error: "Unauthorized" }, { status: 401 });
     }
 
-    const { serviceId, title, description, attachmentUrl } = await request.json();
+    const { serviceId, title, description, attachmentUrl, userId, priority, status } = await request.json();
+
+    // Admin can create requests for any user, regular users create for themselves
+    const requestUserId = (session.user.role === "ADMIN" && userId) ? userId : session.user.id;
+    const requestPriority = (session.user.role === "ADMIN" && priority) ? priority : "MEDIUM";
+    const requestStatus = (session.user.role === "ADMIN" && status) ? status : "PENDING";
 
     const serviceRequest = await prisma.serviceRequest.create({
       data: {
-        userId: session.user.id,
+        userId: requestUserId,
         serviceId,
         title,
         description,
         attachmentUrl,
-        status: "PENDING",
-        priority: "MEDIUM"
+        status: requestStatus,
+        priority: requestPriority
       },
       include: {
         service: true,

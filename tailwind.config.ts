@@ -10,10 +10,18 @@ export default {
   ],
   theme: {
     extend: {
+      screens: {
+        'xs': '475px',
+        '3xl': '1600px',
+      },
       fontFamily: {
         body: ['Inter', 'sans-serif'], // PRD: Inter for body
         headline: ['Poppins', 'sans-serif'], // PRD: Poppins for headline
         code: ['monospace'],
+      },
+      spacing: {
+        '18': '4.5rem',
+        '88': '22rem',
       },
       colors: {
         background: 'hsl(var(--background))',

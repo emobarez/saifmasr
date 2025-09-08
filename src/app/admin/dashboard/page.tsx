@@ -137,12 +137,12 @@ export default function AdminDashboardPage() {
   ];
 
   return (
-    <div className="space-y-8 min-h-screen">
+    <div className="space-y-4 sm:space-y-6 lg:space-y-8 min-h-screen">
       {/* Header */}
-      <div className="flex justify-between items-start mb-8">
+      <div className="flex justify-between items-start mb-3 sm:mb-5 lg:mb-8">
         <div className="space-y-2">
-          <h1 className="text-4xl font-bold text-slate-800 dark:text-slate-100 tracking-tight">لوحة التحكم الإدارية</h1>
-          <p className="text-slate-600 dark:text-slate-400 text-lg">
+          <h1 className="text-2xl sm:text-3xl lg:text-4xl font-bold text-slate-800 dark:text-slate-100 tracking-tight">لوحة التحكم الإدارية</h1>
+          <p className="text-slate-600 dark:text-slate-400 text-sm sm:text-base lg:text-lg">
             مرحباً {user?.name || 'المدير'} - آخر تحديث: {new Date().toLocaleDateString('ar-EG')}
           </p>
         </div>
@@ -160,10 +160,10 @@ export default function AdminDashboardPage() {
 
       {/* Stats Grid */}
       {loading ? (
-        <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-6">
+        <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-4 sm:gap-6">
           {[...Array(4)].map((_, i) => (
             <Card key={i} className="animate-pulse">
-              <CardContent className="p-6">
+              <CardContent className="p-4 sm:p-6">
                 <div className="h-4 bg-gray-300 rounded w-3/4 mb-2"></div>
                 <div className="h-8 bg-gray-300 rounded w-1/2 mb-1"></div>
                 <div className="h-3 bg-gray-300 rounded w-full"></div>
@@ -172,22 +172,17 @@ export default function AdminDashboardPage() {
           ))}
         </div>
       ) : (
-        <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-6">
-        <Card className="group hover:scale-[1.02] transition-transform duration-200 border-slate-200 dark:border-slate-700">
-          <CardContent className="p-8">
-            <div className="flex items-center justify-between">
-              <div className="space-y-2">
-                <p className="text-sm font-medium text-slate-600 dark:text-slate-400">إجمالي العملاء</p>
-                <p className="text-3xl font-bold text-slate-800 dark:text-slate-100">{stats.totalClients}</p>
-                <p className="text-sm text-emerald-600 dark:text-emerald-400 flex items-center gap-1">
-                  <TrendingUp className="h-3 w-3" />
-                  +12% هذا الشهر
-                </p>
-              </div>
-              <div className="w-12 h-12 bg-blue-100 dark:bg-blue-900/30 rounded-2xl flex items-center justify-center">
-                <Users className="h-6 w-6 text-blue-600 dark:text-blue-400" />
-              </div>
-            </div>
+        <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-4 sm:gap-6 mb-4 sm:mb-6 lg:mb-8">
+        <Card className="relative overflow-hidden transition-all duration-300 hover:shadow-lg hover:scale-105 border-l-4 border-l-emerald-500">
+          <CardHeader className="flex flex-row items-center justify-between space-y-0 pb-2 px-4 sm:px-6 pt-4 sm:pt-6">
+            <CardTitle className="text-xs sm:text-sm font-medium text-muted-foreground">إجمالي العملاء</CardTitle>
+            <Users className="h-4 w-4 text-emerald-600" />
+          </CardHeader>
+          <CardContent className="px-4 sm:px-6 pb-4 sm:pb-6">
+            <div className="text-xl sm:text-2xl font-bold text-emerald-700">{stats.totalClients.toLocaleString('ar-EG')}</div>
+            <p className="text-xs text-muted-foreground mt-1">
+              <span className="text-emerald-600 font-medium">+12%</span> عن الشهر الماضي
+            </p>
           </CardContent>
         </Card>
 

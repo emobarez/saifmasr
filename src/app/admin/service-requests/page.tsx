@@ -26,7 +26,8 @@ import {
   User,
   Calendar,
   MapPin,
-  Phone
+  Phone,
+  Plus
 } from "lucide-react";
 import Link from "next/link";
 import { formatEGPSimple } from "@/lib/egyptian-utils";
@@ -169,6 +170,12 @@ export default function AdminServiceRequestsPage() {
           </p>
         </div>
         <div className="flex space-x-2 space-x-reverse">
+          <Button asChild>
+            <Link href="/admin/service-requests/new">
+              <Plus className="h-4 w-4 mr-2" />
+              طلب خدمة جديد
+            </Link>
+          </Button>
           <Button variant="outline">
             <Filter className="h-4 w-4 mr-2" />
             تصدير تقرير

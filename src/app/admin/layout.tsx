@@ -9,7 +9,7 @@ export default function AdminLayout({
   children: React.ReactNode;
 }) {
   return (
-    <div className="flex h-screen bg-background">
+    <div className="flex min-h-svh bg-background">
       {/* Desktop Sidebar */}
       <div className="hidden md:flex md:w-64 md:flex-col md:fixed md:inset-y-0">
         <div className="flex flex-col flex-grow border-r border-sidebar-border bg-sidebar overflow-y-auto">
@@ -19,12 +19,9 @@ export default function AdminLayout({
 
       {/* Mobile Header */}
       <div className="md:hidden">
-        <div className="flex items-center justify-between p-4 border-b bg-card">
-          <h1 className="text-lg font-semibold">إدارة النظام</h1>
-          <div className="flex items-center gap-2">
-            <ThemeSwitcher className="!bg-primary !text-primary-foreground hover:!bg-primary/90" />
-            <MobileAdminSidebar />
-          </div>
+        {/* Mobile Top Bar: hamburger only */}
+        <div className="sticky top-0 z-50 flex items-center justify-start h-12 sm:h-12 px-3 border-b bg-card/95 backdrop-blur supports-[backdrop-filter]:bg-card/60 shadow-sm no-tap-highlight">
+          <MobileAdminSidebar />
         </div>
       </div>
 
@@ -36,8 +33,9 @@ export default function AdminLayout({
             <ThemeSwitcher className="!bg-primary !text-primary-foreground hover:!bg-primary/90" />
           </div>
         </header>
-        <main className="flex-1 overflow-y-auto bg-background">
-          <div className="container mx-auto px-4 py-6 md:px-6 md:py-8">
+        <main className="flex-1 overflow-y-auto overscroll-y-contain touch-pan-y bg-background">
+          {/* Compact mobile padding; larger on desktop */}
+          <div className="container mx-auto px-3 py-3 sm:px-4 sm:py-4 md:px-6 md:py-8">
             {children}
           </div>
         </main>

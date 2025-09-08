@@ -80,33 +80,32 @@ export const authOptions: NextAuthOptions = {
     },
     async jwt({ token, user }) {
       console.log("=== JWT CALLBACK CALLED ===")
-      console.log("Token before:", token)
-      console.log("User:", user)
+      console.log("Token before:", JSON.stringify(token, null, 2))
+      console.log("User:", JSON.stringify(user, null, 2))
       
       if (user) {
         console.log("JWT callback - user exists, adding role to token")
         token.role = user.role
+        token.id = user.id
+        console.log("JWT callback - token.role set to:", token.role)
       }
       
-      console.log("Token after:", token)
+      console.log("Token after:", JSON.stringify(token, null, 2))
       return token
     },
     async session({ session, token }) {
       console.log("=== SESSION CALLBACK CALLED ===")
-      console.log("Session before:", session)
-      console.log("Token:", token)
+      console.log("Session before:", JSON.stringify(session, null, 2))
+      console.log("Token:", JSON.stringify(token, null, 2))
       
       if (token) {
         session.user.id = token.sub!
         session.user.role = token.role as string
-        console.log("Session callback - updated session:", { 
-          id: session.user.id, 
-          email: session.user.email, 
-          role: session.user.role 
-        })
+        console.log("Session callback - updated session with role:", session.user.role)
+        console.log("Session callback - session.user.id:", session.user.id)
       }
       
-      console.log("Session after:", session)
+      console.log("Session after:", JSON.stringify(session, null, 2))
       return session
     }
   },

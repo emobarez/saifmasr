@@ -6,7 +6,7 @@ import { usePathname } from "next/navigation";
 import { cn } from "@/lib/utils";
 import { Button } from "@/components/ui/button";
 import { ScrollArea } from "@/components/ui/scroll-area";
-import { Sheet, SheetContent, SheetTrigger } from "@/components/ui/sheet";
+import { Sheet, SheetContent, SheetTrigger, SheetHeader, SheetTitle } from "@/components/ui/sheet";
 import { 
   Menu,
   LayoutDashboard,
@@ -176,20 +176,103 @@ export function MobileAdminSidebar({ className }: MobileAdminSidebarProps) {
       <SheetTrigger asChild>
         <Button
           variant="ghost"
+          size="sm"
           className={cn(
-            "mr-2 px-0 text-base hover:bg-transparent focus-visible:bg-transparent focus-visible:ring-0 focus-visible:ring-offset-0 md:hidden",
+            "h-8 w-8 p-0 hover:bg-accent/50 focus-visible:outline-none focus-visible:ring-0 md:hidden shrink-0 no-tap-highlight",
             className
           )}
         >
-          <Menu className="h-6 w-6" />
+          <Menu className="h-4 w-4" />
           <span className="sr-only">Toggle Menu</span>
         </Button>
       </SheetTrigger>
       <SheetContent side="right" className="pr-0 w-80">
+        <SheetHeader>
+          <SheetTitle>القائمة الجانبية</SheetTitle>
+        </SheetHeader>
         <ScrollArea className="my-4 h-[calc(100vh-8rem)] pr-6">
-          <AdminSidebar />
+          <MobileAdminSidebarContent onNavigate={() => setOpen(false)} />
         </ScrollArea>
       </SheetContent>
     </Sheet>
+  );
+}
+
+interface MobileAdminSidebarContentProps {
+  onNavigate: () => void;
+}
+
+function MobileAdminSidebarContent({ onNavigate }: MobileAdminSidebarContentProps) {
+  const pathname = usePathname();
+  const { user, signOut } = useAuth();
+
+  const handleSignOut = () => {
+    onNavigate();
+    signOut();
+  };
+
+  return (
+    <div className="pb-24 relative">
+      <div className="space-y-4 py-4">
+        <div className="px-3 py-2">
+          <div className="rounded-2xl p-3 bg-gradient-to-b from-sidebar/60 to-sidebar/80 border border-sidebar-border shadow-sm">
+            <div className="flex items-center px-3 py-2 text-sm font-semibold text-sidebar-foreground">
+              <ShieldCheck className="mr-2 h-4 w-4 text-sidebar-primary" />
+              سيف مصر للأمن
+            </div>
+          </div>
+        </div>
+        <div className="px-3 py-2">
+          <div className="space-y-2">
+            {sidebarNavItems.map((item) => {
+              const active = pathname === item.href;
+              const colorClasses = itemColors[item.href] ?? "bg-muted text-foreground/80 ring-border";
+              return (
+                <Button
+                  key={item.href}
+                  variant="outline"
+                  className={cn(
+                    "w-full justify-start rounded-full px-2 py-2 transition",
+                    active
+                      ? "bg-white shadow-md ring-1 ring-sidebar-border text-sidebar-foreground dark:text-slate-900"
+                      : "border-transparent text-sidebar-foreground/85 hover:text-sidebar-foreground dark:hover:text-slate-900 hover:bg-white/70 hover:shadow-md hover:ring-1 hover:ring-sidebar-border"
+                  )}
+                  asChild
+                >
+                  <Link href={item.href} onClick={onNavigate}>
+                    <span className={cn("mr-3 flex h-7 w-7 items-center justify-center rounded-xl ring-1", colorClasses)}>
+                      <item.icon className="h-4 w-4" />
+                    </span>
+                    {item.title}
+                  </Link>
+                </Button>
+              );
+            })}
+          </div>
+        </div>
+      </div>
+
+      {/* User Info & Logout */}
+      <div className="absolute bottom-0 w-full p-4 border-t border-sidebar-border bg-sidebar/60 backdrop-blur supports-[backdrop-filter]:bg-sidebar/50">
+        <div className="flex items-center gap-2 mb-3">
+          <div className="w-9 h-9 bg-primary rounded-full flex items-center justify-center text-primary-foreground text-sm font-bold shadow">
+            {user?.name?.charAt(0) || 'A'}
+          </div>
+          <div className="flex-1 min-w-0">
+            <p className="text-sm font-semibold truncate text-sidebar-foreground">{user?.name || 'المشرف'}</p>
+            <p className="text-xs text-muted-foreground truncate">{user?.email}</p>
+          </div>
+        </div>
+        <Button
+          variant="outline"
+          size="sm"
+          className="w-full rounded-full"
+          onClick={handleSignOut}
+        >
+          <LogOut className="mr-2 h-4 w-4" />
+          تسجيل الخروج
+        </Button>
+      </div>
+    </div>
   );
 }

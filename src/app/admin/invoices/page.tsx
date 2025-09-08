@@ -30,6 +30,7 @@ import {
   TrendingUp,
   Calendar
 } from "lucide-react";
+import Link from "next/link";
 import { toast } from "@/hooks/use-toast";
 import { formatEGPSimple } from "@/lib/egyptian-utils";
 
@@ -277,9 +278,11 @@ export default function InvoicesPage() {
             <RefreshCw className={`h-4 w-4 ${refreshing ? 'animate-spin' : ''}`} />
             تحديث
           </Button>
-          <Button className="flex items-center gap-2">
-            <Plus className="h-4 w-4" />
-            فاتورة جديدة
+          <Button asChild className="flex items-center gap-2">
+            <Link href="/admin/invoices/new">
+              <Plus className="h-4 w-4" />
+              فاتورة جديدة
+            </Link>
           </Button>
         </div>
       </div>

@@ -9,7 +9,28 @@ export async function GET(request: NextRequest) {
   try {
     const session = await getServerSession(authOptions);
     
-    if (!session || session.user.role !== "ADMIN") {
+    console.log("Activity log API - session:", JSON.stringify(session, null, 2));
+    console.log("Activity log API - user role:", session?.user?.role);
+    
+    if (!session) {
+      console.log("No session found");
+      return NextResponse.json({ error: "Unauthorized" }, { status: 401 });
+    }
+
+    // Check role - if not in session, fetch from database
+    let userRole = session.user.role;
+    if (!userRole && session.user.id) {
+      console.log("Role not in session, fetching from database...");
+      const user = await prisma.user.findUnique({
+        where: { id: session.user.id },
+        select: { role: true }
+      });
+      userRole = user?.role || "";
+      console.log("Role from database:", userRole);
+    }
+    
+    if (userRole !== "ADMIN") {
+      console.log("User is not admin, role:", userRole);
       return NextResponse.json({ error: "Unauthorized" }, { status: 401 });
     }
 

@@ -164,24 +164,28 @@ export function DashboardLayout({ children, navItems }: DashboardLayoutProps) {
         </Sidebar>
 
         <main className="flex-1 flex flex-col">
-          <header className="sticky top-0 z-50 bg-background border-b border-border h-16 flex items-center justify-between px-6 shadow-md">
-            <div className="flex items-center">
-              <SidebarTrigger className="me-4 md:hidden" />
-              <h1 className="text-xl font-semibold font-headline text-primary">
+          <header className="sticky top-0 z-50 bg-background border-b border-border h-14 sm:h-16 flex items-center justify-between px-3 sm:px-6 shadow-md">
+            <div className="flex items-center flex-1 min-w-0">
+              <SidebarTrigger className="me-2 sm:me-4 lg:hidden" />
+              <h1 className="text-base sm:text-xl font-semibold font-headline text-primary truncate">
                 {filteredNavItems.find(item => pathname === item.href || (item.href !== (normalizedRole === 'admin' ? "/admin/dashboard" : "/client/dashboard") && pathname.startsWith(item.href)))?.label || "لوحة التحكم"}
               </h1>
             </div>
-            <div className="flex items-center gap-4">
-              {/* Prominent Theme Switcher Button */}
-              <div className="bg-gradient-to-r from-blue-500 to-teal-500 text-white px-6 py-3 rounded-full shadow-lg hover:shadow-xl transition-all duration-200 border-2 border-white/20">
-                <div className="flex items-center gap-3">
-                  <span className="text-sm font-bold">تبديل المظهر</span>
+            <div className="flex items-center gap-2 sm:gap-4">
+              {/* Mobile Theme Switcher - Compact */}
+              <div className="hidden sm:block bg-gradient-to-r from-blue-500 to-teal-500 text-white px-4 lg:px-6 py-2 lg:py-3 rounded-full shadow-lg hover:shadow-xl transition-all duration-200 border-2 border-white/20">
+                <div className="flex items-center gap-2 lg:gap-3">
+                  <span className="text-xs lg:text-sm font-bold">تبديل المظهر</span>
                   <ThemeSwitcher className="text-white hover:text-white/80 hover:bg-white/20 rounded-full p-1" />
                 </div>
               </div>
+              {/* Mobile-only compact theme switcher */}
+              <div className="sm:hidden bg-primary text-primary-foreground p-2 rounded-full shadow-lg">
+                <ThemeSwitcher className="text-primary-foreground hover:text-primary-foreground/80" />
+              </div>
             </div>
           </header>
-          <div className="flex-grow p-4 sm:p-6 overflow-auto">
+          <div className="flex-grow p-3 sm:p-4 lg:p-6 overflow-auto">
             {children}
           </div>
         </main>
