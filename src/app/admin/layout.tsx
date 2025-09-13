@@ -30,7 +30,7 @@ export default function AdminLayout({
         {/* Desktop Top Bar with Theme Switcher */}
           <header className="hidden md:flex sticky top-0 z-50 bg-card border-b shadow-sm">
             <div className="w-full px-4 py-3 md:px-6 flex items-center justify-end gap-3">
-            <ThemeSwitcher className="!bg-primary !text-primary-foreground hover:!bg-primary/90" />
+            <ThemeSwitcher minimal className="bg-primary text-primary-foreground hover:bg-primary/90" />
           </div>
         </header>
           <main className="flex-1 min-h-0 overflow-x-auto overflow-y-auto overscroll-y-contain touch-pan-x touch-pan-y bg-background">

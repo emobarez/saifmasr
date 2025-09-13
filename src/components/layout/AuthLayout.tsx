@@ -1,9 +1,9 @@
 "use client";
-import { ShieldHalf } from "lucide-react";
 import Image from "next/image";
 import Link from "next/link";
 import { useSiteSettings } from '@/hooks/useSiteSettings'; // Updated import
 import { ThemeSwitcher } from "./ThemeSwitcher";
+import { CustomLogo } from "@/components/ui/CustomLogo";
 
 interface AuthLayoutProps {
   children: React.ReactNode;
@@ -19,14 +19,14 @@ export function AuthLayout({ children, title, description }: AuthLayoutProps) {
     <div className="min-h-screen flex flex-col lg:flex-row bg-background">
       {/* Theme Switcher - Fixed Position */}
       <div className="fixed top-4 right-4 z-50">
-        <ThemeSwitcher className="text-foreground hover:text-primary hover:bg-accent rounded-md p-2 border border-border bg-background/80 backdrop-blur-sm" />
+        <ThemeSwitcher minimal className="bg-background/80 backdrop-blur-sm border border-border hover:bg-accent" />
       </div>
       
       <div className="lg:w-1/2 flex flex-col items-center justify-center p-8 order-2 lg:order-1">
         {/* Security Badge for Mobile */}
         <div className="lg:hidden mb-8 text-center">
           <div className="inline-flex items-center justify-center w-20 h-20 bg-primary/10 rounded-full mb-4">
-            <ShieldHalf className="h-10 w-10 text-primary" />
+            <CustomLogo className="h-10 w-10 text-primary" />
           </div>
           <p className="text-sm text-muted-foreground">خدمات أمنية متقدمة ومتكاملة</p>
         </div>
@@ -34,7 +34,7 @@ export function AuthLayout({ children, title, description }: AuthLayoutProps) {
         <div className="w-full max-w-md space-y-6">
           <div className="text-center lg:text-start">
             <Link href="/" className="inline-flex items-center gap-2 text-primary font-headline text-2xl font-semibold mb-6">
-              <ShieldHalf className="h-8 w-8" />
+              <CustomLogo className="h-8 w-8" />
               <span>{displayPortalName}</span>
             </Link>
             <h1 className="text-3xl font-bold font-headline text-primary">{title}</h1>
@@ -53,7 +53,7 @@ export function AuthLayout({ children, title, description }: AuthLayoutProps) {
         />
         <div className="absolute inset-0 bg-primary/70 flex flex-col items-center justify-center p-12 text-primary-foreground text-center">
           <div className="mb-6">
-            <ShieldHalf className="h-20 w-20 mx-auto mb-4 drop-shadow-lg" />
+            <CustomLogo className="h-20 w-20 mx-auto mb-4 drop-shadow-lg" />
           </div>
           <h2 className="text-4xl font-bold font-headline mb-4 drop-shadow-lg">مرحباً بك في {displayPortalName}</h2>
           <p className="text-xl opacity-90 drop-shadow-md max-w-md">

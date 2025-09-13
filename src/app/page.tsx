@@ -136,11 +136,12 @@ export default function LandingPage() {
               </div>
               <div>
                 <Image
-                  src="https://images.unsplash.com/photo-1568667256549-094345857637?ixlib=rb-4.0.3&ixid=M3wxMjA3fDB8MHxwaG90by1wYWdlfHx8fGVufDB8fHx8fA%3D%3D&auto=format&fit=crop&w=1000&q=80"
+                  src="/hero-image.png"
                   alt="سيف مصر - مركز العمليات الأمنية والفريق المتخصص"
                   width={800}
                   height={600}
                   className="rounded-lg shadow-xl object-cover"
+                  priority
                   data-ai-hint="security operations center team"
                 />
               </div>

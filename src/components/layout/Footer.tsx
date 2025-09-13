@@ -1,8 +1,9 @@
 
 "use client";
-import { Facebook, Twitter, Linkedin, Instagram, ShieldHalf, Phone, Mail, MapPin } from "lucide-react";
+import { Facebook, Twitter, Linkedin, Instagram, Phone, Mail, MapPin } from "lucide-react";
 import Link from "next/link";
-import { useSiteSettings } from '@/hooks/useSiteSettings'; 
+import { useSiteSettings } from '@/hooks/useSiteSettings';
+import { CustomLogo } from "@/components/ui/CustomLogo"; 
 
 export function Footer() {
   const currentYear = new Date().getFullYear();
@@ -33,7 +34,7 @@ export function Footer() {
         <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-8">
           <div>
             <Link href="/" className="flex items-center gap-2 font-headline text-xl font-semibold text-primary mb-4">
-              <ShieldHalf className="h-8 w-8 text-primary" />
+              <CustomLogo className="h-8 w-8 text-primary" />
               <span>{displayPortalName}</span>
             </Link>
             <p className="text-muted-foreground text-sm">

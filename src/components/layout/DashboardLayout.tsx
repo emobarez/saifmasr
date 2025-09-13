@@ -19,7 +19,6 @@ import {
 } from "@/components/ui/sidebar";
 import { Button } from "@/components/ui/button";
 import { 
-  ShieldHalf, 
   LogOut, 
   LayoutDashboard,
   ListPlus,
@@ -40,7 +39,8 @@ import { useAuth } from "@/context/AuthContext";
 import { Avatar, AvatarFallback, AvatarImage } from "@/components/ui/avatar";
 import { useSiteSettings } from '@/hooks/useSiteSettings'; 
 import type { NavItemConfig } from '@/config/dashboardNavs';
-import { ThemeSwitcher } from "./ThemeSwitcher"; 
+import { ThemeSwitcher } from "./ThemeSwitcher";
+import { CustomLogo } from "@/components/ui/CustomLogo"; 
 
 const iconMap: { [key: string]: ElementType } = {
   LayoutDashboard,
@@ -55,7 +55,6 @@ const iconMap: { [key: string]: ElementType } = {
   Settings: SettingsIcon, 
   ShieldEllipsis,
   ClipboardList,
-  ShieldHalf,
   HelpCircle 
 };
 
@@ -98,19 +97,13 @@ export function DashboardLayout({ children, navItems }: DashboardLayoutProps) {
 
   return (
       <div className="flex min-h-screen bg-background relative">
-        {/* Fixed Theme Switcher Button - Always Visible */}
-        <div className="fixed top-4 right-4 z-[9999] bg-gradient-to-r from-purple-500 to-pink-500 text-white px-6 py-3 rounded-full shadow-2xl border-4 border-white hover:scale-110 transition-all duration-300 cursor-pointer">
-          <div className="flex items-center gap-3">
-            <span className="text-sm font-bold">تبديل المظهر</span>
-            <ThemeSwitcher className="text-white hover:text-white/80 bg-white/20 rounded-full p-2" />
-          </div>
-        </div>
+        {/* Removed floating theme switcher button to avoid duplication */}
 
         <Sidebar collapsible="icon" side="right"> {/* Sidebar will use useSidebar().isMobile internally */}
           <SidebarHeader className="p-4 border-b border-sidebar-border">
             <div className="flex items-center gap-3">
               <Link href="/" className="flex items-center gap-2 text-lg font-semibold text-sidebar-primary font-headline">
-                <ShieldHalf className="h-7 w-7" />
+                <CustomLogo className="h-7 w-7" />
                 <span className="group-data-[collapsible=icon]:hidden">{displaySidebarPortalName}</span>
               </Link>
             </div>
@@ -136,30 +129,25 @@ export function DashboardLayout({ children, navItems }: DashboardLayoutProps) {
               })}
             </SidebarMenu>
           </SidebarContent>
-          <SidebarFooter className="p-4 border-t border-sidebar-border space-y-2">
-             <div className="flex items-center gap-3 group-data-[collapsible=icon]:justify-center">
-                <Avatar className="h-9 w-9">
-                  <AvatarImage src={user?.image || undefined} alt={user?.name || "User"} />
-                  <AvatarFallback>{getInitials(user?.name)}</AvatarFallback>
-                </Avatar>
-                <div className="group-data-[collapsible=icon]:hidden">
-                  <p className="text-sm font-medium text-sidebar-foreground">{user?.name || "مستخدم"}</p>
-                  <p className="text-xs text-muted-foreground">{user?.email}</p>
-                </div>
+          <SidebarFooter className="p-4 border-t border-sidebar-border space-y-4">
+            <div className="flex items-center gap-3 group-data-[collapsible=icon]:justify-center">
+              <Avatar className="h-9 w-9">
+                <AvatarImage src={user?.image || undefined} alt={user?.name || "User"} />
+                <AvatarFallback>{getInitials(user?.name)}</AvatarFallback>
+              </Avatar>
+              <div className="group-data-[collapsible=icon]:hidden">
+                <p className="text-sm font-medium text-sidebar-foreground">{user?.name || "مستخدم"}</p>
+                <p className="text-xs text-muted-foreground">{user?.email}</p>
               </div>
-            <div className="flex items-center justify-between group-data-[collapsible=icon]:flex-col group-data-[collapsible=icon]:gap-2">
-              <div className="bg-primary text-primary-foreground rounded-lg p-2 shadow-md">
-                <ThemeSwitcher className="text-primary-foreground hover:text-primary-foreground/80 hover:bg-primary-foreground/20" />
-              </div>
-              <SidebarMenuButton
-                onClick={signOut}
-                tooltip={{ children: "تسجيل الخروج", side: 'left' }}
-                className="w-full group-data-[collapsible=icon]:w-auto"
-              >
-                <LogOut className="h-5 w-5" />
-                <span className="group-data-[collapsible=icon]:hidden">تسجيل الخروج</span>
-              </SidebarMenuButton>
             </div>
+            <SidebarMenuButton
+              onClick={signOut}
+              tooltip={{ children: "تسجيل الخروج", side: 'left' }}
+              className="w-full"
+            >
+              <LogOut className="h-5 w-5" />
+              <span className="group-data-[collapsible=icon]:hidden">تسجيل الخروج</span>
+            </SidebarMenuButton>
           </SidebarFooter>
         </Sidebar>
 
@@ -172,17 +160,8 @@ export function DashboardLayout({ children, navItems }: DashboardLayoutProps) {
               </h1>
             </div>
             <div className="flex items-center gap-2 sm:gap-4">
-              {/* Mobile Theme Switcher - Compact */}
-              <div className="hidden sm:block bg-gradient-to-r from-blue-500 to-teal-500 text-white px-4 lg:px-6 py-2 lg:py-3 rounded-full shadow-lg hover:shadow-xl transition-all duration-200 border-2 border-white/20">
-                <div className="flex items-center gap-2 lg:gap-3">
-                  <span className="text-xs lg:text-sm font-bold">تبديل المظهر</span>
-                  <ThemeSwitcher className="text-white hover:text-white/80 hover:bg-white/20 rounded-full p-1" />
-                </div>
-              </div>
-              {/* Mobile-only compact theme switcher */}
-              <div className="sm:hidden bg-primary text-primary-foreground p-2 rounded-full shadow-lg">
-                <ThemeSwitcher className="text-primary-foreground hover:text-primary-foreground/80" />
-              </div>
+              {/* Small minimal theme switcher */}
+              <ThemeSwitcher minimal className="hover:bg-muted/50" />
             </div>
           </header>
           <div className="flex-grow p-3 sm:p-4 lg:p-6 overflow-auto">

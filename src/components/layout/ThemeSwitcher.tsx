@@ -31,9 +31,11 @@ function setStoredTheme(theme: "light" | "dark"): void {
   }
 }
 
-interface ThemeSwitcherProps extends Omit<ComponentProps<typeof Button>, "onClick" | "aria-label" | "variant" | "size" > {}
+interface ThemeSwitcherProps extends Omit<ComponentProps<typeof Button>, "onClick" | "aria-label" | "variant" | "size" > {
+  minimal?: boolean; // if true, render icon-only small button
+}
 
-export function ThemeSwitcher({ className, ...props }: ThemeSwitcherProps) {
+export function ThemeSwitcher({ className, minimal = false, ...props }: ThemeSwitcherProps) {
   const [mounted, setMounted] = useState(false);
   // Default to 'light' to avoid null state and ensure a predictable initial state
   const [theme, setTheme] = useState<"light" | "dark">("light"); 
@@ -71,17 +73,34 @@ export function ThemeSwitcher({ className, ...props }: ThemeSwitcherProps) {
     return null; 
   }
 
+  const icon = theme === "light" ? <Moon className="h-4 w-4" /> : <Sun className="h-4 w-4" />
+
+  if (minimal) {
+    return (
+      <Button
+        variant="ghost"
+        size="icon"
+        onClick={toggleTheme}
+        aria-label="Toggle theme"
+        className={className}
+        {...props}
+      >
+        {icon}
+      </Button>
+    )
+  }
+
   return (
-    <Button 
-      variant="outline" 
-      size="sm" 
-      onClick={toggleTheme} 
-      aria-label="Toggle theme" 
+    <Button
+      variant="outline"
+      size="sm"
+      onClick={toggleTheme}
+      aria-label="Toggle theme"
       className={`${className} flex items-center gap-2`}
       {...props}
     >
-      {theme === "light" ? <Moon className="h-4 w-4" /> : <Sun className="h-4 w-4" />}
+      {icon}
       <span className="hidden sm:inline">{theme === "light" ? "داكن" : "فاتح"}</span>
     </Button>
-  );
+  )
 }
