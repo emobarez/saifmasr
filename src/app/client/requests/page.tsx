@@ -248,9 +248,9 @@ export default function ClientRequestsPage() {
             <div className="p-4 bg-green-50 border border-green-200 rounded-lg">
               <h3 className="font-semibold text-green-800 mb-2">📞 التواصل المباشر</h3>
               <p className="text-sm text-green-700">
-                للطوارئ: 911<br />
-                خدمة العملاء: 8001234567<br />
-                البريد الإلكتروني: support@company.com
+                للطوارئ: 122<br />
+                خدمة العملاء: +20 2 1234 5678<br />
+                البريد الإلكتروني: support@saifmasr.com
               </p>
             </div>
           </div>

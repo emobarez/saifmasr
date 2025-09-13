@@ -26,34 +26,34 @@ import {
 } from "lucide-react";
 import Link from "next/link";
 
-// Mock data for demonstration
+// Mock data for demonstration - Egyptian context
 const dashboardData = {
   stats: {
     totalRequests: 12,
     activeServices: 3,
     completedServices: 9,
-    totalSpent: 85000,
+    totalSpent: 85000, // EGP
     pendingInvoices: 2,
     overdueInvoices: 0
   },
   recentRequests: [
     {
       id: "REQ-001",
-      title: "حراسة أمنية للمكتب",
+      title: "حراسة أمنية للمكتب الرئيسي بالقاهرة",
       status: "in_progress",
       date: "2024-01-15",
       priority: "high"
     },
     {
       id: "REQ-002",
-      title: "تأمين فعالية",
+      title: "تأمين فعالية بالإسكندرية",
       status: "completed",
       date: "2024-01-10",
       priority: "medium"
     },
     {
       id: "REQ-003",
-      title: "استشارة أمنية",
+      title: "استشارة أمنية للمصنع الجديد",
       status: "pending",
       date: "2024-01-18",
       priority: "low"
@@ -62,13 +62,13 @@ const dashboardData = {
   recentInvoices: [
     {
       id: "INV-2024-001",
-      amount: 15000,
+      amount: 15000, // EGP
       status: "paid",
       dueDate: "2024-02-15"
     },
     {
       id: "INV-2024-002",
-      amount: 8500,
+      amount: 8500, // EGP
       status: "pending",
       dueDate: "2024-02-20"
     }
@@ -76,15 +76,21 @@ const dashboardData = {
   notifications: [
     {
       id: 1,
-      message: "تم قبول طلب الخدمة REQ-001",
+      message: "تم قبول طلب الخدمة REQ-001 للمكتب بالقاهرة الجديدة",
       time: "منذ ساعتين",
       type: "success"
     },
     {
       id: 2,
-      message: "فاتورة جديدة متاحة للمراجعة",
+      message: "فاتورة جديدة بقيمة 8,500 ج.م متاحة للمراجعة",
       time: "منذ 4 ساعات",
       type: "info"
+    },
+    {
+      id: 3,
+      message: "انتهاء صلاحية تأمين الموقع بمدينة نصر",
+      time: "أمس",
+      type: "warning"
     }
   ]
 };
@@ -105,9 +111,9 @@ export default function ClientDashboardPage() {
   }, []);
 
   const formatCurrency = (amount: number) => {
-    return new Intl.NumberFormat('ar-SA', {
+    return new Intl.NumberFormat('ar-EG', {
       style: 'currency',
-      currency: 'SAR'
+      currency: 'EGP'
     }).format(amount);
   };
 
@@ -125,7 +131,7 @@ export default function ClientDashboardPage() {
         <div>
           <h1 className="text-3xl font-bold">لوحة التحكم الرئيسية</h1>
           <p className="text-muted-foreground mt-1">
-            {getGreeting()}، {user?.name || "عزيزي العميل"} - {currentTime.toLocaleDateString('ar-SA')}
+            {getGreeting()}، {user?.name || "عزيزي العميل"} - {currentTime.toLocaleDateString('ar-EG')}
           </p>
         </div>
         <div className="flex gap-2">
@@ -176,7 +182,7 @@ export default function ClientDashboardPage() {
               <div>
                 <p className="text-sm font-medium text-muted-foreground">إجمالي الإنفاق</p>
                 <p className="text-2xl font-bold text-purple-600">{formatCurrency(dashboardData.stats.totalSpent)}</p>
-                <p className="text-xs text-muted-foreground mt-1">هذا العام</p>
+                <p className="text-xs text-muted-foreground mt-1">هذا العام بالجنيه المصري</p>
               </div>
               <div className="p-3 bg-purple-100 rounded-full">
                 <DollarSign className="h-6 w-6 text-purple-600" />
@@ -396,7 +402,7 @@ export default function ClientDashboardPage() {
             </div>
             <div className="flex-1">
               <h3 className="font-semibold text-green-800">حسابك آمن ومحمي</h3>
-              <p className="text-sm text-green-700">جميع خدماتك تعمل بشكل طبيعي. آخر فحص أمني: منذ ساعة واحدة</p>
+              <p className="text-sm text-green-700">جميع خدماتك في مصر تعمل بشكل طبيعي. آخر فحص أمني: منذ ساعة واحدة</p>
             </div>
             <Badge className="bg-green-100 text-green-800">نشط</Badge>
           </div>

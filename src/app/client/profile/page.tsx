@@ -32,9 +32,9 @@ export default function ClientProfilePage() {
   const [formData, setFormData] = useState({
     name: user?.name || "",
     email: user?.email || "",
-    phone: "+966501234567",
-    address: "الرياض، المملكة العربية السعودية",
-    company: "شركة التقنية المتقدمة",
+    phone: "+20 10 1234 5678",
+    address: "القاهرة، جمهورية مصر العربية",
+    company: "شركة النيل للتكنولوجيا",
     position: "مدير العمليات",
     notifications: {
       email: true,
@@ -59,12 +59,12 @@ export default function ClientProfilePage() {
     return name.split(" ").map(n => n[0]).join("").toUpperCase();
   };
 
-  // Mock data for account statistics
+  // Mock data for account statistics - Egyptian context
   const accountStats = {
     totalRequests: 12,
     activeServices: 3,
     completedServices: 9,
-    totalSpent: 85000,
+    totalSpent: 85000, // EGP
     memberSince: "يناير 2023"
   };
 
@@ -356,7 +356,7 @@ export default function ClientProfilePage() {
                     <CreditCard className="h-5 w-5 text-blue-600" />
                     <div>
                       <p className="font-medium">•••• •••• •••• 1234</p>
-                      <p className="text-xs text-muted-foreground">انتهاء: 12/26</p>
+                      <p className="text-xs text-muted-foreground">البنك الأهلي المصري - انتهاء: 12/26</p>
                     </div>
                   </div>
                   <Badge variant="secondary">الرئيسية</Badge>

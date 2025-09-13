@@ -4,8 +4,8 @@
 import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogDescription, DialogFooter, DialogClose } from "@/components/ui/dialog";
 import { Button } from "@/components/ui/button";
 import { Badge } from "@/components/ui/badge";
-
 import { Separator } from "@/components/ui/separator";
+import { formatEGPSimple, formatDateArabic } from "@/lib/egyptian-utils";
 
 // Interface for invoice data from Firestore
 interface Invoice {
@@ -28,11 +28,11 @@ interface InvoiceDetailsDialogProps {
 const formatDateForDialog = (date: Date | string | undefined): string => {
   if (!date) return "غير متوفر";
   const dateObj = date instanceof Date ? date : new Date(date);
-  return dateObj.toLocaleDateString('ar-EG', { year: 'numeric', month: 'long', day: 'numeric' });
+  return formatDateArabic(dateObj);
 };
 
 const formatCurrencyForDialog = (amount: number): string => {
-  return new Intl.NumberFormat('ar-EG', { style: 'currency', currency: 'EGP' }).format(amount);
+  return formatEGPSimple(amount);
 };
 
 const getStatusVariantForDialog = (status: Invoice["status"]): "default" | "secondary" | "destructive" | "outline" => {

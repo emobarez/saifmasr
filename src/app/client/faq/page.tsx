@@ -24,7 +24,7 @@ const faqData = [
       },
       {
         question: "في أي المناطق تقدمون خدماتكم؟",
-        answer: "نغطي جميع مناطق المملكة العربية السعودية، مع مكاتب رئيسية في الرياض وجدة والدمام والخبر. كما نوفر خدمات متخصصة في المناطق النائية حسب الحاجة."
+        answer: "نغطي جميع محافظات جمهورية مصر العربية، مع مكاتب رئيسية في القاهرة والإسكندرية وأسوان والأقصر. كما نوفر خدمات متخصصة في المناطق النائية والصحراوية حسب الحاجة."
       }
     ]
   },
@@ -35,7 +35,7 @@ const faqData = [
     questions: [
       {
         question: "كيف يمكنني طلب خدمة حراسة أمنية؟",
-        answer: "يمكنك طلب الخدمة من خلال: 1) تعبئة نموذج طلب الخدمة في لوحة التحكم، 2) الاتصال بخدمة العملاء على 8001234567، 3) زيارة أحد مكاتبنا، أو 4) التواصل عبر البريد الإلكتروني. سيقوم فريقنا بدراسة طلبك وتقديم عرض مخصص خلال 24 ساعة."
+        answer: "يمكنك طلب الخدمة من خلال: 1) تعبئة نموذج طلب الخدمة في لوحة التحكم، 2) الاتصال بخدمة العملاء على +20 2 1234 5678، 3) زيارة أحد مكاتبنا، أو 4) التواصل عبر البريد الإلكتروني. سيقوم فريقنا بدراسة طلبك وتقديم عرض مخصص خلال 24 ساعة."
       },
       {
         question: "ما هي مؤهلات وخبرات حراس الأمن لديكم؟",
@@ -58,7 +58,7 @@ const faqData = [
       },
       {
         question: "ما هي طرق الدفع المتاحة؟",
-        answer: "نقبل جميع طرق الدفع الرئيسية: البطاقات الائتمانية (فيزا، ماستركارد، مدى)، التحويل البنكي، الشيكات، والمحافظ الرقمية (STCPay، Urpay). كما نوفر خيارات دفع مرنة للعقود طويلة المدى."
+        answer: "نقبل جميع طرق الدفع الرئيسية: البطاقات الائتمانية (فيزا، ماستركارد، مدى)، التحويل البنكي، الشيكات، والمحافظ الرقمية (فودافون كاش، Instapay، Orange Money). كما نوفر خيارات دفع مرنة للعقود طويلة المدى."
       },
       {
         question: "هل هناك خصومات للعقود طويلة المدى؟",
@@ -208,7 +208,7 @@ export default function ClientFAQPage() {
               <Phone className="h-8 w-8 mx-auto mb-3 text-blue-600" />
               <h4 className="font-semibold mb-2">الهاتف</h4>
               <p className="text-sm text-muted-foreground mb-3">خدمة عملاء 24/7</p>
-              <p className="font-medium">8001234567</p>
+              <p className="font-medium">+20 2 1234 5678</p>
               <Button variant="outline" size="sm" className="mt-2">
                 اتصل الآن
               </Button>
@@ -218,7 +218,7 @@ export default function ClientFAQPage() {
               <Mail className="h-8 w-8 mx-auto mb-3 text-green-600" />
               <h4 className="font-semibold mb-2">البريد الإلكتروني</h4>
               <p className="text-sm text-muted-foreground mb-3">رد خلال 24 ساعة</p>
-              <p className="font-medium text-sm">support@company.com</p>
+              <p className="font-medium text-sm">support@saifmasr.com</p>
               <Button variant="outline" size="sm" className="mt-2">
                 أرسل رسالة
               </Button>
