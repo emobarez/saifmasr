@@ -12,7 +12,11 @@
     "lint": "next lint",
     "typecheck": "tsc --noEmit",
     "deploy": "vercel --prod",
-    "deploy:preview": "vercel"
+    "deploy:preview": "vercel",
+    "seed:services": "tsx scripts/seed-services.ts",
+    "test:workflow": "tsx scripts/test-workflow.ts",
+    "test:api": "tsx scripts/test-api.ts",
+    "create:test-request": "tsx scripts/create-test-request.ts"
   },
   "dependencies": {
     "@genkit-ai/googleai": "^1.8.0",

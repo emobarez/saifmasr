@@ -33,6 +33,7 @@ import {
 import Link from "next/link";
 import { toast } from "@/hooks/use-toast";
 import { formatEGPSimple } from "@/lib/egyptian-utils";
+import { useRouter } from "next/navigation";
 
 // Interface for Invoice from API
 interface Invoice {
@@ -54,6 +55,16 @@ interface Invoice {
   paidAt?: string;
   createdAt: string;
   updatedAt: string;
+  serviceRequest?: {
+    id: string;
+    title: string;
+    status: string;
+    service: {
+      id: string;
+      name: string;
+      price: number;
+    };
+  };
   items?: Array<{
     id: string;
     description: string;
@@ -64,6 +75,7 @@ interface Invoice {
 }
 
 export default function InvoicesPage() {
+  const router = useRouter();
   const [loading, setLoading] = useState(true);
   const [refreshing, setRefreshing] = useState(false);
   const [invoices, setInvoices] = useState<Invoice[]>([]);
@@ -239,6 +251,68 @@ export default function InvoicesPage() {
     }
   };
 
+  // Button handler functions
+  const handleViewInvoice = (invoice: Invoice) => {
+    router.push(`/admin/invoices/${invoice.id}`);
+  };
+
+  const handleDownloadInvoice = async (invoice: Invoice) => {
+    try {
+      // Create a simple invoice download
+      const invoiceData = {
+        invoiceNumber: invoice.invoiceNumber,
+        clientName: invoice.user?.name || 'غير محدد',
+        amount: invoice.amount,
+        taxAmount: invoice.taxAmount || 0,
+        totalAmount: invoice.totalAmount || invoice.amount,
+        createdAt: invoice.createdAt,
+        dueDate: invoice.dueDate,
+        status: invoice.status,
+        description: invoice.description || '',
+        serviceRequest: invoice.serviceRequest
+      };
+
+      // Generate PDF-like content (simplified)
+      const content = `
+فاتورة رقم: ${invoiceData.invoiceNumber}
+العميل: ${invoiceData.clientName}
+المبلغ: ${formatEGPSimple(invoiceData.amount)}
+الضريبة: ${formatEGPSimple(invoiceData.taxAmount)}
+الإجمالي: ${formatEGPSimple(invoiceData.totalAmount)}
+تاريخ الإصدار: ${new Date(invoiceData.createdAt).toLocaleDateString('ar-EG')}
+الحالة: ${invoiceData.status === 'PAID' ? 'مدفوعة' : invoiceData.status === 'PENDING' ? 'معلقة' : 'متأخرة'}
+${invoiceData.serviceRequest ? `طلب الخدمة: ${invoiceData.serviceRequest.title}` : ''}
+      `;
+
+      // Create and download file
+      const blob = new Blob([content], { type: 'text/plain;charset=utf-8' });
+      const url = window.URL.createObjectURL(blob);
+      const link = document.createElement('a');
+      link.href = url;
+      link.download = `invoice-${invoiceData.invoiceNumber}.txt`;
+      document.body.appendChild(link);
+      link.click();
+      document.body.removeChild(link);
+      window.URL.revokeObjectURL(url);
+
+      toast({
+        title: "تم تنزيل الفاتورة",
+        description: `تم تنزيل الفاتورة رقم ${invoice.invoiceNumber} بنجاح`,
+      });
+    } catch (error) {
+      console.error('Error downloading invoice:', error);
+      toast({
+        title: "خطأ في التنزيل",
+        description: "تعذر تنزيل الفاتورة. يرجى المحاولة مرة أخرى.",
+        variant: "destructive",
+      });
+    }
+  };
+
+  const handleEditInvoice = (invoice: Invoice) => {
+    router.push(`/admin/invoices/${invoice.id}/edit`);
+  };
+
   const invoiceStats = {
     total: invoices.length,
     paid: invoices.filter(i => i.status === 'PAID').length,
@@ -397,7 +471,7 @@ export default function InvoicesPage() {
               <TableRow>
                 <TableHead>رقم الفاتورة</TableHead>
                 <TableHead>العميل</TableHead>
-                <TableHead>الوصف</TableHead>
+                <TableHead>طلب الخدمة</TableHead>
                 <TableHead>المبلغ</TableHead>
                 <TableHead>الضريبة</TableHead>
                 <TableHead>الإجمالي</TableHead>
@@ -423,7 +497,30 @@ export default function InvoicesPage() {
                       <div className="text-sm text-muted-foreground">{invoice.user?.email || (invoice as any).clientEmail || ''}</div>
                     </div>
                   </TableCell>
-                  <TableCell>{invoice.description || (invoice as any).serviceType || 'خدمة عامة'}</TableCell>
+                  <TableCell>
+                    {invoice.serviceRequest ? (
+                      <div>
+                        <div className="font-medium text-blue-600">
+                          <Link href={`/admin/service-requests/${invoice.serviceRequest.id}`} className="hover:underline">
+                            {invoice.serviceRequest.title}
+                          </Link>
+                        </div>
+                        <div className="text-sm text-muted-foreground">
+                          {invoice.serviceRequest.service.name}
+                        </div>
+                        <Badge 
+                          variant={invoice.serviceRequest.status === 'COMPLETED' ? 'default' : 'secondary'}
+                          className="text-xs mt-1"
+                        >
+                          {invoice.serviceRequest.status === 'PENDING' ? 'معلق' : 
+                           invoice.serviceRequest.status === 'IN_PROGRESS' ? 'جاري' : 
+                           invoice.serviceRequest.status === 'COMPLETED' ? 'مكتمل' : 'ملغي'}
+                        </Badge>
+                      </div>
+                    ) : (
+                      <span className="text-muted-foreground">فاتورة يدوية</span>
+                    )}
+                  </TableCell>
                   <TableCell>{formatEGPSimple(invoice.amount)}</TableCell>
                   <TableCell>{formatEGPSimple(invoice.taxAmount || 0)}</TableCell>
                   <TableCell className="font-bold">
@@ -435,14 +532,32 @@ export default function InvoicesPage() {
                   </TableCell>
                   <TableCell>
                     <div className="flex items-center gap-2">
-                      <Button variant="ghost" size="sm">
+                      <Button 
+                        variant="ghost" 
+                        size="sm"
+                        onClick={() => handleViewInvoice(invoice)}
+                        className="text-blue-600 hover:text-blue-700 hover:bg-blue-50"
+                        title="عرض تفاصيل الفاتورة"
+                      >
                         <Eye className="h-4 w-4" />
                       </Button>
-                      <Button variant="ghost" size="sm">
+                      <Button 
+                        variant="ghost" 
+                        size="sm"
+                        onClick={() => handleDownloadInvoice(invoice)}
+                        className="text-green-600 hover:text-green-700 hover:bg-green-50"
+                        title="تنزيل الفاتورة"
+                      >
                         <Download className="h-4 w-4" />
                       </Button>
                       {invoice.status === 'PENDING' && (
-                        <Button variant="ghost" size="sm">
+                        <Button 
+                          variant="ghost" 
+                          size="sm"
+                          onClick={() => handleEditInvoice(invoice)}
+                          className="text-orange-600 hover:text-orange-700 hover:bg-orange-50"
+                          title="تعديل الفاتورة"
+                        >
                           <Edit className="h-4 w-4" />
                         </Button>
                       )}

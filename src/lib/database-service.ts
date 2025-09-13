@@ -366,7 +366,7 @@ export const invoiceService = {
         items: true
       },
       orderBy: { createdAt: 'desc' }
-    });
+    }) as any;
   },
 
   async getById(id: string) {
@@ -378,22 +378,26 @@ export const invoiceService = {
         },
         items: true
       }
-    });
+    }) as any;
   },
 
   async getByUserId(userId: string) {
     return await prisma.invoice.findMany({
-      where: { userId },
+      where: { clientId: userId }, // العميل الذي تخصه الفاتورة
       include: {
+        user: {
+          select: { id: true, name: true, email: true }
+        },
         items: true
       },
       orderBy: { createdAt: 'desc' }
-    });
+    }) as any;
   },
 
   async create(data: {
     userId: string;
     clientId: string;
+    serviceRequestId?: string;
     amount: number;
     currency?: string;
     description?: string;
@@ -437,7 +441,77 @@ export const invoiceService = {
         },
         items: true
       }
+    }) as any;
+  },
+
+  async createFromServiceRequest(serviceRequestId: string, adminUserId: string, dueDate?: Date) {
+    // Get service request with all related data
+    const serviceRequest = await prisma.serviceRequest.findUnique({
+      where: { id: serviceRequestId },
+      include: {
+        user: true,
+        service: true
+      }
     });
+
+    if (!serviceRequest) {
+      throw new Error('Service request not found');
+    }
+
+    if (!serviceRequest.service.price) {
+      throw new Error('Service price not set');
+    }
+
+    // Note: Will check for duplicate invoices at creation time
+
+    // Egyptian VAT rate is 14%
+    const amount = serviceRequest.service.price;
+    const taxAmount = amount * 0.14;
+    const totalAmount = amount + taxAmount;
+
+    // Calculate due date (default: 30 days from now)
+    const invoiceDueDate = dueDate || new Date(Date.now() + 30 * 24 * 60 * 60 * 1000);
+
+    // Generate invoice number
+    const lastInvoice = await prisma.invoice.findFirst({
+      orderBy: { createdAt: 'desc' },
+      select: { invoiceNumber: true }
+    });
+    
+    const nextNumber = lastInvoice ? 
+      parseInt(lastInvoice.invoiceNumber.replace('INV-', '')) + 1 : 1;
+    const invoiceNumber = `INV-${nextNumber.toString().padStart(6, '0')}`;
+
+    // Create invoice
+    return await prisma.invoice.create({
+      data: {
+        userId: adminUserId,
+        clientId: serviceRequest.userId,
+        serviceRequestId: serviceRequestId,
+        invoiceNumber,
+        amount,
+        currency: 'EGP',
+        status: 'PENDING',
+        description: `فاتورة لخدمة: ${serviceRequest.service.name} - ${serviceRequest.title}`,
+        taxAmount,
+        totalAmount,
+        dueDate: invoiceDueDate,
+        items: {
+          create: [{
+            description: serviceRequest.service.name,
+            quantity: 1,
+            unitPrice: amount,
+            totalPrice: amount
+          }]
+        }
+      } as any,
+      include: {
+        user: {
+          select: { id: true, name: true, email: true }
+        },
+        items: true
+      }
+    }) as any;
   },
 
   async update(id: string, data: Partial<{

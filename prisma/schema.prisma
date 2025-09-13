@@ -104,6 +104,7 @@ model ServiceRequest {
   
   user        User     @relation(fields: [userId], references: [id], onDelete: Cascade)
   service     Service  @relation(fields: [serviceId], references: [id], onDelete: Cascade)
+  invoices    Invoice[] // One service request can have multiple invoices
 }
 
 model Employee {
@@ -138,24 +139,26 @@ model Assignment {
 }
 
 model Invoice {
-  id            String   @id @default(cuid())
-  userId        String
-  clientId      String
-  invoiceNumber String   @unique
-  amount        Float    // Amount in Egyptian Pounds (EGP)
-  currency      String   @default("EGP")
-  status        InvoiceStatus @default(PENDING)
-  dueDate       DateTime?
-  description   String?
-  taxAmount     Float?   @default(0)
-  totalAmount   Float    // amount + taxAmount
-  paymentMethod String?
-  paidAt        DateTime?
-  createdAt     DateTime @default(now())
-  updatedAt     DateTime @updatedAt
+  id               String   @id @default(cuid())
+  userId           String
+  clientId         String
+  serviceRequestId String?  // Optional link to service request
+  invoiceNumber    String   @unique
+  amount           Float    // Amount in Egyptian Pounds (EGP)
+  currency         String   @default("EGP")
+  status           InvoiceStatus @default(PENDING)
+  dueDate          DateTime?
+  description      String?
+  taxAmount        Float?   @default(0)
+  totalAmount      Float    // amount + taxAmount
+  paymentMethod    String?
+  paidAt           DateTime?
+  createdAt        DateTime @default(now())
+  updatedAt        DateTime @updatedAt
   
-  user          User     @relation(fields: [userId], references: [id], onDelete: Cascade)
-  items         InvoiceItem[]
+  user             User     @relation(fields: [userId], references: [id], onDelete: Cascade)
+  serviceRequest   ServiceRequest? @relation(fields: [serviceRequestId], references: [id], onDelete: SetNull)
+  items            InvoiceItem[]
 }
 
 model InvoiceItem {

@@ -40,6 +40,7 @@ export async function POST(request: NextRequest) {
       taxAmount,
       status,
       paymentMethod,
+      serviceRequestId, // Optional service request ID
       items 
     } = await request.json();
 
@@ -54,6 +55,7 @@ export async function POST(request: NextRequest) {
     const invoice = await invoiceService.create({
       userId: session.user.id, // Creator of the invoice
       clientId,
+      serviceRequestId, // Optional service request ID
       amount: parseFloat(amount),
       currency: "EGP", // Egyptian Pounds
       description,

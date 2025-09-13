@@ -271,9 +271,9 @@ export default function ClientProfilePage() {
                 </div>
                 <div className="text-center">
                   <div className="text-2xl font-bold text-orange-600">
-                    {new Intl.NumberFormat('ar-SA', {
+                    {new Intl.NumberFormat('ar-EG', {
                       style: 'currency',
-                      currency: 'SAR'
+                      currency: 'EGP'
                     }).format(accountStats.totalSpent)}
                   </div>
                   <div className="text-xs text-muted-foreground">إجمالي الإنفاق</div>
