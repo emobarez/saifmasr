@@ -19,7 +19,8 @@ import {
   Plus,
   Eye,
   Calendar,
-  Activity
+  Activity,
+  AlertCircle
 } from "lucide-react";
 import { formatEGPSimple } from "@/lib/egyptian-utils";
 import { useAuth } from "@/context/AuthContext";
@@ -46,6 +47,7 @@ export default function AdminDashboardPage() {
   });
   const [recentActivities, setRecentActivities] = useState<Activity[]>([]);
   const [loading, setLoading] = useState(true);
+  const [error, setError] = useState<string | null>(null);
 
   // Fetch real data from database
   useEffect(() => {
@@ -94,19 +96,7 @@ export default function AdminDashboardPage() {
         
       } catch (error) {
         console.error('Error fetching dashboard data:', error);
-        // Fallback to mock data on error
-        setStats({
-          totalClients: 156,
-          activeServices: 89,
-          pendingRequests: 23,
-          monthlyRevenue: 125000,
-          completedTasks: 78,
-          systemHealth: 98
-        });
-        setRecentActivities([
-          { id: '1', type: 'service', message: 'طلب خدمة أمنية جديد من العميل أحمد محمد', time: '5 دقائق', status: 'pending' },
-          { id: '2', type: 'payment', message: 'تم استلام دفعة بقيمة 15,000 جنيه مصري', time: '15 دقيقة', status: 'completed' }
-        ]);
+        setError('فشل في تحميل بيانات لوحة التحكم');
       } finally {
         setLoading(false);
       }
@@ -171,6 +161,15 @@ export default function AdminDashboardPage() {
               </CardContent>
             </Card>
           ))}
+        </div>
+      ) : error ? (
+        <div className="flex items-center justify-center min-h-[400px]">
+          <div className="text-center">
+            <AlertCircle className="h-12 w-12 text-red-500 mx-auto mb-4" />
+            <h3 className="text-lg font-semibold text-gray-900 mb-2">خطأ في تحميل البيانات</h3>
+            <p className="text-gray-500 mb-4">{error}</p>
+            <Button onClick={() => window.location.reload()}>إعادة المحاولة</Button>
+          </div>
         </div>
       ) : (
         <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-4 sm:gap-6 mb-4 sm:mb-6 lg:mb-8">

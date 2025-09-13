@@ -80,40 +80,7 @@ export default function AdminReportsPage() {
   const [error, setError] = useState<string | null>(null);
   const [refreshing, setRefreshing] = useState(false);
 
-  // Mock data - replace with real database queries
-  const mockData: ReportData = {
-    overview: {
-      totalRevenue: 245000,
-      totalClients: 156,
-      activeServices: 89,
-      completedTasks: 234,
-      revenueGrowth: 15.2,
-      clientGrowth: 8.5,
-      serviceGrowth: 12.3
-    },
-    monthlyRevenue: [
-      { month: "يناير", revenue: 180000, clients: 45 },
-      { month: "فبراير", revenue: 195000, clients: 52 },
-      { month: "مارس", revenue: 210000, clients: 58 },
-      { month: "أبريل", revenue: 225000, clients: 62 },
-      { month: "مايو", revenue: 240000, clients: 68 },
-      { month: "يونيو", revenue: 255000, clients: 72 }
-    ],
-    serviceDistribution: [
-      { name: "حراسة شخصية", value: 35, percentage: 39.3 },
-      { name: "أنظمة مراقبة", value: 28, percentage: 31.5 },
-      { name: "أمن مباني", value: 15, percentage: 16.9 },
-      { name: "تدريب أمني", value: 8, percentage: 9.0 },
-      { name: "نقل آمن", value: 3, percentage: 3.4 }
-    ],
-    regionPerformance: [
-      { region: "القاهرة الكبرى", clients: 68, revenue: 136000, growth: 15.2 },
-      { region: "الإسكندرية", clients: 45, revenue: 90000, growth: 12.8 },
-      { region: "الجيزة", clients: 25, revenue: 50000, growth: 8.5 },
-      { region: "القليوبية", clients: 12, revenue: 24000, growth: 6.2 },
-      { region: "أسوان", clients: 6, revenue: 12000, growth: 4.1 }
-    ]
-  };
+  // Removed mock data - using real database only
 
   // Fetch reports data
   const fetchReportsData = async () => {
@@ -129,8 +96,7 @@ export default function AdminReportsPage() {
     } catch (error) {
       console.error('Error fetching reports:', error);
       setError('Failed to load reports data');
-      // Fallback to mock data
-      setReportData(mockData);
+      // Keep reportData as null to show error state
     } finally {
       setLoading(false);
     }

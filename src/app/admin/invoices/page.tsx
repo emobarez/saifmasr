@@ -101,8 +101,7 @@ export default function InvoicesPage() {
           description: "فشل في تحميل الفواتير",
           variant: "destructive",
         });
-        // Fallback to mock data
-        setInvoices(mockInvoices);
+        setError('Failed to load invoices data');
       }
     } catch (error) {
       console.error('Error fetching invoices:', error);
@@ -111,8 +110,7 @@ export default function InvoicesPage() {
         description: "حدث خطأ أثناء تحميل الفواتير",
         variant: "destructive",
       });
-      // Fallback to mock data
-      setInvoices(mockInvoices);
+      setError('Failed to fetch invoices');
     } finally {
       setLoading(false);
     }
@@ -122,106 +120,8 @@ export default function InvoicesPage() {
     fetchInvoices();
   }, []);
 
-  // Mock data for fallback
-  const mockInvoices: (Invoice & {
-    clientName?: string;
-    clientEmail?: string;
-    serviceType?: string;
-    tax?: number;
-    issueDate?: string;
-    dueDate?: string;
-    paidDate?: string;
-  })[] = [
-    {
-      id: "1",
-      invoiceNumber: "INV-2024-001",
-      user: {
-        id: "user-1",
-        name: "أحمد محمد الشهري",
-        email: "ahmed@security.com"
-      },
-      description: "حراسة شخصية",
-      amount: 15000,
-      taxAmount: 2250,
-      totalAmount: 17250,
-      status: "PAID",
-      currency: "EGP",
-      createdAt: "2024-11-01",
-      updatedAt: "2024-11-01",
-      paidAt: "2024-11-25",
-      paymentMethod: "تحويل بنكي"
-    },
-    {
-      id: "2",
-      invoiceNumber: "INV-2024-002",
-      user: {
-        id: "user-2",
-        name: "فاطمة خالد السالم",
-        email: "fatima@security.com"
-      },
-      description: "أنظمة مراقبة",
-      amount: 25000,
-      taxAmount: 3750,
-      totalAmount: 28750,
-      status: "PENDING",
-      currency: "EGP",
-      createdAt: "2024-11-15",
-      updatedAt: "2024-11-15"
-    },
-    {
-      id: "3",
-      invoiceNumber: "INV-2024-003",
-      user: {
-        id: "user-3",
-        name: "محمد عبدالله النمر",
-        email: "mohammed@shield.com"
-      },
-      description: "أمن مباني",
-      amount: 50000,
-      taxAmount: 7500,
-      totalAmount: 57500,
-      status: "OVERDUE",
-      currency: "EGP",
-      createdAt: "2024-10-01",
-      updatedAt: "2024-10-01"
-    },
-    {
-      id: "4",
-      invoiceNumber: "INV-2024-004",
-      user: {
-        id: "user-4",
-        name: "سارة عبدالعزيز القحطاني",
-        email: "sara@training.com"
-      },
-      description: "تدريب أمني",
-      amount: 8000,
-      taxAmount: 1200,
-      totalAmount: 9200,
-      status: "PENDING",
-      currency: "EGP",
-      createdAt: "2024-12-01",
-      updatedAt: "2024-12-01"
-    },
-    {
-      id: "5",
-      invoiceNumber: "INV-2024-005",
-      user: {
-        id: "user-5",
-        name: "عبدالرحمن محمد القرشي",
-        email: "abdulrahman@corp.com"
-      },
-      description: "خدمات أمنية متنوعة",
-      amount: 30000,
-      taxAmount: 4500,
-      totalAmount: 34500,
-      status: "PAID",
-      currency: "EGP",
-      createdAt: "2024-11-20",
-      updatedAt: "2024-11-20",
-      paidAt: "2024-12-01",
-      paymentMethod: "بطاقة ائتمان"
-    }
-  ];
+  // Removed mock data - using real database only
+  const [error, setError] = useState<string | null>(null);
 
   const handleRefresh = async () => {
     setRefreshing(true);

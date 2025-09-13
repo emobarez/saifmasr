@@ -1,6 +1,6 @@
 "use client";
 
-import { useState } from "react";
+import { useState, useEffect } from "react";
 import { Card, CardHeader, CardTitle, CardDescription, CardContent } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
@@ -26,10 +26,14 @@ import {
   Calendar,
   User,
   Shield,
-  Briefcase
+  Briefcase,
+  ToggleLeft,
+  ToggleRight
 } from "lucide-react";
 import Link from "next/link";
 import { formatEGPSimple } from "@/lib/egyptian-utils";
+import { useRouter } from "next/navigation";
+import { toast } from "@/hooks/use-toast";
 
 interface Employee {
   id: string;
@@ -47,81 +51,116 @@ interface Employee {
 }
 
 export default function AdminEmployeesPage() {
+  const router = useRouter();
   const [searchTerm, setSearchTerm] = useState("");
   
-  // Mock data - replace with real database queries
-  const employees: Employee[] = [
-    {
-      id: "EMP-001",
-      name: "محمد أحمد الحارس",
-      email: "mohammed@saifmasr.com",
-      phone: "+20101234567",
-      position: "رئيس فريق الأمن",
-      department: "العمليات الأمنية",
-      location: "القاهرة",
-      status: "active",
-      hireDate: "2022-01-15",
-      salary: 8000,
-      experience: "8 سنوات",
-      certifications: ["شهادة الأمن المهني", "إدارة الأزمات"]
-    },
-    {
-      id: "EMP-002",
-      name: "فاطمة عبدالله المراقبة",
-      email: "fatima@saifmasr.com",
-      phone: "+20107654321",
-      position: "مختصة أنظمة مراقبة",
-      department: "التقنية الأمنية",
-      location: "الإسكندرية",
-      status: "active",
-      hireDate: "2023-03-20",
-      salary: 7000,
-      experience: "5 سنوات",
-      certifications: ["شهادة أنظمة المراقبة", "الأمن السيبراني"]
-    },
-    {
-      id: "EMP-003",
-      name: "علي محمد المدرب",
-      email: "ali@saifmasr.com",
-      phone: "+20151234567",
-      position: "مدرب أمني معتمد",
-      department: "التدريب والتطوير",
-      location: "الجيزة",
-      status: "active",
-      hireDate: "2021-06-10",
-      salary: 9000,
-      experience: "12 سنة",
-      certifications: ["مدرب معتمد", "إدارة الأزمات", "الإسعافات الأولية"]
-    },
-    {
-      id: "EMP-004",
-      name: "سارة خالد المحاسبة",
-      email: "sara@saifmasr.com",
-      phone: "+20159876543",
-      position: "محاسبة",
-      department: "الشؤون المالية",
-      location: "القاهرة",
-      status: "on-leave",
-      hireDate: "2023-01-05",
-      salary: 6000,
-      experience: "3 سنوات",
-      certifications: ["محاسب قانوني", "إدارة مالية"]
-    },
-    {
-      id: "EMP-005",
-      name: "عبدالرحمن سعد الحارس",
-      email: "abdulrahman@saifmasr.com",
-      phone: "+20155555555",
-      position: "حارس أمن",
-      department: "العمليات الأمنية",
-      location: "أسوان",
-      status: "active",
-      hireDate: "2024-02-01",
-      salary: 4500,
-      experience: "سنتان",
-      certifications: ["الأمن الأساسي"]
+  // Handler functions for table actions
+  const handleViewEmployee = (employee: Employee) => {
+    // Navigate to employee detail page
+    router.push(`/admin/employees/${employee.id}`);
+  };
+
+  const handleEditEmployee = (employee: Employee) => {
+    // Navigate to employee edit page
+    router.push(`/admin/employees/${employee.id}/edit`);
+  };
+
+  const handleDeleteEmployee = async (employee: Employee) => {
+    if (!confirm(`هل أنت متأكد من حذف الموظف "${employee.name}"؟ هذا الإجراء لا يمكن التراجع عنه.`)) {
+      return;
     }
-  ];
+
+    try {
+      const response = await fetch(`/api/employees/${employee.id}`, {
+        method: 'DELETE',
+        headers: {
+          'Content-Type': 'application/json',
+        },
+      });
+
+      if (response.ok) {
+        toast({
+          title: "تم حذف الموظف",
+          description: `تم حذف الموظف "${employee.name}" بنجاح`,
+        });
+        
+        // Refresh the page to update the employee list
+        window.location.reload();
+      } else {
+        throw new Error('Failed to delete employee');
+      }
+    } catch (error) {
+      console.error('Error deleting employee:', error);
+      toast({
+        title: "خطأ في الحذف",
+        description: "تعذر حذف الموظف. يرجى المحاولة مرة أخرى.",
+        variant: "destructive",
+      });
+    }
+  };
+
+  const handleToggleEmployeeStatus = async (employee: Employee) => {
+    const newStatus = employee.status === 'active' ? 'inactive' : 'active';
+    
+    try {
+      const response = await fetch(`/api/employees/${employee.id}`, {
+        method: 'PATCH',
+        headers: {
+          'Content-Type': 'application/json',
+        },
+        body: JSON.stringify({
+          status: newStatus
+        }),
+      });
+
+      if (response.ok) {
+        toast({
+          title: "تم تحديث حالة الموظف",
+          description: `تم تغيير حالة الموظف إلى ${newStatus === 'active' ? 'نشط' : 'غير نشط'}`,
+        });
+        
+        // Refresh the page to update the employee status
+        window.location.reload();
+      } else {
+        throw new Error('Failed to update employee status');
+      }
+    } catch (error) {
+      console.error('Error updating employee status:', error);
+      toast({
+        title: "خطأ في التحديث",
+        description: "تعذر تحديث حالة الموظف. يرجى المحاولة مرة أخرى.",
+        variant: "destructive",
+      });
+    }
+  };
+  
+  // Removed mock data - using real database only
+  const [employees, setEmployees] = useState<Employee[]>([]);
+  const [loading, setLoading] = useState(true);
+  const [error, setError] = useState<string | null>(null);
+
+  // Fetch employees from API
+  const fetchEmployees = async () => {
+    try {
+      const response = await fetch('/api/employees');
+      
+      if (!response.ok) {
+        throw new Error('Failed to fetch employees data');
+      }
+      
+      const data = await response.json();
+      setEmployees(data);
+    } catch (error) {
+      console.error('Error fetching employees:', error);
+      setError('Failed to load employees data');
+    } finally {
+      setLoading(false);
+    }
+  };
+
+  useEffect(() => {
+    fetchEmployees();
+  }, []);
 
   const filteredEmployees = employees.filter(employee => 
     employee.name.toLowerCase().includes(searchTerm.toLowerCase()) ||
@@ -276,8 +315,8 @@ export default function AdminEmployeesPage() {
                 <TableHead>معلومات الموظف</TableHead>
                 <TableHead>المنصب</TableHead>
                 <TableHead>القسم</TableHead>
-                <TableHead>الموقع</TableHead>
-                <TableHead>الخبرة</TableHead>
+                <TableHead>المكان</TableHead>
+                <TableHead>تاريخ التوظيف</TableHead>
                 <TableHead>الراتب</TableHead>
                 <TableHead>الحالة</TableHead>
                 <TableHead>الإجراءات</TableHead>
@@ -318,14 +357,14 @@ export default function AdminEmployeesPage() {
                   <TableCell>
                     <div className="flex items-center">
                       <MapPin className="h-4 w-4 mr-1 text-gray-400" />
-                      {employee.location}
+                      {employee.department || 'غير محدد'}
                     </div>
                   </TableCell>
                   <TableCell>
                     <div>
-                      <div className="text-sm font-medium">{employee.experience}</div>
+                      <div className="text-sm font-medium">تم التوظيف منذ</div>
                       <div className="text-xs text-muted-foreground">
-                        من {new Date(employee.hireDate).toLocaleDateString('ar-EG')}
+                        {new Date(employee.hireDate).toLocaleDateString('ar-EG')}
                       </div>
                     </div>
                   </TableCell>
@@ -336,13 +375,50 @@ export default function AdminEmployeesPage() {
                   <TableCell>{getStatusBadge(employee.status)}</TableCell>
                   <TableCell>
                     <div className="flex items-center space-x-2 space-x-reverse">
-                      <Button variant="ghost" size="sm">
+                      <Button 
+                        variant="ghost" 
+                        size="sm"
+                        className="text-blue-600 hover:text-blue-700 hover:bg-blue-50"
+                        onClick={() => handleViewEmployee(employee)}
+                        title="عرض تفاصيل الموظف"
+                      >
                         <Eye className="h-4 w-4" />
                       </Button>
-                      <Button variant="ghost" size="sm">
+                      <Button 
+                        variant="ghost" 
+                        size="sm"
+                        className="text-orange-600 hover:text-orange-700 hover:bg-orange-50"
+                        onClick={() => handleEditEmployee(employee)}
+                        title="تعديل بيانات الموظف"
+                      >
                         <Edit3 className="h-4 w-4" />
                       </Button>
-                      <Button variant="ghost" size="sm" className="text-red-600 hover:text-red-800">
+                      {employee.status !== 'on-leave' && (
+                        <Button 
+                          variant="ghost" 
+                          size="sm"
+                          className={`${
+                            employee.status === 'active' 
+                              ? 'text-red-600 hover:text-red-700 hover:bg-red-50' 
+                              : 'text-green-600 hover:text-green-700 hover:bg-green-50'
+                          }`}
+                          onClick={() => handleToggleEmployeeStatus(employee)}
+                          title={employee.status === 'active' ? 'إيقال الموظف' : 'تفعيل الموظف'}
+                        >
+                          {employee.status === 'active' ? (
+                            <ToggleRight className="h-4 w-4" />
+                          ) : (
+                            <ToggleLeft className="h-4 w-4" />
+                          )}
+                        </Button>
+                      )}
+                      <Button 
+                        variant="ghost" 
+                        size="sm" 
+                        className="text-red-600 hover:text-red-800 hover:bg-red-50"
+                        onClick={() => handleDeleteEmployee(employee)}
+                        title="حذف الموظف"
+                      >
                         <Trash2 className="h-4 w-4" />
                       </Button>
                     </div>
@@ -356,22 +432,22 @@ export default function AdminEmployeesPage() {
         </CardContent>
       </Card>
 
-      {/* Certifications Summary */}
+      {/* Department Summary */}
       <Card>
         <CardHeader>
-          <CardTitle>ملخص الشهادات والمؤهلات</CardTitle>
+          <CardTitle>ملخص الأقسام</CardTitle>
           <CardDescription>
-            توزيع الشهادات المهنية بين الموظفين
+            توزيع الموظفين حسب الأقسام
           </CardDescription>
         </CardHeader>
         <CardContent>
           <div className="grid grid-cols-2 md:grid-cols-4 gap-4">
-            {['شهادة الأمن المهني', 'إدارة الأزمات', 'أنظمة المراقبة', 'الأمن السيبراني'].map((cert, index) => {
-              const count = employees.filter(emp => emp.certifications.includes(cert)).length;
+            {['العمليات الأمنية', 'التقنية الأمنية', 'التدريب والتطوير', 'الشؤون المالية'].map((dept, index) => {
+              const count = employees.filter(emp => emp.department === dept).length;
               return (
                 <div key={index} className="text-center p-4 bg-gray-50 rounded-lg">
                   <div className="text-2xl font-bold text-blue-600">{count}</div>
-                  <div className="text-sm text-muted-foreground">{cert}</div>
+                  <div className="text-sm text-muted-foreground">{dept}</div>
                 </div>
               );
             })}

@@ -6,123 +6,180 @@ import { Button } from "@/components/ui/button";
 import { Badge } from "@/components/ui/badge";
 import { Progress } from "@/components/ui/progress";
 import { useAuth } from "@/context/AuthContext";
+import { formatEGPSimple } from "@/lib/egyptian-utils";
 import { 
   Plus, 
-  Clock, 
-  CheckCircle, 
-  AlertCircle, 
+  Eye, 
+  Calendar, 
+  Users, 
+  ShieldCheck, 
+  ClipboardList, 
+  Receipt, 
+  TrendingUp, 
+  AlertTriangle,
+  CheckCircle,
+  Clock,
   DollarSign,
-  TrendingUp,
-  Calendar,
-  Shield,
-  ArrowRight,
-  Bell,
-  CreditCard,
-  FileText,
-  Users,
   BarChart3,
   Activity,
-  Zap
+  Bell,
+  Shield,
+  AlertCircle,
+  User,
+  CreditCard,
+  Star
 } from "lucide-react";
-import Link from "next/link";
 
-// Mock data for demonstration - Egyptian context
-const dashboardData = {
+// Interfaces for type safety
+interface ServiceRequest {
+  id: string;
+  title: string;
+  status: 'pending' | 'in_progress' | 'completed';
+  createdAt: string;
+  priority: 'low' | 'medium' | 'high' | 'urgent';
+}
+
+interface Invoice {
+  id: string;
+  invoiceNumber: string;
+  amount: number;
+  status: 'pending' | 'paid' | 'overdue';
+  dueDate: string;
+  description: string;
+}
+
+interface Notification {
+  id: string;
+  message: string;
+  time: string;
+  type: 'info' | 'success' | 'warning';
+}
+
+interface DashboardData {
   stats: {
-    totalRequests: 12,
-    activeServices: 3,
-    completedServices: 9,
-    totalSpent: 85000, // EGP
-    pendingInvoices: 2,
-    overdueInvoices: 0
-  },
-  recentRequests: [
-    {
-      id: "REQ-001",
-      title: "حراسة أمنية للمكتب الرئيسي بالقاهرة",
-      status: "in_progress",
-      date: "2024-01-15",
-      priority: "high"
-    },
-    {
-      id: "REQ-002",
-      title: "تأمين فعالية بالإسكندرية",
-      status: "completed",
-      date: "2024-01-10",
-      priority: "medium"
-    },
-    {
-      id: "REQ-003",
-      title: "استشارة أمنية للمصنع الجديد",
-      status: "pending",
-      date: "2024-01-18",
-      priority: "low"
-    }
-  ],
-  recentInvoices: [
-    {
-      id: "INV-2024-001",
-      amount: 15000, // EGP
-      status: "paid",
-      dueDate: "2024-02-15"
-    },
-    {
-      id: "INV-2024-002",
-      amount: 8500, // EGP
-      status: "pending",
-      dueDate: "2024-02-20"
-    }
-  ],
-  notifications: [
-    {
-      id: 1,
-      message: "تم قبول طلب الخدمة REQ-001 للمكتب بالقاهرة الجديدة",
-      time: "منذ ساعتين",
-      type: "success"
-    },
-    {
-      id: 2,
-      message: "فاتورة جديدة بقيمة 8,500 ج.م متاحة للمراجعة",
-      time: "منذ 4 ساعات",
-      type: "info"
-    },
-    {
-      id: 3,
-      message: "انتهاء صلاحية تأمين الموقع بمدينة نصر",
-      time: "أمس",
-      type: "warning"
-    }
-  ]
+    totalServices: number;
+    activeRequests: number;
+    completedServices: number;
+    totalSpent: number;
+    pendingPayments: number;
+  };
+  recentRequests: ServiceRequest[];
+  recentInvoices: Invoice[];
+  notifications: Notification[];
+}
+
+// Helper functions
+const getStatusConfig = (status: string) => {
+  const configs = {
+    pending: { label: "قيد الانتظار", color: "bg-yellow-100 text-yellow-800", icon: Clock },
+    in_progress: { label: "قيد التنفيذ", color: "bg-blue-100 text-blue-800", icon: AlertCircle },
+    completed: { label: "مكتمل", color: "bg-green-100 text-green-800", icon: CheckCircle }
+  };
+  return configs[status as keyof typeof configs] || configs.pending;
 };
 
-const statusConfig = {
-  pending: { label: "قيد الانتظار", color: "bg-yellow-100 text-yellow-800", icon: Clock },
-  in_progress: { label: "قيد التنفيذ", color: "bg-blue-100 text-blue-800", icon: AlertCircle },
-  completed: { label: "مكتمل", color: "bg-green-100 text-green-800", icon: CheckCircle }
+const getPriorityConfig = (priority: string) => {
+  const configs = {
+    low: { label: "منخفض", color: "bg-gray-100 text-gray-800" },
+    medium: { label: "متوسط", color: "bg-blue-100 text-blue-800" },
+    high: { label: "عاجل", color: "bg-orange-100 text-orange-800" },
+    urgent: { label: "عاجل جداً", color: "bg-red-100 text-red-800" }
+  };
+  return configs[priority as keyof typeof configs] || configs.low;
 };
 
 export default function ClientDashboardPage() {
   const { user } = useAuth();
   const [currentTime, setCurrentTime] = useState(new Date());
+  const [dashboardData, setDashboardData] = useState<DashboardData | null>(null);
+  const [loading, setLoading] = useState(true);
+  const [error, setError] = useState<string | null>(null);
 
+  // Update time every minute for accurate display
   useEffect(() => {
-    const timer = setInterval(() => setCurrentTime(new Date()), 60000);
+    const timer = setInterval(() => {
+      setCurrentTime(new Date());
+    }, 60000);
+
     return () => clearInterval(timer);
   }, []);
 
-  const formatCurrency = (amount: number) => {
-    return new Intl.NumberFormat('ar-EG', {
-      style: 'currency',
-      currency: 'EGP'
-    }).format(amount);
+  // Fetch dashboard data from API
+  useEffect(() => {
+    const fetchDashboardData = async () => {
+      try {
+        const response = await fetch('/api/client/dashboard');
+        
+        if (!response.ok) {
+          throw new Error('Failed to fetch dashboard data');
+        }
+        
+        const data = await response.json();
+        setDashboardData(data);
+      } catch (error) {
+        console.error('Error fetching dashboard data:', error);
+        setError('Failed to load dashboard data');
+      } finally {
+        setLoading(false);
+      }
+    };
+
+    fetchDashboardData();
+  }, []);
+
+  const formatTime = (date: Date) => {
+    return new Intl.DateTimeFormat('ar-EG', {
+      weekday: 'long',
+      year: 'numeric',
+      month: 'long',
+      day: 'numeric',
+      hour: '2-digit',
+      minute: '2-digit'
+    }).format(date);
   };
 
-  const getGreeting = () => {
-    const hour = currentTime.getHours();
-    if (hour < 12) return "صباح الخير";
-    if (hour < 17) return "مساء الخير";
-    return "مساء الخير";
-  };
+  if (loading) {
+    return (
+      <div className="flex items-center justify-center min-h-[400px]">
+        <div className="text-center space-y-4">
+          <div className="animate-spin rounded-full h-12 w-12 border-b-2 border-blue-600 mx-auto"></div>
+          <p className="text-muted-foreground">جاري تحميل البيانات...</p>
+        </div>
+      </div>
+    );
+  }
+
+  if (error) {
+    return (
+      <div className="flex items-center justify-center min-h-[400px]">
+        <div className="text-center space-y-4">
+          <AlertCircle className="h-12 w-12 text-red-500 mx-auto" />
+          <div>
+            <h3 className="text-lg font-semibold text-red-700">خطأ في تحميل البيانات</h3>
+            <p className="text-muted-foreground">{error}</p>
+            <Button 
+              onClick={() => window.location.reload()} 
+              className="mt-4"
+              variant="outline"
+            >
+              إعادة تحميل
+            </Button>
+          </div>
+        </div>
+      </div>
+    );
+  }
+
+  if (!dashboardData) {
+    return (
+      <div className="flex items-center justify-center min-h-[400px]">
+        <div className="text-center space-y-4">
+          <AlertTriangle className="h-12 w-12 text-yellow-500 mx-auto" />
+          <p className="text-muted-foreground">لا توجد بيانات للعرض</p>
+        </div>
+      </div>
+    );
+  }
 
   return (
     <div className="space-y-6">
@@ -131,224 +188,206 @@ export default function ClientDashboardPage() {
         <div>
           <h1 className="text-3xl font-bold">لوحة التحكم الرئيسية</h1>
           <p className="text-muted-foreground mt-1">
-            {getGreeting()}، {user?.name || "عزيزي العميل"} - {currentTime.toLocaleDateString('ar-EG')}
+            مرحباً {user?.name || 'العميل'} - {formatTime(currentTime)}
           </p>
         </div>
-        <div className="flex gap-2">
-          <Button asChild>
-            <Link href="/client/requests">
-              <Plus className="h-4 w-4 mr-2" />
-              طلب خدمة جديدة
-            </Link>
-          </Button>
-        </div>
+        <Button className="flex items-center gap-2">
+          <Plus className="h-4 w-4" />
+          طلب خدمة جديدة
+        </Button>
       </div>
 
-      {/* Quick Stats */}
-      <div className="grid grid-cols-2 lg:grid-cols-4 gap-4">
-        <Card className="hover:shadow-md transition-shadow">
-          <CardContent className="pt-6">
-            <div className="flex items-center justify-between">
-              <div>
-                <p className="text-sm font-medium text-muted-foreground">إجمالي الطلبات</p>
-                <p className="text-3xl font-bold text-blue-600">{dashboardData.stats.totalRequests}</p>
-                <p className="text-xs text-muted-foreground mt-1">+2 هذا الشهر</p>
-              </div>
-              <div className="p-3 bg-blue-100 rounded-full">
-                <FileText className="h-6 w-6 text-blue-600" />
-              </div>
-            </div>
-          </CardContent>
-        </Card>
-
-        <Card className="hover:shadow-md transition-shadow">
-          <CardContent className="pt-6">
-            <div className="flex items-center justify-between">
-              <div>
-                <p className="text-sm font-medium text-muted-foreground">الخدمات النشطة</p>
-                <p className="text-3xl font-bold text-green-600">{dashboardData.stats.activeServices}</p>
-                <p className="text-xs text-muted-foreground mt-1">جاري التنفيذ</p>
-              </div>
-              <div className="p-3 bg-green-100 rounded-full">
-                <Activity className="h-6 w-6 text-green-600" />
-              </div>
-            </div>
-          </CardContent>
-        </Card>
-
-        <Card className="hover:shadow-md transition-shadow">
-          <CardContent className="pt-6">
-            <div className="flex items-center justify-between">
-              <div>
-                <p className="text-sm font-medium text-muted-foreground">إجمالي الإنفاق</p>
-                <p className="text-2xl font-bold text-purple-600">{formatCurrency(dashboardData.stats.totalSpent)}</p>
-                <p className="text-xs text-muted-foreground mt-1">هذا العام بالجنيه المصري</p>
-              </div>
-              <div className="p-3 bg-purple-100 rounded-full">
-                <DollarSign className="h-6 w-6 text-purple-600" />
-              </div>
-            </div>
-          </CardContent>
-        </Card>
-
-        <Card className="hover:shadow-md transition-shadow">
-          <CardContent className="pt-6">
-            <div className="flex items-center justify-between">
-              <div>
-                <p className="text-sm font-medium text-muted-foreground">الفواتير المعلقة</p>
-                <p className="text-3xl font-bold text-orange-600">{dashboardData.stats.pendingInvoices}</p>
-                <p className="text-xs text-muted-foreground mt-1">تحتاج دفع</p>
-              </div>
-              <div className="p-3 bg-orange-100 rounded-full">
-                <CreditCard className="h-6 w-6 text-orange-600" />
-              </div>
-            </div>
-          </CardContent>
-        </Card>
-      </div>
-
-      {/* Quick Actions */}
-      <Card>
-        <CardHeader>
-          <CardTitle className="flex items-center gap-2">
-            <Zap className="h-5 w-5" />
-            إجراءات سريعة
-          </CardTitle>
-        </CardHeader>
-        <CardContent>
-          <div className="grid grid-cols-2 md:grid-cols-4 gap-4">
-            <Button asChild variant="outline" className="h-auto p-4">
-              <Link href="/client/requests" className="flex flex-col items-center gap-2">
-                <Plus className="h-6 w-6" />
-                <span className="text-sm">طلب خدمة</span>
-              </Link>
-            </Button>
-            <Button asChild variant="outline" className="h-auto p-4">
-              <Link href="/client/tracking" className="flex flex-col items-center gap-2">
-                <Clock className="h-6 w-6" />
-                <span className="text-sm">تتبع الطلبات</span>
-              </Link>
-            </Button>
-            <Button asChild variant="outline" className="h-auto p-4">
-              <Link href="/client/invoices" className="flex flex-col items-center gap-2">
-                <CreditCard className="h-6 w-6" />
-                <span className="text-sm">الفواتير</span>
-              </Link>
-            </Button>
-            <Button asChild variant="outline" className="h-auto p-4">
-              <Link href="/client/profile" className="flex flex-col items-center gap-2">
-                <Users className="h-6 w-6" />
-                <span className="text-sm">الملف الشخصي</span>
-              </Link>
-            </Button>
-          </div>
-        </CardContent>
-      </Card>
-
-      <div className="grid grid-cols-1 lg:grid-cols-2 gap-6">
-        {/* Recent Requests */}
+      {/* Stats Overview */}
+      <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-5 gap-4">
         <Card>
-          <CardHeader className="flex flex-row items-center justify-between">
-            <div>
-              <CardTitle>الطلبات الأخيرة</CardTitle>
-              <CardDescription>آخر 3 طلبات خدمة</CardDescription>
+          <CardContent className="p-6">
+            <div className="flex items-center justify-between">
+              <div>
+                <p className="text-sm font-medium text-muted-foreground">إجمالي الخدمات</p>
+                <p className="text-2xl font-bold">{dashboardData.stats.totalServices}</p>
+              </div>
+              <ShieldCheck className="h-8 w-8 text-blue-600" />
             </div>
-            <Button asChild variant="ghost" size="sm">
-              <Link href="/client/tracking" className="flex items-center gap-1">
-                عرض الكل
-                <ArrowRight className="h-4 w-4" />
-              </Link>
-            </Button>
+          </CardContent>
+        </Card>
+
+        <Card>
+          <CardContent className="p-6">
+            <div className="flex items-center justify-between">
+              <div>
+                <p className="text-sm font-medium text-muted-foreground">الطلبات النشطة</p>
+                <p className="text-2xl font-bold">{dashboardData.stats.activeRequests}</p>
+              </div>
+              <Activity className="h-8 w-8 text-orange-600" />
+            </div>
+          </CardContent>
+        </Card>
+
+        <Card>
+          <CardContent className="p-6">
+            <div className="flex items-center justify-between">
+              <div>
+                <p className="text-sm font-medium text-muted-foreground">الخدمات المكتملة</p>
+                <p className="text-2xl font-bold">{dashboardData.stats.completedServices}</p>
+              </div>
+              <CheckCircle className="h-8 w-8 text-green-600" />
+            </div>
+          </CardContent>
+        </Card>
+
+        <Card>
+          <CardContent className="p-6">
+            <div className="flex items-center justify-between">
+              <div>
+                <p className="text-sm font-medium text-muted-foreground">إجمالي المبلغ المدفوع</p>
+                <p className="text-2xl font-bold">{formatEGPSimple(dashboardData.stats.totalSpent)}</p>
+              </div>
+              <DollarSign className="h-8 w-8 text-green-600" />
+            </div>
+          </CardContent>
+        </Card>
+
+        <Card>
+          <CardContent className="p-6">
+            <div className="flex items-center justify-between">
+              <div>
+                <p className="text-sm font-medium text-muted-foreground">المدفوعات المعلقة</p>
+                <p className="text-2xl font-bold">{formatEGPSimple(dashboardData.stats.pendingPayments)}</p>
+              </div>
+              <Clock className="h-8 w-8 text-yellow-600" />
+            </div>
+          </CardContent>
+        </Card>
+      </div>
+
+      {/* Recent Activity Grid */}
+      <div className="grid grid-cols-1 lg:grid-cols-2 gap-6">
+        {/* Recent Service Requests */}
+        <Card>
+          <CardHeader>
+            <CardTitle className="flex items-center gap-2">
+              <ClipboardList className="h-5 w-5" />
+              طلبات الخدمة الأخيرة
+            </CardTitle>
           </CardHeader>
-          <CardContent className="space-y-4">
-            {dashboardData.recentRequests.map((request) => {
-              const StatusIcon = statusConfig[request.status as keyof typeof statusConfig].icon;
-              return (
-                <div key={request.id} className="flex items-center justify-between p-3 border rounded-lg hover:bg-muted/50 transition-colors">
-                  <div className="flex-1">
-                    <div className="flex items-center gap-2 mb-1">
-                      <h4 className="font-medium">{request.title}</h4>
-                      <Badge className={statusConfig[request.status as keyof typeof statusConfig].color}>
-                        <StatusIcon className="h-3 w-3 mr-1" />
-                        {statusConfig[request.status as keyof typeof statusConfig].label}
-                      </Badge>
+          <CardContent>
+            <div className="space-y-3">
+              {dashboardData.recentRequests.length > 0 ? (
+                dashboardData.recentRequests.map((request) => {
+                  const statusConfig = getStatusConfig(request.status);
+                  const priorityConfig = getPriorityConfig(request.priority);
+                  const StatusIcon = statusConfig.icon;
+                  
+                  return (
+                    <div key={request.id} className="flex items-center justify-between p-3 border rounded-lg hover:bg-muted/50 transition-colors">
+                      <div className="flex items-center gap-3">
+                        <StatusIcon className="h-4 w-4" />
+                        <div>
+                          <p className="font-medium">{request.title}</p>
+                          <p className="text-xs text-muted-foreground">
+                            {new Date(request.createdAt).toLocaleDateString('ar-EG')}
+                          </p>
+                        </div>
+                      </div>
+                      <div className="flex items-center gap-2">
+                        <Badge variant="outline" className={priorityConfig.color}>
+                          {priorityConfig.label}
+                        </Badge>
+                        <Badge variant="outline" className={statusConfig.color}>
+                          {statusConfig.label}
+                        </Badge>
+                      </div>
                     </div>
-                    <p className="text-sm text-muted-foreground">{request.id} • {request.date}</p>
-                  </div>
-                  <Button variant="ghost" size="sm">
-                    عرض
-                  </Button>
-                </div>
-              );
-            })}
+                  );
+                })
+              ) : (
+                <p className="text-center text-muted-foreground py-6">لا توجد طلبات خدمة حديثة</p>
+              )}
+            </div>
           </CardContent>
         </Card>
 
         {/* Recent Invoices */}
         <Card>
-          <CardHeader className="flex flex-row items-center justify-between">
-            <div>
-              <CardTitle>الفواتير الأخيرة</CardTitle>
-              <CardDescription>آخر الفواتير والمدفوعات</CardDescription>
-            </div>
-            <Button asChild variant="ghost" size="sm">
-              <Link href="/client/invoices" className="flex items-center gap-1">
-                عرض الكل
-                <ArrowRight className="h-4 w-4" />
-              </Link>
-            </Button>
+          <CardHeader>
+            <CardTitle className="flex items-center gap-2">
+              <Receipt className="h-5 w-5" />
+              الفواتير الأخيرة
+            </CardTitle>
           </CardHeader>
-          <CardContent className="space-y-4">
-            {dashboardData.recentInvoices.map((invoice) => (
-              <div key={invoice.id} className="flex items-center justify-between p-3 border rounded-lg hover:bg-muted/50 transition-colors">
-                <div className="flex-1">
-                  <div className="flex items-center gap-2 mb-1">
-                    <h4 className="font-medium">{invoice.id}</h4>
-                    <Badge className={invoice.status === 'paid' ? 'bg-green-100 text-green-800' : 'bg-yellow-100 text-yellow-800'}>
-                      {invoice.status === 'paid' ? 'مدفوعة' : 'قيد الانتظار'}
-                    </Badge>
+          <CardContent>
+            <div className="space-y-3">
+              {dashboardData.recentInvoices.length > 0 ? (
+                dashboardData.recentInvoices.map((invoice) => (
+                  <div key={invoice.id} className="flex items-center justify-between p-3 border rounded-lg hover:bg-muted/50 transition-colors">
+                    <div className="flex items-center gap-3">
+                      <Receipt className="h-4 w-4" />
+                      <div>
+                        <p className="font-medium">{invoice.invoiceNumber}</p>
+                        <p className="text-sm text-muted-foreground">{invoice.description}</p>
+                        <p className="text-xs text-muted-foreground">
+                          استحقاق: {new Date(invoice.dueDate).toLocaleDateString('ar-EG')}
+                        </p>
+                      </div>
+                    </div>
+                    <div className="text-right">
+                      <p className="font-bold">{formatEGPSimple(invoice.amount)}</p>
+                      <Badge 
+                        variant="outline" 
+                        className={
+                          invoice.status === 'paid' ? 'bg-green-100 text-green-800' :
+                          invoice.status === 'overdue' ? 'bg-red-100 text-red-800' :
+                          'bg-yellow-100 text-yellow-800'
+                        }
+                      >
+                        {invoice.status === 'paid' ? 'مدفوع' : 
+                         invoice.status === 'overdue' ? 'متأخر' : 'معلق'}
+                      </Badge>
+                    </div>
                   </div>
-                  <p className="text-sm text-muted-foreground">استحقاق: {invoice.dueDate}</p>
-                </div>
-                <div className="text-right">
-                  <p className="font-bold">{formatCurrency(invoice.amount)}</p>
-                  {invoice.status === 'pending' && (
-                    <Button variant="outline" size="sm" className="mt-1">
-                      دفع الآن
-                    </Button>
-                  )}
-                </div>
-              </div>
-            ))}
+                ))
+              ) : (
+                <p className="text-center text-muted-foreground py-6">لا توجد فواتير حديثة</p>
+              )}
+            </div>
           </CardContent>
         </Card>
       </div>
 
-      {/* Performance Overview */}
+      {/* Performance Metrics */}
       <Card>
         <CardHeader>
           <CardTitle className="flex items-center gap-2">
             <BarChart3 className="h-5 w-5" />
-            نظرة عامة على الأداء
+            ملخص الأداء
           </CardTitle>
         </CardHeader>
         <CardContent>
           <div className="grid grid-cols-1 md:grid-cols-3 gap-6">
             <div className="space-y-3">
               <div className="flex justify-between text-sm">
-                <span>معدل إنجاز الطلبات</span>
-                <span className="font-medium">85%</span>
+                <span>نسبة إكمال الخدمات</span>
+                <span className="font-medium">
+                  {dashboardData.stats.totalServices > 0 
+                    ? Math.round((dashboardData.stats.completedServices / dashboardData.stats.totalServices) * 100)
+                    : 0}%
+                </span>
               </div>
-              <Progress value={85} className="h-2" />
-              <p className="text-xs text-muted-foreground">9 من 12 طلب مكتمل</p>
+              <Progress 
+                value={dashboardData.stats.totalServices > 0 
+                  ? (dashboardData.stats.completedServices / dashboardData.stats.totalServices) * 100
+                  : 0} 
+                className="h-2" 
+              />
+              <p className="text-xs text-muted-foreground">أداء ممتاز</p>
             </div>
             
             <div className="space-y-3">
               <div className="flex justify-between text-sm">
-                <span>الدفع في الوقت المحدد</span>
-                <span className="font-medium">92%</span>
+                <span>الفواتير المدفوعة</span>
+                <span className="font-medium">95%</span>
               </div>
-              <Progress value={92} className="h-2" />
+              <Progress value={95} className="h-2" />
               <p className="text-xs text-muted-foreground">لا توجد متأخرات</p>
             </div>
             

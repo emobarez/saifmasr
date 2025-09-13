@@ -27,6 +27,8 @@ import {
   Loader2
 } from "lucide-react";
 import Link from "next/link";
+import { useRouter } from "next/navigation";
+import { toast } from "@/hooks/use-toast";
 
 interface Client {
   id: string;
@@ -42,6 +44,7 @@ interface Client {
 }
 
 export default function AdminClientsPage() {
+  const router = useRouter();
   const [searchTerm, setSearchTerm] = useState("");
   const [clients, setClients] = useState<Client[]>([]);
   const [loading, setLoading] = useState(true);
@@ -64,22 +67,6 @@ export default function AdminClientsPage() {
       } catch (err) {
         console.error('Error fetching clients:', err);
         setError('Failed to load clients');
-        
-        // Fallback to mock data
-        setClients([
-          {
-            id: "1",
-            name: "أحمد محمد العلي",
-            email: "ahmed@company.com",
-            phone: "+20101234567",
-            company: "شركة الأمان التجارية",
-            location: "الرياض",
-            status: 'ACTIVE',
-            createdAt: "2024-01-15",
-            lastActivity: "2024-12-01",
-            totalServices: 3
-          }
-        ]);
       } finally {
         setLoading(false);
       }
@@ -104,6 +91,51 @@ export default function AdminClientsPage() {
         return <Badge className="bg-orange-100 text-orange-800">معلق</Badge>;
       default:
         return <Badge variant="outline">{status}</Badge>;
+    }
+  };
+
+  // Handler functions for table actions
+  const handleViewClient = (client: Client) => {
+    // Navigate to client detail page
+    router.push(`/admin/clients/${client.id}`);
+  };
+
+  const handleEditClient = (client: Client) => {
+    // Navigate to client edit page
+    router.push(`/admin/clients/${client.id}/edit`);
+  };
+
+  const handleDeleteClient = async (client: Client) => {
+    if (!confirm(`هل أنت متأكد من حذف العميل "${client.name}"؟ هذا الإجراء لا يمكن التراجع عنه.`)) {
+      return;
+    }
+
+    try {
+      const response = await fetch(`/api/clients/${client.id}`, {
+        method: 'DELETE',
+        headers: {
+          'Content-Type': 'application/json',
+        },
+      });
+
+      if (response.ok) {
+        toast({
+          title: "تم حذف العميل",
+          description: `تم حذف العميل "${client.name}" بنجاح`,
+        });
+        
+        // Remove client from local state
+        setClients(clients.filter(c => c.id !== client.id));
+      } else {
+        throw new Error('Failed to delete client');
+      }
+    } catch (error) {
+      console.error('Error deleting client:', error);
+      toast({
+        title: "خطأ في الحذف",
+        description: "تعذر حذف العميل. يرجى المحاولة مرة أخرى.",
+        variant: "destructive",
+      });
     }
   };
 
@@ -313,13 +345,31 @@ export default function AdminClientsPage() {
                   </TableCell>
                   <TableCell className="min-w-[120px]">
                     <div className="flex items-center space-x-1 space-x-reverse">
-                      <Button variant="ghost" size="sm" className="h-8 w-8 p-0">
+                      <Button 
+                        variant="ghost" 
+                        size="sm" 
+                        className="h-8 w-8 p-0 text-blue-600 hover:text-blue-700 hover:bg-blue-50"
+                        onClick={() => handleViewClient(client)}
+                        title="عرض تفاصيل العميل"
+                      >
                         <Eye className="h-4 w-4" />
                       </Button>
-                      <Button variant="ghost" size="sm" className="h-8 w-8 p-0">
+                      <Button 
+                        variant="ghost" 
+                        size="sm" 
+                        className="h-8 w-8 p-0 text-orange-600 hover:text-orange-700 hover:bg-orange-50"
+                        onClick={() => handleEditClient(client)}
+                        title="تعديل بيانات العميل"
+                      >
                         <Edit3 className="h-4 w-4" />
                       </Button>
-                      <Button variant="ghost" size="sm" className="h-8 w-8 p-0 text-red-600 hover:text-red-800">
+                      <Button 
+                        variant="ghost" 
+                        size="sm" 
+                        className="h-8 w-8 p-0 text-red-600 hover:text-red-800 hover:bg-red-50"
+                        onClick={() => handleDeleteClient(client)}
+                        title="حذف العميل"
+                      >
                         <Trash2 className="h-4 w-4" />
                       </Button>
                     </div>

@@ -1,6 +1,3 @@
-// This is your Prisma schema file,
-// learn more about it in the docs: https://pris.ly/d/prisma-schema
-
 generator client {
   provider = "prisma-client-js"
 }
@@ -16,15 +13,14 @@ model Account {
   type              String
   provider          String
   providerAccountId String
-  refresh_token     String? @db.Text
-  access_token      String? @db.Text
+  refresh_token     String?
+  access_token      String?
   expires_at        Int?
   token_type        String?
   scope             String?
-  id_token          String? @db.Text
+  id_token          String?
   session_state     String?
-
-  user User @relation(fields: [userId], references: [id], onDelete: Cascade)
+  user              User    @relation(fields: [userId], references: [id], onDelete: Cascade)
 
   @@unique([provider, providerAccountId])
 }
@@ -38,22 +34,21 @@ model Session {
 }
 
 model User {
-  id            String    @id @default(cuid())
-  name          String?
-  email         String    @unique
-  emailVerified DateTime?
-  image         String?
-  password      String?
-  role          Role      @default(CLIENT)
-  status        UserStatus @default(ACTIVE)
-  createdAt     DateTime  @default(now())
-  updatedAt     DateTime  @updatedAt
-  
-  accounts      Account[]
-  sessions      Session[]
+  id              String           @id @default(cuid())
+  name            String?
+  email           String           @unique
+  emailVerified   DateTime?
+  image           String?
+  role            Role             @default(CLIENT)
+  status          UserStatus       @default(ACTIVE)
+  createdAt       DateTime         @default(now())
+  updatedAt       DateTime         @updatedAt
+  password        String?
+  accounts        Account[]
+  activityLogs    ActivityLog[]
+  invoices        Invoice[]
   serviceRequests ServiceRequest[]
-  invoices      Invoice[]
-  activityLogs  ActivityLog[]
+  sessions        Session[]
 }
 
 model VerificationToken {
@@ -65,17 +60,16 @@ model VerificationToken {
 }
 
 model Service {
-  id          String   @id @default(cuid())
-  name        String
-  description String?
-  category    String?
-  price       Float?
-  status      ServiceStatus @default(ACTIVE)
-  createdAt   DateTime @default(now())
-  updatedAt   DateTime @updatedAt
-  
+  id              String           @id @default(cuid())
+  name            String
+  description     String?
+  category        String?
+  price           Float?
+  status          ServiceStatus    @default(ACTIVE)
+  createdAt       DateTime         @default(now())
+  updatedAt       DateTime         @updatedAt
+  faqs            ServiceFAQ[]
   serviceRequests ServiceRequest[]
-  faqs        ServiceFAQ[]
 }
 
 model ServiceFAQ {
@@ -86,78 +80,73 @@ model ServiceFAQ {
   order     Int      @default(0)
   createdAt DateTime @default(now())
   updatedAt DateTime @updatedAt
-  
-  service   Service @relation(fields: [serviceId], references: [id], onDelete: Cascade)
+  service   Service  @relation(fields: [serviceId], references: [id], onDelete: Cascade)
 }
 
 model ServiceRequest {
-  id          String   @id @default(cuid())
-  userId      String
-  serviceId   String
-  title       String
-  description String
-  status      ServiceRequestStatus @default(PENDING)
-  priority    Priority @default(MEDIUM)
+  id            String               @id @default(cuid())
+  userId        String
+  serviceId     String
+  title         String
+  description   String
+  status        ServiceRequestStatus @default(PENDING)
+  priority      Priority             @default(MEDIUM)
   attachmentUrl String?
-  createdAt   DateTime @default(now())
-  updatedAt   DateTime @updatedAt
-  
-  user        User     @relation(fields: [userId], references: [id], onDelete: Cascade)
-  service     Service  @relation(fields: [serviceId], references: [id], onDelete: Cascade)
-  invoices    Invoice[] // One service request can have multiple invoices
+  createdAt     DateTime             @default(now())
+  updatedAt     DateTime             @updatedAt
+  invoices      Invoice[]
+  service       Service              @relation(fields: [serviceId], references: [id], onDelete: Cascade)
+  user          User                 @relation(fields: [userId], references: [id], onDelete: Cascade)
 }
 
 model Employee {
-  id          String   @id @default(cuid())
+  id          String         @id @default(cuid())
   name        String
-  email       String   @unique
+  email       String         @unique
   phone       String?
   position    String
   department  String?
   salary      Float?
   status      EmployeeStatus @default(ACTIVE)
   hireDate    DateTime
-  createdAt   DateTime @default(now())
-  updatedAt   DateTime @updatedAt
-  
+  createdAt   DateTime       @default(now())
+  updatedAt   DateTime       @updatedAt
   assignments Assignment[]
 }
 
 model Assignment {
-  id          String   @id @default(cuid())
+  id          String           @id @default(cuid())
   employeeId  String
   title       String
   description String?
   status      AssignmentStatus @default(PENDING)
-  priority    Priority @default(MEDIUM)
+  priority    Priority         @default(MEDIUM)
   startDate   DateTime?
   endDate     DateTime?
-  createdAt   DateTime @default(now())
-  updatedAt   DateTime @updatedAt
-  
-  employee    Employee @relation(fields: [employeeId], references: [id], onDelete: Cascade)
+  createdAt   DateTime         @default(now())
+  updatedAt   DateTime         @updatedAt
+  employee    Employee         @relation(fields: [employeeId], references: [id], onDelete: Cascade)
 }
 
 model Invoice {
-  id               String   @id @default(cuid())
+  id               String          @id @default(cuid())
   userId           String
   clientId         String
-  serviceRequestId String?  // Optional link to service request
-  invoiceNumber    String   @unique
-  amount           Float    // Amount in Egyptian Pounds (EGP)
-  currency         String   @default("EGP")
-  status           InvoiceStatus @default(PENDING)
+  amount           Float
+  status           InvoiceStatus   @default(PENDING)
   dueDate          DateTime?
   description      String?
-  taxAmount        Float?   @default(0)
-  totalAmount      Float    // amount + taxAmount
-  paymentMethod    String?
+  createdAt        DateTime        @default(now())
+  updatedAt        DateTime        @updatedAt
+  currency         String          @default("EGP")
+  invoiceNumber    String          @unique
   paidAt           DateTime?
-  createdAt        DateTime @default(now())
-  updatedAt        DateTime @updatedAt
-  
-  user             User     @relation(fields: [userId], references: [id], onDelete: Cascade)
-  serviceRequest   ServiceRequest? @relation(fields: [serviceRequestId], references: [id], onDelete: SetNull)
+  paymentMethod    String?
+  taxAmount        Float?          @default(0)
+  totalAmount      Float
+  serviceRequestId String?
+  serviceRequest   ServiceRequest? @relation(fields: [serviceRequestId], references: [id])
+  user             User            @relation(fields: [userId], references: [id], onDelete: Cascade)
   items            InvoiceItem[]
 }
 
@@ -166,27 +155,26 @@ model InvoiceItem {
   invoiceId   String
   description String
   quantity    Int      @default(1)
-  unitPrice   Float    // Unit price in EGP
-  totalPrice  Float    // quantity * unitPrice
+  unitPrice   Float
+  totalPrice  Float
   createdAt   DateTime @default(now())
-  
   invoice     Invoice  @relation(fields: [invoiceId], references: [id], onDelete: Cascade)
 }
 
 model Report {
-  id          String   @id @default(cuid())
-  title       String
-  content     String
-  summary     String?
-  status      ReportStatus @default(DRAFT)
-  type        String?
-  clientId    String?
-  serviceId   String?
-  employeeId  String?
-  startDate   DateTime?
-  endDate     DateTime?
-  createdAt   DateTime @default(now())
-  updatedAt   DateTime @updatedAt
+  id         String       @id @default(cuid())
+  title      String
+  content    String
+  status     ReportStatus @default(DRAFT)
+  type       String?
+  createdAt  DateTime     @default(now())
+  updatedAt  DateTime     @updatedAt
+  clientId   String?
+  employeeId String?
+  endDate    DateTime?
+  serviceId  String?
+  startDate  DateTime?
+  summary    String?
 }
 
 model ActivityLog {
@@ -196,48 +184,39 @@ model ActivityLog {
   description String
   metadata    Json?
   createdAt   DateTime @default(now())
-  
-  user        User?    @relation(fields: [userId], references: [id], onDelete: SetNull)
+  user        User?    @relation(fields: [userId], references: [id])
 }
 
 model SystemSettings {
-  id                    String   @id @default("general")
-  portalName           String   @default("سيف مصر الوطنية للأمن")
-  maintenanceMode      Boolean  @default(false)
-  adminEmail           String   @default("admin@saifmasr.com")
-  companyPhone         String?
-  companyAddress       String?
-  publicEmail          String?
-  
-  // Egyptian localization
-  currency             String   @default("EGP")
-  locale               String   @default("ar-EG")
-  timezone             String   @default("Africa/Cairo")
-  taxRate              Float    @default(14.0) // Egyptian VAT rate
-  
-  // Theme settings
-  themeBackgroundLight String?
-  themeForegroundLight String?
-  themePrimaryLight    String?
+  id                          String   @id @default("general")
+  portalName                  String   @default("سيف مصر الوطنية للأمن")
+  maintenanceMode             Boolean  @default(false)
+  adminEmail                  String   @default("admin@saifmasr.com")
+  companyPhone                String?
+  companyAddress              String?
+  publicEmail                 String?
+  themeBackgroundLight        String?
+  themeForegroundLight        String?
+  themePrimaryLight           String?
   themePrimaryForegroundLight String?
-  themeAccentLight     String?
-  themeAccentForegroundLight String?
-  
-  themeBackgroundDark  String?
-  themeForegroundDark  String?
-  themePrimaryDark     String?
-  themePrimaryForegroundDark String?
-  themeAccentDark      String?
-  themeAccentForegroundDark String?
-  
-  // Social links
-  facebookUrl          String?
-  twitterUrl           String?
-  linkedinUrl          String?
-  instagramUrl         String?
-  
-  createdAt           DateTime @default(now())
-  updatedAt           DateTime @updatedAt
+  themeAccentLight            String?
+  themeAccentForegroundLight  String?
+  themeBackgroundDark         String?
+  themeForegroundDark         String?
+  themePrimaryDark            String?
+  themePrimaryForegroundDark  String?
+  themeAccentDark             String?
+  themeAccentForegroundDark   String?
+  facebookUrl                 String?
+  twitterUrl                  String?
+  linkedinUrl                 String?
+  instagramUrl                String?
+  createdAt                   DateTime @default(now())
+  updatedAt                   DateTime @updatedAt
+  currency                    String   @default("EGP")
+  locale                      String   @default("ar-EG")
+  taxRate                     Float    @default(14.0)
+  timezone                    String   @default("Africa/Cairo")
 }
 
 enum EmployeeStatus {

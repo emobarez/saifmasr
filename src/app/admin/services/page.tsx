@@ -26,11 +26,15 @@ import {
   Clock,
   AlertTriangle,
   Camera,
-  UserCheck
+  UserCheck,
+  Trash2,
+  ToggleLeft,
+  ToggleRight
 } from "lucide-react";
 import Link from "next/link";
 import { toast } from "@/hooks/use-toast";
 import { formatEGPSimple } from "@/lib/egyptian-utils";
+import { useRouter } from "next/navigation";
 
 interface Service {
   id: string;
@@ -45,70 +49,99 @@ interface Service {
 }
 
 export default function AdminServicesPage() {
+  const router = useRouter();
   const [loading, setLoading] = useState(true);
   const [refreshing, setRefreshing] = useState(false);
   const [services, setServices] = useState<Service[]>([]);
   const [searchTerm, setSearchTerm] = useState("");
   const [statusFilter, setStatusFilter] = useState<string>("all");
 
-  // Mock data for demonstration
-  const mockServices: Service[] = [
-    {
-      id: "1",
-      name: "خدمة الحراسة الشخصية",
-      description: "حراسة وحماية الشخصيات المهمة على مدار الساعة",
-      category: "حماية شخصية",
-      price: 15000,
-      status: 'active',
-      createdDate: "2024-01-15",
-      duration: "شهري",
-      clients: 25
-    },
-    {
-      id: "2",
-      name: "أنظمة المراقبة المتطورة",
-      description: "تركيب وصيانة أنظمة المراقبة وكاميرات الأمان",
-      category: "مراقبة",
-      price: 12000,
-      status: 'active',
-      createdDate: "2024-01-10",
-      duration: "سنوي",
-      clients: 35
-    },
-    {
-      id: "3",
-      name: "أمن المباني والمنشآت",
-      description: "حراسة وتأمين المباني والمجمعات التجارية",
-      category: "أمن مباني",
-      price: 8000,
-      status: 'active',
-      createdDate: "2024-01-05",
-      duration: "شهري",
-      clients: 18
-    },
-    {
-      id: "4",
-      name: "التدريب الأمني المتخصص",
-      description: "برامج تدريبية شاملة في الأمن والحماية",
-      category: "تدريب",
-      price: 5000,
-      status: 'active',
-      createdDate: "2024-01-20",
-      duration: "دورة",
-      clients: 12
-    },
-    {
-      id: "5",
-      name: "الاستشارات الأمنية",
-      description: "تقييم المخاطر ووضع الخطط الأمنية",
-      category: "استشارات",
-      price: 7500,
-      status: 'draft',
-      createdDate: "2024-01-25",
-      duration: "مشروع",
-      clients: 0
+  // Handler functions for table actions
+  const handleViewService = (service: Service) => {
+    // Navigate to service detail page
+    router.push(`/admin/services/${service.id}`);
+  };
+
+  const handleEditService = (service: Service) => {
+    // Navigate to service edit page
+    router.push(`/admin/services/${service.id}/edit`);
+  };
+
+  const handleDeleteService = async (service: Service) => {
+    if (!confirm(`هل أنت متأكد من حذف الخدمة "${service.name}"؟ هذا الإجراء لا يمكن التراجع عنه.`)) {
+      return;
     }
-  ];
+
+    try {
+      const response = await fetch(`/api/services/${service.id}`, {
+        method: 'DELETE',
+        headers: {
+          'Content-Type': 'application/json',
+        },
+      });
+
+      if (response.ok) {
+        toast({
+          title: "تم حذف الخدمة",
+          description: `تم حذف الخدمة "${service.name}" بنجاح`,
+        });
+        
+        // Remove service from local state
+        setServices(services.filter(s => s.id !== service.id));
+      } else {
+        throw new Error('Failed to delete service');
+      }
+    } catch (error) {
+      console.error('Error deleting service:', error);
+      toast({
+        title: "خطأ في الحذف",
+        description: "تعذر حذف الخدمة. يرجى المحاولة مرة أخرى.",
+        variant: "destructive",
+      });
+    }
+  };
+
+  const handleToggleServiceStatus = async (service: Service) => {
+    const newStatus = service.status === 'active' ? 'inactive' : 'active';
+    
+    try {
+      const response = await fetch(`/api/services/${service.id}`, {
+        method: 'PATCH',
+        headers: {
+          'Content-Type': 'application/json',
+        },
+        body: JSON.stringify({
+          status: newStatus
+        }),
+      });
+
+      if (response.ok) {
+        toast({
+          title: "تم تحديث حالة الخدمة",
+          description: `تم تغيير حالة الخدمة إلى ${newStatus === 'active' ? 'نشط' : 'غير نشط'}`,
+        });
+        
+        // Update service status in local state
+        setServices(services.map(s => 
+          s.id === service.id 
+            ? { ...s, status: newStatus as 'active' | 'inactive' | 'draft' }
+            : s
+        ));
+      } else {
+        throw new Error('Failed to update service status');
+      }
+    } catch (error) {
+      console.error('Error updating service status:', error);
+      toast({
+        title: "خطأ في التحديث",
+        description: "تعذر تحديث حالة الخدمة. يرجى المحاولة مرة أخرى.",
+        variant: "destructive",
+      });
+    }
+  };
+
+  // Removed mock data - using real database only
+  const [error, setError] = useState<string | null>(null);
 
   // Fetch services from API
   const fetchServices = async () => {
@@ -130,11 +163,11 @@ export default function AdminServicesPage() {
         }));
         setServices(mappedServices);
       } else {
-        setServices(mockServices);
+        setError('No services data available');
       }
     } catch (error) {
       console.error('Error fetching services:', error);
-      setServices(mockServices);
+      setError('Failed to load services');
     } finally {
       setLoading(false);
     }
@@ -392,11 +425,51 @@ export default function AdminServicesPage() {
                   </TableCell>
                   <TableCell className="min-w-[100px]">
                     <div className="flex items-center gap-1">
-                      <Button variant="ghost" size="sm" className="h-8 w-8 p-0">
+                      <Button 
+                        variant="ghost" 
+                        size="sm" 
+                        className="h-8 w-8 p-0 text-blue-600 hover:text-blue-700 hover:bg-blue-50"
+                        onClick={() => handleViewService(service)}
+                        title="عرض تفاصيل الخدمة"
+                      >
                         <Eye className="h-4 w-4" />
                       </Button>
-                      <Button variant="ghost" size="sm" className="h-8 w-8 p-0">
+                      <Button 
+                        variant="ghost" 
+                        size="sm" 
+                        className="h-8 w-8 p-0 text-orange-600 hover:text-orange-700 hover:bg-orange-50"
+                        onClick={() => handleEditService(service)}
+                        title="تعديل الخدمة"
+                      >
                         <Edit className="h-4 w-4" />
+                      </Button>
+                      {service.status !== 'draft' && (
+                        <Button 
+                          variant="ghost" 
+                          size="sm" 
+                          className={`h-8 w-8 p-0 ${
+                            service.status === 'active' 
+                              ? 'text-red-600 hover:text-red-700 hover:bg-red-50' 
+                              : 'text-green-600 hover:text-green-700 hover:bg-green-50'
+                          }`}
+                          onClick={() => handleToggleServiceStatus(service)}
+                          title={service.status === 'active' ? 'إيقاف الخدمة' : 'تفعيل الخدمة'}
+                        >
+                          {service.status === 'active' ? (
+                            <ToggleRight className="h-4 w-4" />
+                          ) : (
+                            <ToggleLeft className="h-4 w-4" />
+                          )}
+                        </Button>
+                      )}
+                      <Button 
+                        variant="ghost" 
+                        size="sm" 
+                        className="h-8 w-8 p-0 text-red-600 hover:text-red-800 hover:bg-red-50"
+                        onClick={() => handleDeleteService(service)}
+                        title="حذف الخدمة"
+                      >
+                        <Trash2 className="h-4 w-4" />
                       </Button>
                     </div>
                   </TableCell>
