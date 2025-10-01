@@ -249,7 +249,7 @@ export default function ClientRequestsPage() {
               <h3 className="font-semibold text-green-800 mb-2">📞 التواصل المباشر</h3>
               <p className="text-sm text-green-700">
                 للطوارئ: 122<br />
-                خدمة العملاء: +20 2 1234 5678<br />
+                خدمة العملاء: 01119224091<br />
                 البريد الإلكتروني: support@saifmasr.com
               </p>
             </div>

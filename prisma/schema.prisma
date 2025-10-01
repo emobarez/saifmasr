@@ -5,6 +5,7 @@ generator client {
 datasource db {
   provider = "postgresql"
   url      = env("DATABASE_URL")
+  directUrl = env("DIRECT_URL")
 }
 
 model Account {
@@ -44,6 +45,18 @@ model User {
   createdAt       DateTime         @default(now())
   updatedAt       DateTime         @updatedAt
   password        String?
+  // Client profile fields
+  phone           String?
+  address         String?
+  company         String?
+  position        String?
+  // Notification preferences
+  notificationsEmail  Boolean @default(true)
+  notificationsSms    Boolean @default(true)
+  notificationsSystem Boolean @default(true)
+  // Two-factor authentication (TOTP)
+  twoFactorEnabled    Boolean @default(false)
+  twoFactorSecret     String?
   accounts        Account[]
   activityLogs    ActivityLog[]
   invoices        Invoice[]

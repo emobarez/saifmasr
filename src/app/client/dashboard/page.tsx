@@ -1,6 +1,7 @@
 "use client";
 
 import { useState, useEffect } from "react";
+import { useRouter } from "next/navigation";
 import { Card, CardHeader, CardTitle, CardDescription, CardContent } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
 import { Badge } from "@/components/ui/badge";
@@ -90,6 +91,7 @@ const getPriorityConfig = (priority: string) => {
 
 export default function ClientDashboardPage() {
   const { user } = useAuth();
+  const router = useRouter();
   const [currentTime, setCurrentTime] = useState(new Date());
   const [dashboardData, setDashboardData] = useState<DashboardData | null>(null);
   const [loading, setLoading] = useState(true);
@@ -191,7 +193,7 @@ export default function ClientDashboardPage() {
             مرحباً {user?.name || 'العميل'} - {formatTime(currentTime)}
           </p>
         </div>
-        <Button className="flex items-center gap-2">
+        <Button className="flex items-center gap-2" onClick={() => router.push('/client/requests')}>
           <Plus className="h-4 w-4" />
           طلب خدمة جديدة
         </Button>

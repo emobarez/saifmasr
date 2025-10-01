@@ -33,34 +33,44 @@ export async function GET() {
       take: 10
     });
 
-    // Calculate stats
+    // Calculate stats matching the UI schema
+    const totalServices = serviceRequests.length;
+    const activeRequests = serviceRequests.filter(r => r.status === 'PENDING' || r.status === 'IN_PROGRESS').length;
+    const completedServices = serviceRequests.filter(r => r.status === 'COMPLETED').length;
+    const totalSpent = invoices
+      .filter(i => i.status === 'PAID')
+      .reduce((sum, i) => sum + (i.totalAmount ?? 0), 0);
+    const pendingPayments = invoices
+      .filter(i => i.status === 'PENDING')
+      .reduce((sum, i) => sum + (i.totalAmount ?? 0), 0);
+
     const stats = {
-      totalRequests: serviceRequests.length,
-      activeServices: serviceRequests.filter(r => r.status === 'IN_PROGRESS').length,
-      completedServices: serviceRequests.filter(r => r.status === 'COMPLETED').length,
-      totalSpent: invoices.filter(i => i.status === 'PAID').reduce((sum, i) => sum + i.totalAmount, 0),
-      pendingInvoices: invoices.filter(i => i.status === 'PENDING').length,
-      overdueInvoices: invoices.filter(i => i.status === 'OVERDUE').length
+      totalServices,
+      activeRequests,
+      completedServices,
+      totalSpent,
+      pendingPayments,
     };
 
     // Get recent activities (last 5 service requests)
     const recentRequests = serviceRequests.slice(0, 5).map(request => ({
       id: request.id,
       title: request.title,
-      status: request.status.toLowerCase(),
-      date: request.createdAt.toISOString(),
-      priority: request.priority.toLowerCase(),
+      status: request.status.toLowerCase(), // expected by UI: 'pending' | 'in_progress' | 'completed'
+      createdAt: request.createdAt.toISOString(), // UI expects createdAt
+      priority: request.priority.toLowerCase(), // 'low' | 'medium' | 'high' | 'urgent'
       serviceName: request.service.name,
       servicePrice: request.service.price
     }));
 
     // Get recent invoices (last 5)
     const recentInvoices = invoices.slice(0, 5).map(invoice => ({
-      id: invoice.invoiceNumber || invoice.id,
-      amount: invoice.totalAmount,
-      status: invoice.status.toLowerCase(),
-      dueDate: invoice.dueDate?.toISOString() || null,
-      createdAt: invoice.createdAt.toISOString()
+      id: invoice.id,
+      invoiceNumber: invoice.invoiceNumber,
+      amount: invoice.totalAmount ?? invoice.amount,
+      status: invoice.status.toLowerCase(), // 'pending' | 'paid' | 'overdue'
+      dueDate: (invoice.dueDate ?? invoice.createdAt).toISOString(),
+      description: invoice.description ?? `فاتورة رقم ${invoice.invoiceNumber}`,
     }));
 
     // Create notifications based on recent activity
