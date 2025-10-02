@@ -18,6 +18,9 @@ function normalizeStatus(input?: string | null) {
 // GET /api/services/[id]
 export async function GET(_req: NextRequest, { params }: { params: { id: string } }) {
   try {
+    // Ensure duration column exists
+    await prisma.$executeRawUnsafe('ALTER TABLE "Service" ADD COLUMN IF NOT EXISTS "duration" TEXT');
+
     const service = await prisma.service.findUnique({
       where: { id: params.id },
       include: {
@@ -26,7 +29,8 @@ export async function GET(_req: NextRequest, { params }: { params: { id: string 
       }
     });
     if (!service) return NextResponse.json({ error: "Not found" }, { status: 404 });
-    return NextResponse.json(service);
+    const [row] = await prisma.$queryRaw<{ duration: string | null }[]>`SELECT "duration" FROM "Service" WHERE "id" = ${params.id}`;
+    return NextResponse.json({ ...service, duration: row?.duration || null });
   } catch (error) {
     console.error("Error fetching service: ", error);
     return NextResponse.json({ error: "Failed to fetch service" }, { status: 500 });
@@ -41,9 +45,9 @@ export async function PATCH(req: NextRequest, { params }: { params: { id: string
       return NextResponse.json({ error: "Unauthorized" }, { status: 401 });
     }
 
-    const body = await req.json();
+  const body = await req.json();
     const status = normalizeStatus(body.status);
-    const data: any = {};
+  const data: any = {};
     if (typeof body.name === 'string') data.name = body.name;
     if (typeof body.description === 'string') data.description = body.description;
     if (typeof body.category === 'string') data.category = body.category;
@@ -58,7 +62,11 @@ export async function PATCH(req: NextRequest, { params }: { params: { id: string
       data,
       include: { faqs: true }
     });
-    return NextResponse.json(updated);
+    if (typeof body.duration === 'string') {
+      await prisma.$executeRaw`UPDATE "Service" SET "duration" = ${body.duration} WHERE "id" = ${params.id}`;
+    }
+    const [row] = await prisma.$queryRaw<{ duration: string | null }[]>`SELECT "duration" FROM "Service" WHERE "id" = ${params.id}`;
+    return NextResponse.json({ ...updated, duration: row?.duration || null });
   } catch (error) {
     console.error("Error updating service: ", error);
     return NextResponse.json({ error: "Failed to update service" }, { status: 500 });

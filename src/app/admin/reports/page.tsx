@@ -85,7 +85,7 @@ export default function AdminReportsPage() {
   // Fetch reports data
   const fetchReportsData = async () => {
     try {
-      const response = await fetch('/api/reports');
+      const response = await fetch(`/api/reports/analytics?period=${selectedPeriod}`);
       
       if (!response.ok) {
         throw new Error('Failed to fetch reports data');

@@ -31,6 +31,7 @@ export default function NewServicePage() {
     description: "",
     category: "",
     price: "",
+    duration: "",
     status: "ACTIVE"
   });
 
@@ -66,6 +67,7 @@ export default function NewServicePage() {
           description: formData.description.trim() || null,
           category: formData.category || null,
           price: formData.price ? parseFloat(formData.price) : null,
+          duration: formData.duration || null,
           status: formData.status
         })
       });
@@ -159,6 +161,17 @@ export default function NewServicePage() {
                   value={formData.price}
                   onChange={(e) => handleInputChange("price", e.target.value)}
                   placeholder="0.00"
+                />
+              </div>
+
+              {/* Duration */}
+              <div className="space-y-2">
+                <Label htmlFor="duration">المدة</Label>
+                <Input
+                  id="duration"
+                  value={formData.duration}
+                  onChange={(e) => handleInputChange("duration", e.target.value)}
+                  placeholder="مثال: شهري، أسبوعي، يومي..."
                 />
               </div>
 

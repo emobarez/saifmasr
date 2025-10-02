@@ -6,44 +6,43 @@ import { Card, CardHeader, CardTitle, CardDescription, CardContent } from "@/com
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
-import { Textarea } from "@/components/ui/textarea";
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
 import { ArrowLeft, Save, Loader2 } from "lucide-react";
 import Link from "next/link";
 import { useToast } from "@/hooks/use-toast";
 
-export default function EditServicePage() {
+export default function EditClientPage() {
   const params = useParams<{ id: string }>();
+  const id = params?.id as string;
   const router = useRouter();
   const { toast } = useToast();
-  const id = params?.id as string;
   const [loading, setLoading] = useState(true);
   const [saving, setSaving] = useState(false);
   const [formData, setFormData] = useState({
     name: "",
-    description: "",
-    category: "",
-    price: "",
-    duration: "",
+    email: "",
+    phone: "",
+    company: "",
+    address: "",
     status: "ACTIVE"
   });
 
   useEffect(() => {
     const load = async () => {
       try {
-        const res = await fetch(`/api/services/${id}`);
-        if (!res.ok) throw new Error("تعذر تحميل الخدمة");
-        const s = await res.json();
+        const res = await fetch(`/api/clients/${id}`);
+        if (!res.ok) throw new Error('تعذر تحميل بيانات العميل');
+        const c = await res.json();
         setFormData({
-          name: s.name || "",
-          description: s.description || "",
-          category: s.category || "",
-          price: typeof s.price === 'number' ? String(s.price) : "",
-          duration: s.duration || "",
-          status: (s.status || 'ACTIVE')
+          name: c.name || "",
+          email: c.email || "",
+          phone: c.phone || "",
+          company: c.company || "",
+          address: c.address || "",
+          status: c.status || "ACTIVE"
         });
       } catch (e: any) {
-        toast({ title: 'خطأ', description: e?.message || 'تعذر تحميل الخدمة', variant: 'destructive' });
+        toast({ title: 'خطأ', description: e?.message || 'تعذر تحميل بيانات العميل', variant: 'destructive' });
       } finally {
         setLoading(false);
       }
@@ -57,24 +56,17 @@ export default function EditServicePage() {
     e.preventDefault();
     setSaving(true);
     try {
-      const res = await fetch(`/api/services/${id}`, {
+      const res = await fetch(`/api/clients/${id}`, {
         method: 'PATCH',
         headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify({
-          name: formData.name.trim(),
-          description: formData.description.trim() || null,
-          category: formData.category || null,
-          price: formData.price ? Number(formData.price) : null,
-          duration: formData.duration || null,
-          status: formData.status
-        })
+        body: JSON.stringify(formData)
       });
       if (!res.ok) {
         const err = await res.json().catch(() => ({}));
         throw new Error(err?.error || 'تعذر حفظ التعديلات');
       }
-      toast({ title: 'تم الحفظ', description: 'تم تحديث بيانات الخدمة.' });
-      router.push(`/admin/services/${id}`);
+      toast({ title: 'تم الحفظ', description: 'تم تحديث بيانات العميل.' });
+      router.push(`/admin/clients/${id}`);
     } catch (e: any) {
       toast({ title: 'خطأ', description: e?.message || 'حدث خطأ أثناء الحفظ', variant: 'destructive' });
     } finally {
@@ -88,39 +80,43 @@ export default function EditServicePage() {
     <div className="space-y-6 p-4 sm:p-6 lg:p-8">
       <div className="flex items-center space-x-4 space-x-reverse">
         <Button variant="outline" size="icon" asChild>
-          <Link href={`/admin/services/${id}`}>
+          <Link href={`/admin/clients/${id}`}>
             <ArrowLeft className="h-4 w-4" />
           </Link>
         </Button>
         <div>
-          <h1 className="text-3xl font-bold">تعديل الخدمة</h1>
-          <p className="text-muted-foreground">تحديث بيانات الخدمة</p>
+          <h1 className="text-3xl font-bold">تعديل العميل</h1>
+          <p className="text-muted-foreground">تحديث بيانات العميل</p>
         </div>
       </div>
 
       <Card>
         <CardHeader>
-          <CardTitle>بيانات الخدمة</CardTitle>
-          <CardDescription>حرر حقول الخدمة التالية</CardDescription>
+          <CardTitle>بيانات العميل</CardTitle>
+          <CardDescription>حرر حقول العميل التالية</CardDescription>
         </CardHeader>
         <CardContent>
           <form onSubmit={onSubmit} className="space-y-6">
             <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
               <div className="space-y-2">
-                <Label htmlFor="name">اسم الخدمة *</Label>
+                <Label htmlFor="name">الاسم *</Label>
                 <Input id="name" value={formData.name} onChange={(e) => handleInputChange('name', e.target.value)} required />
               </div>
               <div className="space-y-2">
-                <Label htmlFor="category">التصنيف</Label>
-                <Input id="category" value={formData.category} onChange={(e) => handleInputChange('category', e.target.value)} />
+                <Label htmlFor="email">البريد الإلكتروني *</Label>
+                <Input id="email" type="email" value={formData.email} onChange={(e) => handleInputChange('email', e.target.value)} required />
               </div>
               <div className="space-y-2">
-                <Label htmlFor="price">السعر</Label>
-                <Input id="price" type="number" min="0" step="0.01" value={formData.price} onChange={(e) => handleInputChange('price', e.target.value)} />
+                <Label htmlFor="phone">الهاتف</Label>
+                <Input id="phone" value={formData.phone} onChange={(e) => handleInputChange('phone', e.target.value)} />
               </div>
               <div className="space-y-2">
-                <Label htmlFor="duration">المدة</Label>
-                <Input id="duration" value={formData.duration} onChange={(e) => handleInputChange('duration', e.target.value)} placeholder="مثال: شهري، أسبوعي، يومي..." />
+                <Label htmlFor="company">الشركة</Label>
+                <Input id="company" value={formData.company} onChange={(e) => handleInputChange('company', e.target.value)} />
+              </div>
+              <div className="space-y-2 md:col-span-2">
+                <Label htmlFor="address">العنوان</Label>
+                <Input id="address" value={formData.address} onChange={(e) => handleInputChange('address', e.target.value)} />
               </div>
               <div className="space-y-2">
                 <Label htmlFor="status">الحالة</Label>
@@ -129,20 +125,16 @@ export default function EditServicePage() {
                     <SelectValue />
                   </SelectTrigger>
                   <SelectContent>
-                    <SelectItem value="ACTIVE">نشطة</SelectItem>
-                    <SelectItem value="INACTIVE">غير نشطة</SelectItem>
-                    <SelectItem value="DRAFT">مسودة</SelectItem>
+                    <SelectItem value="ACTIVE">نشط</SelectItem>
+                    <SelectItem value="INACTIVE">غير نشط</SelectItem>
+                    <SelectItem value="BANNED">محظور</SelectItem>
                   </SelectContent>
                 </Select>
               </div>
             </div>
-            <div className="space-y-2">
-              <Label htmlFor="description">الوصف</Label>
-              <Textarea id="description" value={formData.description} onChange={(e) => handleInputChange('description', e.target.value)} rows={4} />
-            </div>
             <div className="flex justify-end space-x-4 space-x-reverse pt-6">
               <Button type="button" variant="outline" asChild>
-                <Link href={`/admin/services/${id}`}>إلغاء</Link>
+                <Link href={`/admin/clients/${id}`}>إلغاء</Link>
               </Button>
               <Button type="submit" disabled={saving}>
                 {saving && <Loader2 className="h-4 w-4 mr-2 animate-spin" />}
