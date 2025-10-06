@@ -28,7 +28,8 @@ import {
   Phone,
   Plus,
   Loader2,
-  RefreshCw
+  RefreshCw,
+  Shield
 } from "lucide-react";
 import Link from "next/link";
 import { formatEGPSimple } from "@/lib/egyptian-utils";
@@ -285,7 +286,7 @@ export default function AdminServiceRequestsPage() {
             إدارة ومتابعة جميع طلبات الخدمة الواردة
           </p>
         </div>
-        <div className="flex space-x-2 space-x-reverse">
+        <div className="flex flex-wrap gap-2">
           <Button onClick={handleRefresh} variant="outline" disabled={isRefreshing}>
             {isRefreshing ? (
               <Loader2 className="h-4 w-4 mr-2 animate-spin" />
@@ -294,10 +295,16 @@ export default function AdminServiceRequestsPage() {
             )}
             تحديث
           </Button>
-          <Button asChild>
+          <Button asChild className="bg-orange-600 hover:bg-orange-700">
+            <Link href="/admin/service-requests/bodyguard/new">
+              <Shield className="h-4 w-4 mr-2" />
+              طلب حراسة شخصية
+            </Link>
+          </Button>
+          <Button asChild variant="outline">
             <Link href="/admin/service-requests/new">
               <Plus className="h-4 w-4 mr-2" />
-              طلب خدمة جديد
+              طلب خدمة عام
             </Link>
           </Button>
           <Button variant="outline">

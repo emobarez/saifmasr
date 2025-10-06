@@ -149,6 +149,27 @@ export default function NewServiceRequestPage() {
         </div>
       </div>
 
+      {/* Quick Access - Bodyguard Service */}
+      <Card className="bg-gradient-to-r from-orange-50 to-red-50 border-orange-200">
+        <CardContent className="pt-6">
+          <div className="flex flex-col sm:flex-row items-start sm:items-center justify-between gap-4">
+            <div className="flex-1">
+              <h3 className="text-lg font-semibold text-orange-900 mb-1">طلب خدمة الحارس الشخصي</h3>
+              <p className="text-sm text-orange-700">نموذج متخصص مع حقول إضافية (عدد الأفراد، التسليح، الموقع، الجدولة)</p>
+            </div>
+            <Button 
+              asChild
+              className="bg-orange-600 hover:bg-orange-700 text-white shrink-0"
+            >
+              <Link href="/admin/service-requests/bodyguard/new">
+                <Users className="h-4 w-4 mr-2" />
+                إنشاء طلب حراسة
+              </Link>
+            </Button>
+          </div>
+        </CardContent>
+      </Card>
+
       {/* Form */}
       <Card>
         <CardHeader>
