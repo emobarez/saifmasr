@@ -110,6 +110,34 @@ model ServiceRequest {
   invoices      Invoice[]
   service       Service              @relation(fields: [serviceId], references: [id], onDelete: Cascade)
   user          User                 @relation(fields: [userId], references: [id], onDelete: Cascade)
+  // Extended fields (were previously added via raw SQL fallbacks)
+  personnelCount    Int?
+  durationUnit      DurationUnit?
+  startAt           DateTime?
+  endAt             DateTime?
+  locationText      String?
+  locationLat       Float?
+  locationLng       Float?
+  armamentLevel     ArmamentLevel?
+  notes             String?
+  notifyBeforeHours Int?             @default(24)
+  isDraft           Boolean?         @default(false)
+  lastReminderAt    DateTime?
+  attachments       RequestAttachment[]
+
+  @@index([startAt])
+  @@index([status, startAt])
+  @@index([isDraft, startAt])
+}
+
+model RequestAttachment {
+  id        String   @id @default(cuid())
+  requestId String
+  url       String
+  name      String?
+  mimeType  String?
+  createdAt DateTime @default(now())
+  request   ServiceRequest @relation(fields: [requestId], references: [id], onDelete: Cascade)
 }
 
 model Employee {
@@ -288,4 +316,16 @@ enum ReportStatus {
   UNDER_REVIEW
   PUBLISHED
   ARCHIVED
+}
+
+enum DurationUnit {
+  HOURS
+  DAYS
+}
+
+enum ArmamentLevel {
+  STANDARD
+  ARMED
+  SUPERVISOR
+  MIXED
 }

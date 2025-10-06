@@ -110,24 +110,36 @@ export default function ClientDashboardPage() {
   useEffect(() => {
     const fetchDashboardData = async () => {
       try {
-        const response = await fetch('/api/client/dashboard');
-        
+        const response = await fetch('/api/client/dashboard', { headers: { 'Accept': 'application/json' }, cache: 'no-store' });
         if (!response.ok) {
-          throw new Error('Failed to fetch dashboard data');
+          let body: any = null;
+          try { body = await response.json(); } catch {}
+          if (response.status === 401) {
+            setError(body?.error || 'يجب تسجيل الدخول أولاً');
+            return;
+          }
+            if (response.status === 403) {
+              // If user context indicates admin, redirect to admin dashboard
+              if (user?.role === 'ADMIN') {
+                router.replace('/admin/dashboard');
+                return;
+              }
+              setError(body?.error || 'ليس لديك صلاحية لعرض هذه الصفحة');
+              return;
+            }
+          throw new Error(body?.error || 'تعذر جلب بيانات لوحة التحكم');
         }
-        
         const data = await response.json();
         setDashboardData(data);
-      } catch (error) {
+      } catch (error: any) {
         console.error('Error fetching dashboard data:', error);
-        setError('Failed to load dashboard data');
+        setError(error?.message || 'تعذر تحميل بيانات لوحة التحكم');
       } finally {
         setLoading(false);
       }
     };
-
     fetchDashboardData();
-  }, []);
+  }, [user, router]);
 
   const formatTime = (date: Date) => {
     return new Intl.DateTimeFormat('ar-EG', {

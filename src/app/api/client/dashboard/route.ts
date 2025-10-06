@@ -7,24 +7,45 @@ import { authOptions } from "@/lib/auth";
 export async function GET() {
   try {
     const session = await getServerSession(authOptions);
-    
-    if (!session || session.user.role !== "CLIENT") {
-      return NextResponse.json({ error: "Unauthorized" }, { status: 401 });
+    if (!session) {
+      return NextResponse.json({ error: "لم يتم العثور على جلسة المستخدم" }, { status: 401 });
+    }
+    if (session.user.role !== "CLIENT") {
+      return NextResponse.json({ error: "غير مسموح لهذا الدور بالوصول إلى لوحة تحكم العميل" }, { status: 403 });
     }
 
     const userId = session.user.id;
 
     // Get client's service requests
-    const serviceRequests = await prisma.serviceRequest.findMany({
-      where: { userId },
-      include: {
-        service: {
-          select: { name: true, price: true }
-        }
-      },
-      orderBy: { createdAt: 'desc' },
-      take: 10
-    });
+    let serviceRequests;
+    try {
+      // Try full selection (if schema migrated)
+      serviceRequests = await prisma.serviceRequest.findMany({
+        where: { userId },
+        include: { service: { select: { name: true, price: true } } },
+        orderBy: { createdAt: 'desc' },
+        take: 10
+      });
+    } catch (e: any) {
+      if (e.code === 'P2022') {
+        // Fallback: select only core legacy columns present before extended migration
+        serviceRequests = await prisma.$queryRaw<any[]>`SELECT r.id, r."userId" as "userId", r."serviceId" as "serviceId", r.title, r.description, r.status, r.priority, r."attachmentUrl", r."createdAt", r."updatedAt", s.name as service_name, s.price as service_price FROM "ServiceRequest" r LEFT JOIN "Service" s ON s.id = r."serviceId" WHERE r."userId" = ${userId} ORDER BY r."createdAt" DESC LIMIT 10`;
+        // Map to shape similar to Prisma result set
+        serviceRequests = serviceRequests.map((r: any) => ({
+          id: r.id,
+          userId: r.userId,
+          serviceId: r.serviceId,
+          title: r.title,
+          description: r.description,
+          status: r.status,
+          priority: r.priority,
+          attachmentUrl: r.attachmentUrl,
+          createdAt: r.createdAt,
+          updatedAt: r.updatedAt,
+          service: { name: r.service_name, price: r.service_price }
+        }));
+      } else { throw e; }
+    }
 
     // Get client's invoices
     const invoices = await prisma.invoice.findMany({
@@ -53,7 +74,7 @@ export async function GET() {
     };
 
     // Get recent activities (last 5 service requests)
-    const recentRequests = serviceRequests.slice(0, 5).map(request => ({
+  const recentRequests = serviceRequests.slice(0, 5).map((request: any) => ({
       id: request.id,
       title: request.title,
       status: request.status.toLowerCase(), // expected by UI: 'pending' | 'in_progress' | 'completed'
@@ -116,10 +137,13 @@ export async function GET() {
       notifications: notifications.slice(0, 5) // Limit to 5 notifications
     });
 
-  } catch (error) {
-    console.error("Error fetching client dashboard data:", error);
+  } catch (error: any) {
+    console.error("[CLIENT_DASHBOARD_API] Error fetching client dashboard data", {
+      message: error?.message,
+      stack: error?.stack
+    });
     return NextResponse.json(
-      { error: "Failed to fetch dashboard data" },
+      { error: "فشل تحميل بيانات لوحة التحكم" },
       { status: 500 }
     );
   }

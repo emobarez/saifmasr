@@ -1,6 +1,7 @@
 "use client";
 
 import { useState, useEffect } from "react";
+import { useRouter } from 'next/navigation';
 import { Card, CardHeader, CardTitle, CardDescription, CardContent } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
@@ -20,6 +21,7 @@ interface Service {
 }
 
 export default function ClientRequestsPage() {
+  const router = useRouter();
   const { user } = useAuth();
   const { toast } = useToast();
   const [services, setServices] = useState<Service[]>([]);
@@ -131,8 +133,13 @@ export default function ClientRequestsPage() {
 
   return (
     <div className="space-y-6">
-      <div className="flex justify-between items-center">
+      <div className="flex flex-col md:flex-row justify-between items-start md:items-center gap-3">
         <h1 className="text-3xl font-bold">طلب خدمة جديدة</h1>
+        <div className="flex gap-2">
+          <Button onClick={() => router.push('/client/requests/bodyguard?from=requests')}>
+            طلب خدمة الحارس الشخصي
+          </Button>
+        </div>
       </div>
 
       <Card>

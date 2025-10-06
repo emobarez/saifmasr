@@ -39,6 +39,7 @@ interface Employee {
   salary: number;
   experience: string;
   certifications: string[];
+  assignments?: any[]; // added to align with usage in UI
 }
 
 export default function EmployeeDetailPage() {
