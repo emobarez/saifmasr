@@ -17,9 +17,10 @@ interface PickerProps {
   onChange: (coords: { lat: number; lng: number }) => void;
   className?: string;
   heightClass?: string; // Tailwind class e.g. h-72
+  readOnly?: boolean; // If true, disable dragging and clicking
 }
 
-export const LeafletMapPicker: React.FC<PickerProps> = ({ value, onChange, className, heightClass = 'h-72' }) => {
+export const LeafletMapPicker: React.FC<PickerProps> = ({ value, onChange, className, heightClass = 'h-72', readOnly = false }) => {
   const containerRef = useRef<HTMLDivElement | null>(null);
   const mapRef = useRef<any | null>(null);
   const markerRef = useRef<any | null>(null);
@@ -41,22 +42,36 @@ export const LeafletMapPicker: React.FC<PickerProps> = ({ value, onChange, class
         (L as any).Icon.Default.mergeOptions({ iconRetinaUrl: iconRetina, iconUrl: icon, shadowUrl: shadow });
       } catch {}
       const start = value || { lat: 30.0444, lng: 31.2357 };
-      mapRef.current = L!.map(containerRef.current, { center: [start.lat, start.lng], zoom: 13, attributionControl: false });
+      mapRef.current = L!.map(containerRef.current, { 
+        center: [start.lat, start.lng], 
+        zoom: 13, 
+        attributionControl: false,
+        dragging: !readOnly,
+        touchZoom: !readOnly,
+        scrollWheelZoom: !readOnly,
+        doubleClickZoom: !readOnly,
+        boxZoom: !readOnly,
+        keyboard: !readOnly
+      });
       L!.tileLayer('https://{s}.tile.openstreetmap.org/{z}/{x}/{y}.png', { maxZoom: 19 }).addTo(mapRef.current);
-      markerRef.current = L!.marker([start.lat, start.lng], { draggable: true }).addTo(mapRef.current);
-      markerRef.current.on('dragend', () => {
-        const pos = markerRef.current.getLatLng();
-        onChange({ lat: Number(pos.lat.toFixed(6)), lng: Number(pos.lng.toFixed(6)) });
-      });
-      mapRef.current.on('click', (e: any) => {
-        const { lat: clat, lng: clng } = e.latlng;
-        markerRef.current.setLatLng([clat, clng]);
-        onChange({ lat: Number(clat.toFixed(6)), lng: Number(clng.toFixed(6)) });
-      });
+      markerRef.current = L!.marker([start.lat, start.lng], { draggable: !readOnly }).addTo(mapRef.current);
+      
+      if (!readOnly) {
+        markerRef.current.on('dragend', () => {
+          const pos = markerRef.current.getLatLng();
+          onChange({ lat: Number(pos.lat.toFixed(6)), lng: Number(pos.lng.toFixed(6)) });
+        });
+        mapRef.current.on('click', (e: any) => {
+          const { lat: clat, lng: clng } = e.latlng;
+          markerRef.current.setLatLng([clat, clng]);
+          onChange({ lat: Number(clat.toFixed(6)), lng: Number(clng.toFixed(6)) });
+        });
+      }
+      
       setTimeout(() => mapRef.current.invalidateSize(), 50);
     })();
     return () => { cancelled = true; try { mapRef.current?.remove(); } catch {} };
-  }, []);
+  }, [readOnly]);
 
   // External value sync
   useEffect(() => {
