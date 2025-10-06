@@ -453,7 +453,7 @@ export default function ServiceRequestEditPage() {
                       <Input
                         id="startAt"
                         type="datetime-local"
-                        value={watch('startAt') ? new Date(watch('startAt')).toISOString().slice(0, 16) : ''}
+                        value={watch('startAt') && watch('startAt') !== null ? new Date(watch('startAt')!).toISOString().slice(0, 16) : ''}
                         onChange={(e) => setValue('startAt', e.target.value ? new Date(e.target.value).toISOString() : null)}
                       />
                     </div>
@@ -464,7 +464,7 @@ export default function ServiceRequestEditPage() {
                       <Input
                         id="endAt"
                         type="datetime-local"
-                        value={watch('endAt') ? new Date(watch('endAt')).toISOString().slice(0, 16) : ''}
+                        value={watch('endAt') && watch('endAt') !== null ? new Date(watch('endAt')!).toISOString().slice(0, 16) : ''}
                         onChange={(e) => setValue('endAt', e.target.value ? new Date(e.target.value).toISOString() : null)}
                       />
                     </div>
