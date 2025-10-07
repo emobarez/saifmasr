@@ -47,9 +47,9 @@ export async function GET() {
       } else { throw e; }
     }
 
-    // Get client's invoices
+    // Get client's invoices (where clientId matches the logged-in user)
     const invoices = await prisma.invoice.findMany({
-      where: { userId },
+      where: { clientId: userId },
       orderBy: { createdAt: 'desc' },
       take: 10
     });
@@ -60,17 +60,17 @@ export async function GET() {
     const completedServices = serviceRequests.filter(r => r.status === 'COMPLETED').length;
     const totalSpent = invoices
       .filter(i => i.status === 'PAID')
-      .reduce((sum, i) => sum + (i.totalAmount ?? 0), 0);
+      .reduce((sum, i) => sum + Number(i.totalAmount ?? i.amount ?? 0), 0);
     const pendingPayments = invoices
       .filter(i => i.status === 'PENDING' || i.status === 'OVERDUE')
-      .reduce((sum, i) => sum + (i.totalAmount ?? 0), 0);
+      .reduce((sum, i) => sum + Number(i.totalAmount ?? i.amount ?? 0), 0);
 
     const stats = {
       totalServices,
       activeRequests,
       completedServices,
-      totalSpent,
-      pendingPayments,
+      totalSpent: Number(totalSpent) || 0,
+      pendingPayments: Number(pendingPayments) || 0,
     };
 
     // Get recent activities (last 5 service requests)
