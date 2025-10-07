@@ -13,7 +13,7 @@ import { Switch } from "@/components/ui/switch";
 import { useToast } from "@/hooks/use-toast";
 import { useAuth } from "@/context/AuthContext";
 import { useSiteSettings } from "@/hooks/useSiteSettings";
-import { Loader2, MapPin, Paperclip, Save, Send, Undo2, Upload } from "lucide-react";
+import { FileText, Loader2, MapPin, Paperclip, Save, Send, Undo2, Upload } from "lucide-react";
 import dynamic from "next/dynamic";
 
 // Dynamically import Leaflet MapPicker only
@@ -325,10 +325,18 @@ export default function BodyguardRequestPage() {
         />
       </Head>
       <div className="flex items-center justify-between">
-        <h1 className="text-3xl font-bold">طلب خدمة الحارس الشخصي</h1>
+        <div>
+          <h1 className="text-3xl font-bold">طلب خدمة الحارس الشخصي</h1>
+          <p className="text-sm text-muted-foreground mt-1">
+            يمكنك حفظ الطلب كمسودة والعودة إليه لاحقاً من زر "المسودات" أعلاه
+          </p>
+        </div>
         <div className="flex gap-2">
           <Button variant="secondary" onClick={() => router.push("/client/requests")}>
             <Undo2 className="h-4 w-4 ml-1" /> رجوع
+          </Button>
+          <Button variant="outline" onClick={() => router.push("/client/requests/drafts")}>
+            <FileText className="h-4 w-4 ml-1" /> المسودات
           </Button>
           <Button variant="outline" onClick={() => submitRequest(true)} disabled={submitting}>
             {submitting ? <Loader2 className="h-4 w-4 animate-spin" /> : <Save className="h-4 w-4 ml-1" />} حفظ كمسودة

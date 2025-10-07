@@ -13,7 +13,8 @@ import {
   Settings,
   ShieldEllipsis,
   ClipboardList,
-  HelpCircle // Added HelpCircle
+  HelpCircle, // Added HelpCircle
+  FileText // Added FileText for drafts
 } from "lucide-react";
 
 export interface NavItemConfig {
