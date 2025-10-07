@@ -5,11 +5,9 @@ import { ActivityLogger } from "@/lib/activityLogger";
 import path from "path";
 import { promises as fs } from "fs";
 
-// Cloudinary configuration for Vercel deployment
-const CLOUDINARY_CLOUD_NAME = process.env.CLOUDINARY_CLOUD_NAME;
-const CLOUDINARY_UPLOAD_PRESET = process.env.CLOUDINARY_UPLOAD_PRESET;
-// Only use Cloudinary if explicitly configured (both vars must be set)
-const USE_CLOUDINARY = CLOUDINARY_CLOUD_NAME && CLOUDINARY_UPLOAD_PRESET;
+// Check if running on Vercel (serverless environment)
+// On Vercel, we'll store files as base64 data URLs in the database
+const IS_VERCEL = process.env.VERCEL === '1';
 
 export async function POST(req: NextRequest) {
   try {
@@ -24,9 +22,10 @@ export async function POST(req: NextRequest) {
 
     const saved: Array<{ url: string; name: string; mimeType: string; size: number }> = [];
 
-    // Use Cloudinary if configured, otherwise use local filesystem
-    if (USE_CLOUDINARY) {
-
+    // On Vercel: store files as base64 data URLs (saved in database)
+    // Local dev: store files in public/uploads/ folder
+    if (IS_VERCEL) {
+      // Vercel deployment - store as base64 data URLs
       for (const fileEntry of files) {
         if (!(fileEntry instanceof File)) continue;
         const file = fileEntry as File;
@@ -36,46 +35,22 @@ export async function POST(req: NextRequest) {
         }
 
         try {
-          // Convert file to base64 for Cloudinary upload
+          // Convert file to base64 data URL for database storage
           const arrayBuffer = await file.arrayBuffer();
           const buffer = Buffer.from(arrayBuffer);
           const base64 = buffer.toString('base64');
           const dataUrl = `data:${file.type || 'application/octet-stream'};base64,${base64}`;
 
-          // Upload to Cloudinary
-          const cloudinaryFormData = new FormData();
-          cloudinaryFormData.append('file', dataUrl);
-          if (CLOUDINARY_UPLOAD_PRESET) {
-            cloudinaryFormData.append('upload_preset', CLOUDINARY_UPLOAD_PRESET);
-          }
-          cloudinaryFormData.append('folder', 'saifmasr-attachments');
-          cloudinaryFormData.append('resource_type', 'auto');
-
-          const uploadRes = await fetch(
-            `https://api.cloudinary.com/v1_1/${CLOUDINARY_CLOUD_NAME}/upload`,
-            {
-              method: 'POST',
-              body: cloudinaryFormData,
-            }
-          );
-
-          if (!uploadRes.ok) {
-            const errorText = await uploadRes.text();
-            console.error('Cloudinary upload failed:', errorText);
-            throw new Error(`Cloudinary upload failed: ${uploadRes.statusText}`);
-          }
-
-          const cloudinaryResult = await uploadRes.json();
           saved.push({
-            url: cloudinaryResult.secure_url,
+            url: dataUrl, // This will be stored in the database
             name: file.name || 'upload',
             mimeType: file.type || 'application/octet-stream',
             size: file.size,
           });
         } catch (uploadError: any) {
-          console.error('Error uploading file to Cloudinary:', uploadError);
+          console.error('Error processing file:', uploadError);
           return NextResponse.json({ 
-            error: `Failed to upload ${file.name}: ${uploadError.message}` 
+            error: `فشل رفع ${file.name}: ${uploadError.message}` 
           }, { status: 500 });
         }
       }
