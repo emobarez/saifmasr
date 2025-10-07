@@ -15,6 +15,7 @@ import { useAuth } from "@/context/AuthContext";
 import { useSiteSettings } from "@/hooks/useSiteSettings";
 import { FileText, Loader2, MapPin, Paperclip, Save, Send, Undo2, Upload } from "lucide-react";
 import dynamic from "next/dynamic";
+import AttachmentLink from "@/components/client/AttachmentLink";
 
 // Dynamically import Leaflet MapPicker only
 const LeafletMapPicker = dynamic(() => import("@/components/client/LeafletMapPicker").then(m => m.LeafletMapPicker), { ssr: false, loading: () => <div className="h-72 flex items-center justify-center border rounded">جارٍ تحميل الخريطة...</div> });
@@ -546,9 +547,14 @@ export default function BodyguardRequestPage() {
               <div className="mt-2 grid grid-cols-1 md:grid-cols-2 gap-2">
                 {attachments.map((att, idx) => (
                   <div key={`${att.url}-${idx}`} className="flex items-center justify-between p-2 border rounded">
-                    <div className="flex items-center gap-2 truncate">
-                      <Paperclip className="h-4 w-4" />
-                      <a className="text-blue-600 hover:underline truncate" href={att.url} target="_blank" rel="noreferrer">{att.name || att.url}</a>
+                    <div className="flex items-center gap-2 truncate min-w-0">
+                      <AttachmentLink 
+                        url={att.url} 
+                        name={att.name || "ملف"} 
+                        mimeType={att.mimeType}
+                        variant="link"
+                        showIcon={true}
+                      />
                     </div>
                     <Button size="sm" variant="ghost" onClick={() => setAttachments(prev => prev.filter((_, i) => i !== idx))}>إزالة</Button>
                   </div>

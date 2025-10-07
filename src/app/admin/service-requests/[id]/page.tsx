@@ -20,12 +20,14 @@ import {
   Edit3,
   Check,
   X,
-  MapPin
+  MapPin,
+  Paperclip
 } from "lucide-react";
 import Link from "next/link";
 import { useParams, useRouter } from "next/navigation";
 import { formatEGPSimple } from "@/lib/egyptian-utils";
 import { useToast } from "@/hooks/use-toast";
+import AttachmentLink from "@/components/client/AttachmentLink";
 
 // Dynamic import for LeafletMapPicker to avoid SSR issues
 const LeafletMapPicker = dynamic(
@@ -65,6 +67,13 @@ interface ServiceRequest {
     price: number;
     category: string;
   };
+  attachments?: Array<{
+    id: string;
+    url: string;
+    name: string | null;
+    mimeType: string | null;
+    createdAt: string;
+  }>;
   invoices?: Array<{
     id: string;
     invoiceNumber: string;
@@ -484,14 +493,23 @@ export default function ServiceRequestViewPage() {
             <label className="text-sm font-medium text-muted-foreground">وصف الطلب</label>
             <p className="text-gray-700 whitespace-pre-wrap">{request.description}</p>
           </div>
-          {request.attachmentUrl && (
+          {request.attachments && request.attachments.length > 0 && (
             <div>
-              <label className="text-sm font-medium text-muted-foreground">المرفقات</label>
-              <Button variant="outline" asChild>
-                <a href={request.attachmentUrl} target="_blank" rel="noopener noreferrer">
-                  عرض المرفق
-                </a>
-              </Button>
+              <label className="text-sm font-medium text-muted-foreground">المرفقات ({request.attachments.length})</label>
+              <div className="mt-2 space-y-2">
+                {request.attachments.map((att) => (
+                  <div key={att.id} className="flex items-center gap-2 p-2 border rounded">
+                    <Paperclip className="h-4 w-4 text-muted-foreground" />
+                    <AttachmentLink
+                      url={att.url}
+                      name={att.name || "ملف"}
+                      mimeType={att.mimeType || undefined}
+                      variant="link"
+                      showIcon={false}
+                    />
+                  </div>
+                ))}
+              </div>
             </div>
           )}
         </CardContent>

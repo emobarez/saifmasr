@@ -7,7 +7,8 @@ import { Button } from "@/components/ui/button";
 import { Badge } from "@/components/ui/badge";
 import { useToast } from "@/hooks/use-toast";
 import { useAuth } from "@/context/AuthContext";
-import { Calendar, Clock, Edit, FileText, Loader2, MapPin, Send, Shield, Trash2, Users } from "lucide-react";
+import { Calendar, Clock, Edit, FileText, Loader2, MapPin, Paperclip, Send, Shield, Trash2, Users } from "lucide-react";
+import AttachmentLink from "@/components/client/AttachmentLink";
 
 type DraftRequest = {
   id: string;
@@ -26,7 +27,7 @@ type DraftRequest = {
   endAt?: string;
   locationText?: string;
   notes?: string;
-  attachments?: Array<{ id: string; url: string; name?: string }>;
+  attachments?: Array<{ id: string; url: string; name?: string; mimeType?: string }>;
 };
 
 export default function DraftsPage() {
@@ -42,7 +43,7 @@ export default function DraftsPage() {
   const loadDrafts = async () => {
     try {
       setLoading(true);
-      const res = await fetch("/api/service-requests?draft=true");
+      const res = await fetch("/api/service-requests?draft=true&extended=1");
       if (!res.ok) throw new Error("فشل تحميل المسودات");
       const data = await res.json();
       setDrafts(data);
@@ -269,9 +270,22 @@ export default function DraftsPage() {
                 )}
 
                 {draft.attachments && draft.attachments.length > 0 && (
-                  <div className="flex items-center gap-2 text-sm">
-                    <FileText className="h-4 w-4 text-muted-foreground" />
-                    <span>{draft.attachments.length} مرفق</span>
+                  <div>
+                    <p className="text-sm font-semibold mb-2">المرفقات ({draft.attachments.length}):</p>
+                    <div className="space-y-1">
+                      {draft.attachments.map((att) => (
+                        <div key={att.id} className="flex items-center gap-2 text-sm">
+                          <Paperclip className="h-3 w-3 text-muted-foreground" />
+                          <AttachmentLink
+                            url={att.url}
+                            name={att.name || "ملف"}
+                            mimeType={att.mimeType}
+                            variant="link"
+                            showIcon={false}
+                          />
+                        </div>
+                      ))}
+                    </div>
                   </div>
                 )}
 

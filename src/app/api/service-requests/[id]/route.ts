@@ -22,6 +22,9 @@ export async function GET(
         service: true,
         user: {
           select: { id: true, name: true, email: true }
+        },
+        attachments: {
+          orderBy: { createdAt: 'desc' }
         }
       }
     }) as any;
