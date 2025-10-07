@@ -8,7 +8,8 @@ import { promises as fs } from "fs";
 // Cloudinary configuration for Vercel deployment
 const CLOUDINARY_CLOUD_NAME = process.env.CLOUDINARY_CLOUD_NAME;
 const CLOUDINARY_UPLOAD_PRESET = process.env.CLOUDINARY_UPLOAD_PRESET;
-const USE_CLOUDINARY = process.env.VERCEL || CLOUDINARY_CLOUD_NAME; // Auto-detect Vercel or explicit config
+// Only use Cloudinary if explicitly configured (both vars must be set)
+const USE_CLOUDINARY = CLOUDINARY_CLOUD_NAME && CLOUDINARY_UPLOAD_PRESET;
 
 export async function POST(req: NextRequest) {
   try {
@@ -23,13 +24,8 @@ export async function POST(req: NextRequest) {
 
     const saved: Array<{ url: string; name: string; mimeType: string; size: number }> = [];
 
-    // Use Cloudinary for Vercel or if configured
+    // Use Cloudinary if configured, otherwise use local filesystem
     if (USE_CLOUDINARY) {
-      if (!CLOUDINARY_CLOUD_NAME) {
-        return NextResponse.json({ 
-          error: "Cloud storage not configured. Please set CLOUDINARY_CLOUD_NAME and CLOUDINARY_UPLOAD_PRESET environment variables." 
-        }, { status: 500 });
-      }
 
       for (const fileEntry of files) {
         if (!(fileEntry instanceof File)) continue;
