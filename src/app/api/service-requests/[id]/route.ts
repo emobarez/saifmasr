@@ -139,12 +139,20 @@ export async function PATCH(
         include: { service: true, user: { select: { id: true, name: true, email: true } } } as any
       });
 
-      // Auto invoice on completion
+      // Auto invoice on completion (only if no invoice exists yet)
       if (status === 'COMPLETED' && previousStatus !== 'COMPLETED') {
         try {
           if (existing.service.price) {
-            const { invoiceService } = await import('@/lib/database-service');
-            await invoiceService.createFromServiceRequest(params.id, session.user.id);
+            // Check if an invoice already exists for this service request
+            const existingInvoice = await prisma.invoice.findFirst({
+              where: { serviceRequestId: params.id }
+            });
+            
+            // Only create invoice if one doesn't exist
+            if (!existingInvoice) {
+              const { invoiceService } = await import('@/lib/database-service');
+              await invoiceService.createFromServiceRequest(params.id, session.user.id);
+            }
           }
         } catch (e) { console.error('Invoice create failed', e); }
       }

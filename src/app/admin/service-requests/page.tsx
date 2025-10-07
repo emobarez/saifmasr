@@ -605,8 +605,8 @@ export default function AdminServiceRequestsPage() {
 
                                 if (response.ok) {
                                   toast({
-                                    title: "تم إنهاء الطلب وإنشاء الفاتورة",
-                                    description: `تم إنهاء طلب ${request.title} بنجاح وتم إنشاء فاتورة تلقائياً`,
+                                    title: "تم إنهاء الطلب",
+                                    description: `تم إنهاء طلب ${request.title} بنجاح`,
                                   });
                                   fetchServiceRequests(true); // Refresh data
                                 } else {
