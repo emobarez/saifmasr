@@ -541,6 +541,7 @@ export default function BodyguardRequestPage() {
             <Label htmlFor="attachments" className="flex items-center gap-2">
               <Upload className="h-4 w-4" />
               إضافة مرفقات
+              <span className="text-xs text-muted-foreground font-normal">(يمكن اختيار اكثر من ملف بالضغط على زر التحكم)</span>
             </Label>
             <Input id="attachments" type="file" multiple onChange={(e) => handleUpload(e.target.files)} />
             {attachments.length > 0 && (
