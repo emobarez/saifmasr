@@ -62,7 +62,7 @@ export async function GET() {
       .filter(i => i.status === 'PAID')
       .reduce((sum, i) => sum + (i.totalAmount ?? 0), 0);
     const pendingPayments = invoices
-      .filter(i => i.status === 'PENDING')
+      .filter(i => i.status === 'PENDING' || i.status === 'OVERDUE')
       .reduce((sum, i) => sum + (i.totalAmount ?? 0), 0);
 
     const stats = {

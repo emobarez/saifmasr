@@ -42,6 +42,7 @@ export default function AdminDashboardPage() {
     activeServices: 0,
     pendingRequests: 0,
     monthlyRevenue: 0,
+    pendingPayments: 0,
     completedTasks: 0,
     systemHealth: 98
   });
@@ -67,18 +68,30 @@ export default function AdminDashboardPage() {
         const requestsRes = await fetch('/api/service-requests');
         const requests = requestsRes.ok ? await requestsRes.json() : [];
         
+        // Fetch invoices from database
+        const invoicesRes = await fetch('/api/invoices');
+        const invoices = invoicesRes.ok ? await invoicesRes.json() : [];
+        
+        // Calculate real stats from invoices
+        const paidInvoices = invoices.filter((inv: any) => inv.status === 'PAID');
+        const pendingInvoices = invoices.filter((inv: any) => inv.status === 'PENDING' || inv.status === 'OVERDUE');
+        
+        const totalPaidAmount = paidInvoices.reduce((sum: number, inv: any) => sum + (inv.totalAmount || 0), 0);
+        const totalPendingAmount = pendingInvoices.reduce((sum: number, inv: any) => sum + (inv.totalAmount || 0), 0);
+        
         // Calculate stats
         const pendingRequests = requests.filter((r: any) => r.status === 'PENDING').length || 0;
         const completedTasks = requests.filter((r: any) => r.status === 'COMPLETED').length || 0;
         
-        // Mock revenue calculation - replace with actual invoice data later
-        const monthlyRevenue = (completedTasks || 0) * 5000; // Estimate
+        // Use real invoice data
+        const monthlyRevenue = totalPaidAmount;
         
         setStats({
           totalClients: clients.length,
           activeServices: services.filter((s: any) => s.status === 'ACTIVE').length,
           pendingRequests,
           monthlyRevenue,
+          pendingPayments: totalPendingAmount,
           completedTasks,
           systemHealth: 98
         });
