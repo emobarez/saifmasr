@@ -92,9 +92,28 @@ model ServiceRequest {
   status        ServiceRequestStatus @default(PENDING)
   priority      Priority             @default(MEDIUM)
   attachmentUrl String?
+  // New structured fields for rich, per-service customization
+  details       Json?
+  attachments   Json?
+  // Scheduling and location
+  startAt       DateTime?
+  endAt         DateTime?
+  locationAddress String?
+  locationLat   Float?
+  locationLng   Float?
+  // Options and pricing
+  armamentLevel ArmamentLevel?
+  headcount     Int? // e.g., number of guards or cleaners
+  unitPrice     Float?
+  extraCost     Float?              @default(0)
+  totalCost     Float?
+  // Workflow helpers
+  remindBefore24h Boolean           @default(false)
+  isDraft         Boolean           @default(false)
   createdAt     DateTime             @default(now())
   updatedAt     DateTime             @updatedAt
   invoices      Invoice[]
+  reminders     Reminder[]
   service       Service              @relation(fields: [serviceId], references: [id], onDelete: Cascade)
   user          User                 @relation(fields: [userId], references: [id], onDelete: Cascade)
 }
@@ -187,6 +206,18 @@ model ActivityLog {
   user        User?    @relation(fields: [userId], references: [id])
 }
 
+model Reminder {
+  id                String         @id @default(cuid())
+  serviceRequestId  String
+  type              String         @default("FOLLOW_UP_24H")
+  dueAt             DateTime
+  sentAt            DateTime?
+  channel           String?        // e.g., EMAIL, SMS, PUSH
+  createdAt         DateTime       @default(now())
+  updatedAt         DateTime       @updatedAt
+  serviceRequest    ServiceRequest @relation(fields: [serviceRequestId], references: [id], onDelete: Cascade)
+}
+
 model SystemSettings {
   id                          String   @id @default("general")
   portalName                  String   @default("سيف مصر الوطنية للأمن")
@@ -254,6 +285,13 @@ enum ServiceRequestStatus {
   IN_PROGRESS
   COMPLETED
   CANCELLED
+}
+
+// Level of armament for guards/security
+enum ArmamentLevel {
+  NONE
+  SOUND_WEAPON
+  FIREARM
 }
 
 enum Priority {

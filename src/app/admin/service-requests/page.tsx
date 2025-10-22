@@ -43,6 +43,8 @@ interface ServiceRequest {
   priority: string;
   createdAt: string;
   updatedAt: string;
+  totalCost?: number | null;
+  details?: any;
   user: {
     id: string;
     name: string;
@@ -242,6 +244,64 @@ export default function AdminServiceRequestsPage() {
     }
   };
 
+  const renderBriefDetails = (req: ServiceRequest) => {
+    const s = req.service.name || "";
+    const d = (req.details || {}) as any;
+    try {
+      if (s.includes("حارس") || s.includes("حراسة") || s.includes("بودي")) {
+        return (
+          <div className="text-xs text-muted-foreground">
+            أفراد: { (d.headcount as any) || (req as any).headcount || "-" } • شفت: {d.shiftType || "-"}
+          </div>
+        );
+      }
+      if (s.includes("الأمن النظامي") || s.includes("أمن")) {
+        return (
+          <div className="text-xs text-muted-foreground">
+            منشأة: {d.facilityType || "-"} • شفت: {d.shiftSystem || "-"} • أفراد: { (req as any).headcount || "-"}
+          </div>
+        );
+      }
+      if (s.includes("كاميرات") || s.includes("مراقبة")) {
+        const types = Array.isArray(d.cameraTypes) ? d.cameraTypes.join(", ") : d.cameraTypes;
+        return (
+          <div className="text-xs text-muted-foreground">
+            أنواع: {types || "-"} • عدد: {d.cameraCount || "-"}
+          </div>
+        );
+      }
+      if (s.includes("فعاليات")) {
+        return (
+          <div className="text-xs text-muted-foreground">
+            نوع: {d.eventType || "-"} • حضور: {d.attendees || "-"}
+          </div>
+        );
+      }
+      if (s.includes("استشارات")) {
+        return (
+          <div className="text-xs text-muted-foreground">
+            نوع: {d.consultType || "-"} • عميل: {d.clientNature || "-"}
+          </div>
+        );
+      }
+      if (s.includes("تدريب")) {
+        return (
+          <div className="text-xs text-muted-foreground">
+            نوع: {d.trainingType || "-"} • عدد: {(req as any).headcount || "-"}
+          </div>
+        );
+      }
+      if (s.includes("نظافة")) {
+        return (
+          <div className="text-xs text-muted-foreground">
+            نوع: {d.cleanType || "-"} • حجم: {d.placeSize || "-"}
+          </div>
+        );
+      }
+    } catch {}
+    return null;
+  };
+
   const statusStats = {
     pending: requests.filter(r => r.status === 'PENDING').length,
     inProgress: requests.filter(r => r.status === 'IN_PROGRESS').length,
@@ -403,6 +463,7 @@ export default function AdminServiceRequestsPage() {
                 <TableHead className="w-[120px] text-center">الأولوية</TableHead>
                 <TableHead className="w-[120px] text-center">الحالة</TableHead>
                 <TableHead className="w-[130px] text-center">السعر المقدر</TableHead>
+                <TableHead className="w-[220px]">تفاصيل مختصرة</TableHead>
                 <TableHead className="w-[200px] text-center">الإجراءات</TableHead>
               </TableRow>
             </TableHeader>
@@ -455,7 +516,10 @@ export default function AdminServiceRequestsPage() {
                     <TableCell className="w-[120px] text-center">{getPriorityBadge(request.priority)}</TableCell>
                     <TableCell className="w-[120px] text-center">{getStatusBadge(request.status)}</TableCell>
                     <TableCell className="w-[130px] text-center">
-                      <div className="font-medium">{formatEGPSimple(request.service.price || 0)}</div>
+                      <div className="font-medium">{formatEGPSimple((request.totalCost ?? request.service.price) || 0)}</div>
+                    </TableCell>
+                    <TableCell className="w-[220px]">
+                      {renderBriefDetails(request)}
                     </TableCell>
                     <TableCell className="w-[200px]">
                       <div className="flex items-center justify-center space-x-1 space-x-reverse">

@@ -1,6 +1,7 @@
 "use client";
 
 import { AdminSidebar, MobileAdminSidebar } from "@/components/admin/AdminSidebar";
+import { NotificationBell } from "@/components/admin/NotificationBell";
 import { ThemeSwitcher } from "@/components/layout/ThemeSwitcher";
 
 export default function AdminLayout({
@@ -30,6 +31,7 @@ export default function AdminLayout({
         {/* Desktop Top Bar with Theme Switcher */}
           <header className="hidden md:flex sticky top-0 z-50 bg-card border-b shadow-sm">
             <div className="w-full px-4 py-3 md:px-6 flex items-center justify-end gap-3">
+            <NotificationBell />
             <ThemeSwitcher minimal className="bg-primary text-primary-foreground hover:bg-primary/90" />
           </div>
         </header>

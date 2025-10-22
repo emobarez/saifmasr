@@ -8,6 +8,7 @@ import { Label } from "@/components/ui/label";
 import { Textarea } from "@/components/ui/textarea";
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
 import { Plus, Send, Loader2 } from "lucide-react";
+import Link from "next/link";
 import { useAuth } from "@/context/AuthContext";
 import { useToast } from "@/hooks/use-toast";
 
@@ -131,6 +132,23 @@ export default function ClientRequestsPage() {
 
   return (
     <div className="space-y-6">
+      <Card>
+        <CardHeader>
+          <CardTitle>اختصار النماذج المتخصصة</CardTitle>
+          <CardDescription>اختر نموذجاً مخصصاً حسب نوع الخدمة</CardDescription>
+        </CardHeader>
+        <CardContent>
+          <div className="flex flex-wrap gap-3">
+            <Link href="/client/services/personal-guard" className="px-3 py-2 rounded-md border hover:bg-secondary">الحارس الشخصي</Link>
+            <Link href="/client/services/regular-security" className="px-3 py-2 rounded-md border hover:bg-secondary">الأمن النظامي</Link>
+            <Link href="/client/services/cctv-installation" className="px-3 py-2 rounded-md border hover:bg-secondary">كاميرات المراقبة</Link>
+            <Link href="/client/services/event-security" className="px-3 py-2 rounded-md border hover:bg-secondary">تأمين فعاليات</Link>
+            <Link href="/client/services/security-consulting" className="px-3 py-2 rounded-md border hover:bg-secondary">استشارات أمنية</Link>
+            <Link href="/client/services/security-training" className="px-3 py-2 rounded-md border hover:bg-secondary">تدريبات أمنية</Link>
+            <Link href="/client/services/cleaning" className="px-3 py-2 rounded-md border hover:bg-secondary">خدمة نظافة</Link>
+          </div>
+        </CardContent>
+      </Card>
       <div className="flex justify-between items-center">
         <h1 className="text-3xl font-bold">طلب خدمة جديدة</h1>
       </div>

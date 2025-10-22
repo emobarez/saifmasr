@@ -39,6 +39,11 @@ interface Employee {
   salary: number;
   experience: string;
   certifications: string[];
+  // Added to match API shape returned by employeeService.getById(include: { assignments: true })
+  assignments?: Array<{
+    title: string;
+    description?: string | null;
+  }>;
 }
 
 export default function EmployeeDetailPage() {

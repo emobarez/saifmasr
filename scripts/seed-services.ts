@@ -8,45 +8,52 @@ async function seedServices() {
 
     const services = [
       {
-        name: 'حراسة أمنية',
-        description: 'خدمات الحراسة الأمنية للمباني والمنشآت',
+        name: 'الحارس الشخصي',
+        description: 'خدمة بودي جارد بخيارات الشفتات والتسليح',
+        category: 'حراسة',
+        price: 0,
+        status: ServiceStatus.ACTIVE
+      },
+      {
+        name: 'الأمن النظامي',
+        description: 'تأمين منشآت بفِرَق أمنية ونظام شفتات',
         category: 'أمن',
-        price: 5000,
+        price: 0,
+        status: ServiceStatus.ACTIVE
+      },
+      {
+        name: 'تركيب كاميرات المراقبة',
+        description: 'توريد وتركيب وتكوين أنظمة كاميرات',
+        category: 'تقنية',
+        price: 0,
         status: ServiceStatus.ACTIVE
       },
       {
         name: 'تأمين فعاليات',
-        description: 'تأمين الفعاليات والمؤتمرات والحفلات',
+        description: 'تنسيق وتأمين الفعاليات بجميع أحجامها',
         category: 'فعاليات',
-        price: 8000,
+        price: 0,
         status: ServiceStatus.ACTIVE
       },
       {
         name: 'استشارات أمنية',
-        description: 'استشارات متخصصة في مجال الأمن والحماية',
+        description: 'تقييم مخاطر وخطط أمنية وتدقيق',
         category: 'استشارات',
-        price: 3000,
+        price: 0,
         status: ServiceStatus.ACTIVE
       },
       {
-        name: 'تحقيقات خاصة',
-        description: 'خدمات التحقيقات الخاصة والبحث',
-        category: 'تحقيقات',
-        price: 10000,
-        status: ServiceStatus.ACTIVE
-      },
-      {
-        name: 'تدريب أمني',
-        description: 'برامج التدريب في مجال الأمن والحماية',
+        name: 'تدريبات أمنية',
+        description: 'برامج تدريبية لرفع الكفاءة الأمنية',
         category: 'تدريب',
-        price: 2500,
+        price: 0,
         status: ServiceStatus.ACTIVE
       },
       {
-        name: 'أنظمة مراقبة',
-        description: 'تركيب وصيانة أنظمة المراقبة والكاميرات',
-        category: 'تقنية',
-        price: 15000,
+        name: 'خدمة نظافة',
+        description: 'نظافة دورية/عميقة كخدمة إضافية',
+        category: 'خدمات إضافية',
+        price: 0,
         status: ServiceStatus.ACTIVE
       }
     ];

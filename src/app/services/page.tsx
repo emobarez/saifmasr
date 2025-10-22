@@ -110,6 +110,32 @@ export default function ServicesPage() {
                         </li>
                       ))}
                     </ul>
+                    {(index === 0 || index === 1 || index === 3) && (
+                      <div className="mt-4">
+                        {index === 0 ? (
+                          <a
+                            href="/client/services/personal-guard"
+                            className="inline-flex items-center justify-center px-4 py-2 bg-primary text-primary-foreground rounded-md hover:bg-primary/90 transition-colors"
+                          >
+                            اطلب الآن
+                          </a>
+                        ) : index === 1 ? (
+                          <a
+                            href="/client/services/cctv-installation"
+                            className="inline-flex items-center justify-center px-4 py-2 bg-primary text-primary-foreground rounded-md hover:bg-primary/90 transition-colors"
+                          >
+                            اطلب الآن
+                          </a>
+                        ) : (
+                          <a
+                            href="/client/services/regular-security"
+                            className="inline-flex items-center justify-center px-4 py-2 bg-primary text-primary-foreground rounded-md hover:bg-primary/90 transition-colors"
+                          >
+                            اطلب الآن
+                          </a>
+                        )}
+                      </div>
+                    )}
                   </CardContent>
                 </Card>
               );
