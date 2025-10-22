@@ -7,5 +7,6 @@
       "path": "/api/reminders/process",
       "schedule": "0 * * * *"
     }
-  ]
+  ],
+  "buildCommand": "npm run build"
 }
