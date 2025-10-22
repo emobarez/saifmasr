@@ -158,7 +158,7 @@ export default function AdminServicesPage() {
           price: typeof service.price === 'number' ? service.price : 0,
           status: service.status?.toLowerCase() || 'draft',
           createdDate: service.createdAt || new Date().toISOString(),
-          duration: 'شهري', // Default duration
+          duration: service.duration || '',
           clients: service._count?.serviceRequests || 0
         }));
         setServices(mappedServices);
@@ -371,7 +371,7 @@ export default function AdminServicesPage() {
         <CardContent>
           {/* Enhanced scrollable table container */}
           <div className="relative">
-            <div className="w-full overflow-auto border rounded-lg force-scrollbar" style={{maxHeight: '75vh', minHeight: '400px'}}>
+            <div className="w-full overflow-auto border rounded-lg force-scrollbar max-h-[75vh] min-h-[400px]">
               <div className="min-w-[1200px]">
                 <Table className="w-full">
             <TableHeader>

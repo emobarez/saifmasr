@@ -464,8 +464,12 @@ export const invoiceService = {
 
     // Note: Will check for duplicate invoices at creation time
 
+    // Calculate amount based on service price multiplied by personnel count (for bodyguard services)
+    // If personnelCount is not set (null/undefined), default to 1
+    const personnelCount = serviceRequest.personnelCount || 1;
+    const amount = serviceRequest.service.price * personnelCount;
+    
     // Egyptian VAT rate is 14%
-    const amount = serviceRequest.service.price;
     const taxAmount = amount * 0.14;
     const totalAmount = amount + taxAmount;
 
@@ -482,6 +486,15 @@ export const invoiceService = {
       parseInt(lastInvoice.invoiceNumber.replace('INV-', '')) + 1 : 1;
     const invoiceNumber = `INV-${nextNumber.toString().padStart(6, '0')}`;
 
+    // Create invoice with personnel count in description if applicable
+    const itemDescription = personnelCount > 1 
+      ? `${serviceRequest.service.name} (${personnelCount} أفراد)`
+      : serviceRequest.service.name;
+    
+    const invoiceDescription = personnelCount > 1
+      ? `فاتورة لخدمة: ${serviceRequest.service.name} - ${serviceRequest.title} (${personnelCount} أفراد × ${serviceRequest.service.price.toLocaleString('ar-EG')} جنيه)`
+      : `فاتورة لخدمة: ${serviceRequest.service.name} - ${serviceRequest.title}`;
+
     // Create invoice
     return await prisma.invoice.create({
       data: {
@@ -492,15 +505,15 @@ export const invoiceService = {
         amount,
         currency: 'EGP',
         status: 'PENDING',
-        description: `فاتورة لخدمة: ${serviceRequest.service.name} - ${serviceRequest.title}`,
+        description: invoiceDescription,
         taxAmount,
         totalAmount,
         dueDate: invoiceDueDate,
         items: {
           create: [{
-            description: serviceRequest.service.name,
-            quantity: 1,
-            unitPrice: amount,
+            description: itemDescription,
+            quantity: personnelCount,
+            unitPrice: serviceRequest.service.price,
             totalPrice: amount
           }]
         }

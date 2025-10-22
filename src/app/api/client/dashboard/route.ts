@@ -7,60 +7,91 @@ import { authOptions } from "@/lib/auth";
 export async function GET() {
   try {
     const session = await getServerSession(authOptions);
-    
-    if (!session || session.user.role !== "CLIENT") {
-      return NextResponse.json({ error: "Unauthorized" }, { status: 401 });
+    if (!session) {
+      return NextResponse.json({ error: "لم يتم العثور على جلسة المستخدم" }, { status: 401 });
+    }
+    if (session.user.role !== "CLIENT") {
+      return NextResponse.json({ error: "غير مسموح لهذا الدور بالوصول إلى لوحة تحكم العميل" }, { status: 403 });
     }
 
     const userId = session.user.id;
 
     // Get client's service requests
-    const serviceRequests = await prisma.serviceRequest.findMany({
-      where: { userId },
-      include: {
-        service: {
-          select: { name: true, price: true }
-        }
-      },
-      orderBy: { createdAt: 'desc' },
-      take: 10
-    });
+    let serviceRequests;
+    try {
+      // Try full selection (if schema migrated)
+      serviceRequests = await prisma.serviceRequest.findMany({
+        where: { userId },
+        include: { service: { select: { name: true, price: true } } },
+        orderBy: { createdAt: 'desc' },
+        take: 10
+      });
+    } catch (e: any) {
+      if (e.code === 'P2022') {
+        // Fallback: select only core legacy columns present before extended migration
+        serviceRequests = await prisma.$queryRaw<any[]>`SELECT r.id, r."userId" as "userId", r."serviceId" as "serviceId", r.title, r.description, r.status, r.priority, r."attachmentUrl", r."createdAt", r."updatedAt", s.name as service_name, s.price as service_price FROM "ServiceRequest" r LEFT JOIN "Service" s ON s.id = r."serviceId" WHERE r."userId" = ${userId} ORDER BY r."createdAt" DESC LIMIT 10`;
+        // Map to shape similar to Prisma result set
+        serviceRequests = serviceRequests.map((r: any) => ({
+          id: r.id,
+          userId: r.userId,
+          serviceId: r.serviceId,
+          title: r.title,
+          description: r.description,
+          status: r.status,
+          priority: r.priority,
+          attachmentUrl: r.attachmentUrl,
+          createdAt: r.createdAt,
+          updatedAt: r.updatedAt,
+          service: { name: r.service_name, price: r.service_price }
+        }));
+      } else { throw e; }
+    }
 
-    // Get client's invoices
+    // Get client's invoices (where clientId matches the logged-in user)
     const invoices = await prisma.invoice.findMany({
-      where: { userId },
+      where: { clientId: userId },
       orderBy: { createdAt: 'desc' },
       take: 10
     });
 
-    // Calculate stats
+    // Calculate stats matching the UI schema
+    const totalServices = serviceRequests.length;
+    const activeRequests = serviceRequests.filter(r => r.status === 'PENDING' || r.status === 'IN_PROGRESS').length;
+    const completedServices = serviceRequests.filter(r => r.status === 'COMPLETED').length;
+    const totalSpent = invoices
+      .filter(i => i.status === 'PAID')
+      .reduce((sum, i) => sum + Number(i.totalAmount ?? i.amount ?? 0), 0);
+    const pendingPayments = invoices
+      .filter(i => i.status === 'PENDING' || i.status === 'OVERDUE')
+      .reduce((sum, i) => sum + Number(i.totalAmount ?? i.amount ?? 0), 0);
+
     const stats = {
-      totalRequests: serviceRequests.length,
-      activeServices: serviceRequests.filter(r => r.status === 'IN_PROGRESS').length,
-      completedServices: serviceRequests.filter(r => r.status === 'COMPLETED').length,
-      totalSpent: invoices.filter(i => i.status === 'PAID').reduce((sum, i) => sum + i.totalAmount, 0),
-      pendingInvoices: invoices.filter(i => i.status === 'PENDING').length,
-      overdueInvoices: invoices.filter(i => i.status === 'OVERDUE').length
+      totalServices,
+      activeRequests,
+      completedServices,
+      totalSpent: Number(totalSpent) || 0,
+      pendingPayments: Number(pendingPayments) || 0,
     };
 
     // Get recent activities (last 5 service requests)
-    const recentRequests = serviceRequests.slice(0, 5).map(request => ({
+  const recentRequests = serviceRequests.slice(0, 5).map((request: any) => ({
       id: request.id,
       title: request.title,
-      status: request.status.toLowerCase(),
-      date: request.createdAt.toISOString(),
-      priority: request.priority.toLowerCase(),
+      status: request.status.toLowerCase(), // expected by UI: 'pending' | 'in_progress' | 'completed'
+      createdAt: request.createdAt.toISOString(), // UI expects createdAt
+      priority: request.priority.toLowerCase(), // 'low' | 'medium' | 'high' | 'urgent'
       serviceName: request.service.name,
       servicePrice: request.service.price
     }));
 
     // Get recent invoices (last 5)
     const recentInvoices = invoices.slice(0, 5).map(invoice => ({
-      id: invoice.invoiceNumber || invoice.id,
-      amount: invoice.totalAmount,
-      status: invoice.status.toLowerCase(),
-      dueDate: invoice.dueDate?.toISOString() || null,
-      createdAt: invoice.createdAt.toISOString()
+      id: invoice.id,
+      invoiceNumber: invoice.invoiceNumber,
+      amount: invoice.totalAmount ?? invoice.amount,
+      status: invoice.status.toLowerCase(), // 'pending' | 'paid' | 'overdue'
+      dueDate: (invoice.dueDate ?? invoice.createdAt).toISOString(),
+      description: invoice.description ?? `فاتورة رقم ${invoice.invoiceNumber}`,
     }));
 
     // Create notifications based on recent activity
@@ -106,10 +137,13 @@ export async function GET() {
       notifications: notifications.slice(0, 5) // Limit to 5 notifications
     });
 
-  } catch (error) {
-    console.error("Error fetching client dashboard data:", error);
+  } catch (error: any) {
+    console.error("[CLIENT_DASHBOARD_API] Error fetching client dashboard data", {
+      message: error?.message,
+      stack: error?.stack
+    });
     return NextResponse.json(
-      { error: "Failed to fetch dashboard data" },
+      { error: "فشل تحميل بيانات لوحة التحكم" },
       { status: 500 }
     );
   }

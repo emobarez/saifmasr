@@ -1,6 +1,7 @@
 "use client";
 
 import { useState, useEffect } from "react";
+import dynamic from "next/dynamic";
 import { Card, CardHeader, CardTitle, CardDescription, CardContent } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
 import { Badge } from "@/components/ui/badge";
@@ -18,12 +19,21 @@ import {
   Loader2,
   Edit3,
   Check,
-  X
+  X,
+  MapPin,
+  Paperclip
 } from "lucide-react";
 import Link from "next/link";
 import { useParams, useRouter } from "next/navigation";
 import { formatEGPSimple } from "@/lib/egyptian-utils";
 import { useToast } from "@/hooks/use-toast";
+import AttachmentLink from "@/components/client/AttachmentLink";
+
+// Dynamic import for LeafletMapPicker to avoid SSR issues
+const LeafletMapPicker = dynamic(
+  () => import("@/components/client/LeafletMapPicker"),
+  { ssr: false, loading: () => <div className="flex items-center justify-center h-full"><Loader2 className="h-6 w-6 animate-spin" /></div> }
+);
 
 interface ServiceRequest {
   id: string;
@@ -34,6 +44,17 @@ interface ServiceRequest {
   createdAt: string;
   updatedAt: string;
   attachmentUrl?: string;
+  personnelCount?: number | null;
+  durationUnit?: string | null;
+  startAt?: string | null;
+  endAt?: string | null;
+  locationText?: string | null;
+  locationLat?: number | null;
+  locationLng?: number | null;
+  armamentLevel?: string | null;
+  notes?: string | null;
+  notifyBeforeHours?: number | null;
+  isDraft?: boolean;
   user: {
     id: string;
     name: string;
@@ -46,6 +67,13 @@ interface ServiceRequest {
     price: number;
     category: string;
   };
+  attachments?: Array<{
+    id: string;
+    url: string;
+    name: string | null;
+    mimeType: string | null;
+    createdAt: string;
+  }>;
   invoices?: Array<{
     id: string;
     invoiceNumber: string;
@@ -329,6 +357,125 @@ export default function ServiceRequestViewPage() {
         </Card>
       </div>
 
+      {/* Bodyguard-specific fields */}
+      {(request.personnelCount || request.armamentLevel || request.startAt) && (
+        <Card>
+          <CardHeader>
+            <CardTitle className="flex items-center">
+              <AlertTriangle className="h-5 w-5 mr-2" />
+              تفاصيل الحراسة
+            </CardTitle>
+          </CardHeader>
+          <CardContent>
+            <div className="grid grid-cols-1 md:grid-cols-3 gap-6">
+              {request.personnelCount && (
+                <div>
+                  <label className="text-sm font-medium text-muted-foreground">عدد الأفراد</label>
+                  <p className="font-medium text-lg">{request.personnelCount} فرد</p>
+                </div>
+              )}
+              {request.armamentLevel && (
+                <div>
+                  <label className="text-sm font-medium text-muted-foreground">مستوى التسليح</label>
+                  <Badge variant="outline" className="mt-1">
+                    {request.armamentLevel === 'NONE' ? 'بدون سلاح' :
+                     request.armamentLevel === 'LIGHT' ? 'سلاح خفيف' :
+                     request.armamentLevel === 'MEDIUM' ? 'سلاح متوسط' :
+                     request.armamentLevel === 'HEAVY' ? 'سلاح ثقيل' : request.armamentLevel}
+                  </Badge>
+                </div>
+              )}
+              {request.durationUnit && (
+                <div>
+                  <label className="text-sm font-medium text-muted-foreground">وحدة المدة</label>
+                  <p className="font-medium">
+                    {request.durationUnit === 'HOURS' ? 'ساعات' :
+                     request.durationUnit === 'DAYS' ? 'أيام' :
+                     request.durationUnit === 'WEEKS' ? 'أسابيع' : request.durationUnit}
+                  </p>
+                </div>
+              )}
+            </div>
+
+            {/* Schedule section */}
+            {(request.startAt || request.endAt) && (
+              <div className="mt-6 pt-6 border-t">
+                <h4 className="font-medium mb-4 flex items-center">
+                  <Calendar className="h-4 w-4 mr-2" />
+                  الجدولة الزمنية
+                </h4>
+                <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
+                  {request.startAt && (
+                    <div>
+                      <label className="text-sm font-medium text-muted-foreground">وقت البدء</label>
+                      <p className="font-medium">{new Date(request.startAt).toLocaleString('ar-EG', {
+                        dateStyle: 'full',
+                        timeStyle: 'short'
+                      })}</p>
+                    </div>
+                  )}
+                  {request.endAt && (
+                    <div>
+                      <label className="text-sm font-medium text-muted-foreground">وقت الانتهاء</label>
+                      <p className="font-medium">{new Date(request.endAt).toLocaleString('ar-EG', {
+                        dateStyle: 'full',
+                        timeStyle: 'short'
+                      })}</p>
+                    </div>
+                  )}
+                </div>
+              </div>
+            )}
+
+            {/* Location section */}
+            {(request.locationText || request.locationLat) && (
+              <div className="mt-6 pt-6 border-t">
+                <h4 className="font-medium mb-4 flex items-center">
+                  <Tag className="h-4 w-4 mr-2" />
+                  الموقع
+                </h4>
+                {request.locationText && (
+                  <div className="mb-3">
+                    <label className="text-sm font-medium text-muted-foreground">وصف الموقع</label>
+                    <p className="font-medium">{request.locationText}</p>
+                  </div>
+                )}
+                {request.locationLat && request.locationLng && (
+                  <>
+                    <div className="mb-3">
+                      <label className="text-sm font-medium text-muted-foreground">الإحداثيات</label>
+                      <p className="text-sm font-mono">
+                        {request.locationLat.toFixed(6)}, {request.locationLng.toFixed(6)}
+                      </p>
+                    </div>
+                    <div className="mt-4">
+                      <label className="text-sm font-medium text-muted-foreground mb-2 flex items-center">
+                        <MapPin className="h-4 w-4 mr-2" />
+                        الخريطة
+                      </label>
+                      <LeafletMapPicker
+                        value={{ lat: request.locationLat, lng: request.locationLng }}
+                        onChange={() => {}} // Read-only, no changes allowed
+                        heightClass="h-[300px]"
+                        readOnly={true}
+                      />
+                    </div>
+                  </>
+                )}
+              </div>
+            )}
+
+            {/* Notes */}
+            {request.notes && (
+              <div className="mt-6 pt-6 border-t">
+                <label className="text-sm font-medium text-muted-foreground">ملاحظات إضافية</label>
+                <p className="mt-2 p-3 bg-muted/50 rounded-md whitespace-pre-wrap">{request.notes}</p>
+              </div>
+            )}
+          </CardContent>
+        </Card>
+      )}
+
       {/* Request Content */}
       <Card>
         <CardHeader>
@@ -346,14 +493,23 @@ export default function ServiceRequestViewPage() {
             <label className="text-sm font-medium text-muted-foreground">وصف الطلب</label>
             <p className="text-gray-700 whitespace-pre-wrap">{request.description}</p>
           </div>
-          {request.attachmentUrl && (
+          {request.attachments && request.attachments.length > 0 && (
             <div>
-              <label className="text-sm font-medium text-muted-foreground">المرفقات</label>
-              <Button variant="outline" asChild>
-                <a href={request.attachmentUrl} target="_blank" rel="noopener noreferrer">
-                  عرض المرفق
-                </a>
-              </Button>
+              <label className="text-sm font-medium text-muted-foreground">المرفقات ({request.attachments.length})</label>
+              <div className="mt-2 space-y-2">
+                {request.attachments.map((att) => (
+                  <div key={att.id} className="flex items-center gap-2 p-2 border rounded">
+                    <Paperclip className="h-4 w-4 text-muted-foreground" />
+                    <AttachmentLink
+                      url={att.url}
+                      name={att.name || "ملف"}
+                      mimeType={att.mimeType || undefined}
+                      variant="link"
+                      showIcon={false}
+                    />
+                  </div>
+                ))}
+              </div>
             </div>
           )}
         </CardContent>

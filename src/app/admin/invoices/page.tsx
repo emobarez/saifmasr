@@ -363,23 +363,43 @@ ${invoiceData.serviceRequest ? `طلب الخدمة: ${invoiceData.serviceReques
             إجمالي {filteredInvoices.length} فاتورة
           </CardDescription>
         </CardHeader>
-        <CardContent>
-          <div className="w-full overflow-auto border rounded-lg force-scrollbar" style={{maxHeight: '75vh', minHeight: '400px'}}>
-            <div className="min-w-[1300px]">
-              <Table className="w-full">
-            <TableHeader>
-              <TableRow>
-                <TableHead>رقم الفاتورة</TableHead>
-                <TableHead>العميل</TableHead>
-                <TableHead>طلب الخدمة</TableHead>
-                <TableHead>المبلغ</TableHead>
-                <TableHead>الضريبة</TableHead>
-                <TableHead>الإجمالي</TableHead>
-                <TableHead>الحالة</TableHead>
-                <TableHead>تاريخ الإصدار</TableHead>
-                <TableHead>الإجراءات</TableHead>
-              </TableRow>
-            </TableHeader>
+        <CardContent className="p-0">
+          <div className="border rounded-lg overflow-hidden">
+            {/* Fixed Table Header */}
+            <div className="overflow-hidden border-b bg-muted">
+              <Table className="min-w-[1300px]">
+                <TableHeader>
+                  <TableRow className="hover:bg-transparent">
+                    <TableHead className="bg-muted">رقم الفاتورة</TableHead>
+                    <TableHead className="bg-muted">العميل</TableHead>
+                    <TableHead className="bg-muted">طلب الخدمة</TableHead>
+                    <TableHead className="bg-muted">المبلغ</TableHead>
+                    <TableHead className="bg-muted">الضريبة</TableHead>
+                    <TableHead className="bg-muted">الإجمالي</TableHead>
+                    <TableHead className="bg-muted">الحالة</TableHead>
+                    <TableHead className="bg-muted">تاريخ الإصدار</TableHead>
+                    <TableHead className="bg-muted">الإجراءات</TableHead>
+                  </TableRow>
+                </TableHeader>
+              </Table>
+            </div>
+            
+            {/* Scrollable Table Body */}
+            <div className="w-full overflow-auto force-scrollbar max-h-[calc(75vh-60px)] min-h-[340px]">
+              <Table className="min-w-[1300px]">
+                <TableHeader className="invisible">
+                  <TableRow>
+                    <TableHead>رقم الفاتورة</TableHead>
+                    <TableHead>العميل</TableHead>
+                    <TableHead>طلب الخدمة</TableHead>
+                    <TableHead>المبلغ</TableHead>
+                    <TableHead>الضريبة</TableHead>
+                    <TableHead>الإجمالي</TableHead>
+                    <TableHead>الحالة</TableHead>
+                    <TableHead>تاريخ الإصدار</TableHead>
+                    <TableHead>الإجراءات</TableHead>
+                  </TableRow>
+                </TableHeader>
             <TableBody>
               {filteredInvoices.map((invoice) => (
                 <TableRow key={invoice.id}>
@@ -467,16 +487,16 @@ ${invoiceData.serviceRequest ? `طلب الخدمة: ${invoiceData.serviceReques
               ))}
             </TableBody>
           </Table>
-
+          
           {filteredInvoices.length === 0 && (
             <div className="text-center py-12">
               <Receipt className="h-12 w-12 text-gray-400 mx-auto mb-4" />
-              <h3 className="text-lg font-medium text-gray-900 mb-2">لا توجد فواتير</h3>
+              <h3 className="text-lg font-medium text-gray-900 dark:text-gray-100 mb-2">لا توجد فواتير</h3>
               <p className="text-gray-500">لم يتم العثور على فواتير تطابق البحث</p>
             </div>
           )}
-              </div>
             </div>
+          </div>
         </CardContent>
       </Card>
       </div>

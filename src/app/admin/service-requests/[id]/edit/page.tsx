@@ -27,7 +27,14 @@ const editRequestSchema = z.object({
   title: z.string().min(3, "عنوان الطلب يجب أن يكون 3 أحرف على الأقل"),
   description: z.string().min(10, "وصف الطلب يجب أن يكون 10 أحرف على الأقل"),
   status: z.enum(["PENDING", "IN_PROGRESS", "COMPLETED", "CANCELLED"]),
-  priority: z.enum(["LOW", "MEDIUM", "HIGH", "URGENT"])
+  priority: z.enum(["LOW", "MEDIUM", "HIGH", "URGENT"]),
+  personnelCount: z.number().optional().nullable(),
+  armamentLevel: z.enum(["NONE", "LIGHT", "MEDIUM", "HEAVY"]).optional().nullable(),
+  durationUnit: z.enum(["HOURS", "DAYS", "WEEKS"]).optional().nullable(),
+  startAt: z.string().optional().nullable(),
+  endAt: z.string().optional().nullable(),
+  locationText: z.string().optional().nullable(),
+  notes: z.string().optional().nullable()
 });
 
 type EditRequestForm = z.infer<typeof editRequestSchema>;
@@ -41,6 +48,17 @@ interface ServiceRequest {
   createdAt: string;
   updatedAt: string;
   attachmentUrl?: string;
+  personnelCount?: number | null;
+  durationUnit?: string | null;
+  startAt?: string | null;
+  endAt?: string | null;
+  locationText?: string | null;
+  locationLat?: number | null;
+  locationLng?: number | null;
+  armamentLevel?: string | null;
+  notes?: string | null;
+  notifyBeforeHours?: number | null;
+  isDraft?: boolean;
   user: {
     id: string;
     name: string;
@@ -86,6 +104,13 @@ export default function ServiceRequestEditPage() {
           setValue('description', data.description);
           setValue('status', data.status);
           setValue('priority', data.priority);
+          if (data.personnelCount) setValue('personnelCount', data.personnelCount);
+          if (data.armamentLevel) setValue('armamentLevel', data.armamentLevel);
+          if (data.durationUnit) setValue('durationUnit', data.durationUnit);
+          if (data.startAt) setValue('startAt', data.startAt);
+          if (data.endAt) setValue('endAt', data.endAt);
+          if (data.locationText) setValue('locationText', data.locationText);
+          if (data.notes) setValue('notes', data.notes);
         } else {
           throw new Error('Failed to fetch request');
         }
@@ -352,6 +377,135 @@ export default function ServiceRequestEditPage() {
                 )}
               </div>
             </div>
+
+            {/* Bodyguard-specific fields */}
+            {request.service.name.match(/حارس|حراسة|بودي|Body/i) && (
+              <>
+                <div className="border-t pt-6 mt-6">
+                  <h3 className="font-semibold mb-4">تفاصيل الحراسة</h3>
+                  <div className="grid grid-cols-1 md:grid-cols-3 gap-6">
+                    {/* Personnel Count */}
+                    <div>
+                      <label htmlFor="personnelCount" className="block text-sm font-medium mb-2">
+                        عدد الأفراد
+                      </label>
+                      <Input
+                        id="personnelCount"
+                        type="number"
+                        min="1"
+                        value={watch('personnelCount') || ''}
+                        onChange={(e) => setValue('personnelCount', e.target.value ? Number(e.target.value) : null)}
+                        placeholder="عدد الأفراد المطلوبين"
+                      />
+                    </div>
+
+                    {/* Armament Level */}
+                    <div>
+                      <label htmlFor="armamentLevel" className="block text-sm font-medium mb-2">
+                        مستوى التسليح
+                      </label>
+                      <Select
+                        value={watch('armamentLevel') || ''}
+                        onValueChange={(value) => setValue('armamentLevel', value as any)}
+                      >
+                        <SelectTrigger>
+                          <SelectValue placeholder="اختر مستوى التسليح" />
+                        </SelectTrigger>
+                        <SelectContent>
+                          <SelectItem value="NONE">بدون سلاح</SelectItem>
+                          <SelectItem value="LIGHT">سلاح خفيف</SelectItem>
+                          <SelectItem value="MEDIUM">سلاح متوسط</SelectItem>
+                          <SelectItem value="HEAVY">سلاح ثقيل</SelectItem>
+                        </SelectContent>
+                      </Select>
+                    </div>
+
+                    {/* Duration Unit */}
+                    <div>
+                      <label htmlFor="durationUnit" className="block text-sm font-medium mb-2">
+                        وحدة المدة
+                      </label>
+                      <Select
+                        value={watch('durationUnit') || ''}
+                        onValueChange={(value) => setValue('durationUnit', value as any)}
+                      >
+                        <SelectTrigger>
+                          <SelectValue placeholder="اختر وحدة المدة" />
+                        </SelectTrigger>
+                        <SelectContent>
+                          <SelectItem value="HOURS">ساعات</SelectItem>
+                          <SelectItem value="DAYS">أيام</SelectItem>
+                          <SelectItem value="WEEKS">أسابيع</SelectItem>
+                        </SelectContent>
+                      </Select>
+                    </div>
+                  </div>
+                </div>
+
+                {/* Schedule */}
+                <div className="border-t pt-6 mt-6">
+                  <h3 className="font-semibold mb-4">الجدولة الزمنية</h3>
+                  <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
+                    <div>
+                      <label htmlFor="startAt" className="block text-sm font-medium mb-2">
+                        وقت البدء
+                      </label>
+                      <Input
+                        id="startAt"
+                        type="datetime-local"
+                        value={watch('startAt') && watch('startAt') !== null ? new Date(watch('startAt')!).toISOString().slice(0, 16) : ''}
+                        onChange={(e) => setValue('startAt', e.target.value ? new Date(e.target.value).toISOString() : null)}
+                      />
+                    </div>
+                    <div>
+                      <label htmlFor="endAt" className="block text-sm font-medium mb-2">
+                        وقت الانتهاء
+                      </label>
+                      <Input
+                        id="endAt"
+                        type="datetime-local"
+                        value={watch('endAt') && watch('endAt') !== null ? new Date(watch('endAt')!).toISOString().slice(0, 16) : ''}
+                        onChange={(e) => setValue('endAt', e.target.value ? new Date(e.target.value).toISOString() : null)}
+                      />
+                    </div>
+                  </div>
+                </div>
+
+                {/* Location */}
+                <div className="border-t pt-6 mt-6">
+                  <h3 className="font-semibold mb-4">الموقع</h3>
+                  <div>
+                    <label htmlFor="locationText" className="block text-sm font-medium mb-2">
+                      وصف الموقع
+                    </label>
+                    <Textarea
+                      id="locationText"
+                      value={watch('locationText') || ''}
+                      onChange={(e) => setValue('locationText', e.target.value || null)}
+                      placeholder="أدخل وصف الموقع..."
+                      rows={2}
+                    />
+                  </div>
+                </div>
+
+                {/* Notes */}
+                <div className="border-t pt-6 mt-6">
+                  <h3 className="font-semibold mb-4">ملاحظات إضافية</h3>
+                  <div>
+                    <label htmlFor="notes" className="block text-sm font-medium mb-2">
+                      ملاحظات
+                    </label>
+                    <Textarea
+                      id="notes"
+                      value={watch('notes') || ''}
+                      onChange={(e) => setValue('notes', e.target.value || null)}
+                      placeholder="أدخل أي ملاحظات إضافية..."
+                      rows={3}
+                    />
+                  </div>
+                </div>
+              </>
+            )}
 
             {/* Current Status Preview */}
             <div className="border-t pt-4">

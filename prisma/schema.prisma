@@ -5,6 +5,7 @@ generator client {
 datasource db {
   provider = "postgresql"
   url      = env("DATABASE_URL")
+  directUrl = env("DIRECT_URL")
 }
 
 model Account {
@@ -44,6 +45,18 @@ model User {
   createdAt       DateTime         @default(now())
   updatedAt       DateTime         @updatedAt
   password        String?
+  // Client profile fields
+  phone           String?
+  address         String?
+  company         String?
+  position        String?
+  // Notification preferences
+  notificationsEmail  Boolean @default(true)
+  notificationsSms    Boolean @default(true)
+  notificationsSystem Boolean @default(true)
+  // Two-factor authentication (TOTP)
+  twoFactorEnabled    Boolean @default(false)
+  twoFactorSecret     String?
   accounts        Account[]
   activityLogs    ActivityLog[]
   invoices        Invoice[]
@@ -92,30 +105,45 @@ model ServiceRequest {
   status        ServiceRequestStatus @default(PENDING)
   priority      Priority             @default(MEDIUM)
   attachmentUrl String?
-  // New structured fields for rich, per-service customization
-  details       Json?
-  attachments   Json?
-  // Scheduling and location
-  startAt       DateTime?
-  endAt         DateTime?
-  locationAddress String?
-  locationLat   Float?
-  locationLng   Float?
-  // Options and pricing
-  armamentLevel ArmamentLevel?
-  headcount     Int? // e.g., number of guards or cleaners
-  unitPrice     Float?
-  extraCost     Float?              @default(0)
-  totalCost     Float?
-  // Workflow helpers
-  remindBefore24h Boolean           @default(false)
-  isDraft         Boolean           @default(false)
-  createdAt     DateTime             @default(now())
-  updatedAt     DateTime             @updatedAt
-  invoices      Invoice[]
-  reminders     Reminder[]
-  service       Service              @relation(fields: [serviceId], references: [id], onDelete: Cascade)
-  user          User                 @relation(fields: [userId], references: [id], onDelete: Cascade)
+  // Structured fields for rich, per-service customization
+  details           Json?
+  // Scheduling and location (consolidated)
+  startAt           DateTime?
+  endAt             DateTime?
+  locationText      String?
+  locationLat       Float?
+  locationLng       Float?
+  // Options and pricing (consolidated)
+  armamentLevel     ArmamentLevel?
+  personnelCount    Int?
+  durationUnit      DurationUnit?
+  notes             String?
+  notifyBeforeHours Int?             @default(24)
+  isDraft           Boolean?         @default(false)
+  lastReminderAt    DateTime?
+  // Attachments relation
+  attachments       RequestAttachment[]
+  // Relations
+  createdAt         DateTime         @default(now())
+  updatedAt         DateTime         @updatedAt
+  invoices          Invoice[]
+  reminders         Reminder[]
+  service           Service          @relation(fields: [serviceId], references: [id], onDelete: Cascade)
+  user              User             @relation(fields: [userId], references: [id], onDelete: Cascade)
+
+  @@index([startAt])
+  @@index([status, startAt])
+  @@index([isDraft, startAt])
+}
+
+model RequestAttachment {
+  id        String   @id @default(cuid())
+  requestId String
+  url       String
+  name      String?
+  mimeType  String?
+  createdAt DateTime @default(now())
+  request   ServiceRequest @relation(fields: [requestId], references: [id], onDelete: Cascade)
 }
 
 model Employee {
@@ -288,11 +316,6 @@ enum ServiceRequestStatus {
 }
 
 // Level of armament for guards/security
-enum ArmamentLevel {
-  NONE
-  SOUND_WEAPON
-  FIREARM
-}
 
 enum Priority {
   LOW
@@ -313,4 +336,16 @@ enum ReportStatus {
   UNDER_REVIEW
   PUBLISHED
   ARCHIVED
+}
+
+enum DurationUnit {
+  HOURS
+  DAYS
+}
+
+enum ArmamentLevel {
+  STANDARD
+  ARMED
+  SUPERVISOR
+  MIXED
 }

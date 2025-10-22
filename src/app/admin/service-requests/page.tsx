@@ -28,7 +28,8 @@ import {
   Phone,
   Plus,
   Loader2,
-  RefreshCw
+  RefreshCw,
+  Shield
 } from "lucide-react";
 import Link from "next/link";
 import { formatEGPSimple } from "@/lib/egyptian-utils";
@@ -50,12 +51,22 @@ interface ServiceRequest {
     name: string;
     email: string;
   };
-  service: {
+  service?: {
     id: string;
     name: string;
     description: string;
     price: number;
   };
+  service_name?: string;
+  service_description?: string;
+  service_price?: number;
+  personnelCount?: number;
+  startAt?: string;
+  endAt?: string;
+  armamentLevel?: string;
+  isDraft?: boolean;
+  locationLat?: number;
+  locationLng?: number;
 }
 
 export default function AdminServiceRequestsPage() {
@@ -64,6 +75,11 @@ export default function AdminServiceRequestsPage() {
   const [searchTerm, setSearchTerm] = useState("");
   const [statusFilter, setStatusFilter] = useState<string>("all");
   const [requests, setRequests] = useState<ServiceRequest[]>([]);
+  const [armamentFilter, setArmamentFilter] = useState<string>('all');
+  const [draftFilter, setDraftFilter] = useState<string>('all');
+  const [serviceNameFilter, setServiceNameFilter] = useState('');
+  const [fromDate, setFromDate] = useState('');
+  const [toDate, setToDate] = useState('');
   const [isLoading, setIsLoading] = useState(true);
   const [isRefreshing, setIsRefreshing] = useState(false);
 
@@ -75,8 +91,14 @@ export default function AdminServiceRequestsPage() {
       } else {
         setIsLoading(true);
       }
-
-      const response = await fetch('/api/service-requests');
+      const params = new URLSearchParams();
+      params.set('extended', '1');
+      if (armamentFilter !== 'all') params.set('armamentLevel', armamentFilter);
+      if (draftFilter !== 'all') params.set('draft', draftFilter === 'draft' ? 'true' : 'false');
+      if (fromDate) params.set('from', new Date(fromDate).toISOString());
+      if (toDate) params.set('to', new Date(toDate).toISOString());
+      if (serviceNameFilter) params.set('serviceType', serviceNameFilter);
+      const response = await fetch('/api/service-requests?' + params.toString());
       if (response.ok) {
         const data = await response.json();
         setRequests(data);
@@ -98,7 +120,8 @@ export default function AdminServiceRequestsPage() {
 
   useEffect(() => {
     fetchServiceRequests();
-  }, []);
+  // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [armamentFilter, draftFilter, fromDate, toDate, serviceNameFilter]);
 
   const handleRefresh = () => {
     fetchServiceRequests(true);
@@ -207,7 +230,7 @@ export default function AdminServiceRequestsPage() {
   
   const filteredRequests = requests.filter(request => {
     const matchesSearch = request.title.toLowerCase().includes(searchTerm.toLowerCase()) ||
-                         request.service.name.toLowerCase().includes(searchTerm.toLowerCase()) ||
+                         (request.service?.name || request.service_name || '').toLowerCase().includes(searchTerm.toLowerCase()) ||
                          request.user.name.toLowerCase().includes(searchTerm.toLowerCase()) ||
                          request.id.toLowerCase().includes(searchTerm.toLowerCase());
     const matchesStatus = statusFilter === "all" || request.status === statusFilter;
@@ -245,7 +268,7 @@ export default function AdminServiceRequestsPage() {
   };
 
   const renderBriefDetails = (req: ServiceRequest) => {
-    const s = req.service.name || "";
+    const s = req.service?.name || "";
     const d = (req.details || {}) as any;
     try {
       if (s.includes("حارس") || s.includes("حراسة") || s.includes("بودي")) {
@@ -323,7 +346,7 @@ export default function AdminServiceRequestsPage() {
             إدارة ومتابعة جميع طلبات الخدمة الواردة
           </p>
         </div>
-        <div className="flex space-x-2 space-x-reverse">
+        <div className="flex flex-wrap gap-2">
           <Button onClick={handleRefresh} variant="outline" disabled={isRefreshing}>
             {isRefreshing ? (
               <Loader2 className="h-4 w-4 mr-2 animate-spin" />
@@ -332,10 +355,16 @@ export default function AdminServiceRequestsPage() {
             )}
             تحديث
           </Button>
-          <Button asChild>
+          <Button asChild className="bg-orange-600 hover:bg-orange-700">
+            <Link href="/admin/service-requests/bodyguard/new">
+              <Shield className="h-4 w-4 mr-2" />
+              طلب حراسة شخصية
+            </Link>
+          </Button>
+          <Button asChild variant="outline">
             <Link href="/admin/service-requests/new">
               <Plus className="h-4 w-4 mr-2" />
-              طلب خدمة جديد
+              طلب خدمة عام
             </Link>
           </Button>
           <Button variant="outline">
@@ -397,8 +426,8 @@ export default function AdminServiceRequestsPage() {
 
       {/* Search and Filters */}
       <Card>
-        <CardContent className="p-6">
-          <div className="flex items-center space-x-4 space-x-reverse">
+        <CardContent className="p-6 space-y-4">
+          <div className="flex flex-col lg:flex-row items-stretch lg:items-center gap-4">
             <div className="relative flex-1">
               <Search className="absolute right-3 top-1/2 transform -translate-y-1/2 text-gray-400 h-4 w-4" />
               <Input
@@ -408,7 +437,7 @@ export default function AdminServiceRequestsPage() {
                 className="pr-10"
               />
             </div>
-            <div className="flex space-x-2 space-x-reverse">
+            <div className="flex flex-wrap gap-2">
               <Button 
                 variant={statusFilter === 'all' ? 'default' : 'outline'}
                 onClick={() => setStatusFilter('all')}
@@ -439,6 +468,38 @@ export default function AdminServiceRequestsPage() {
               </Button>
             </div>
           </div>
+          <div className="grid grid-cols-1 md:grid-cols-2 xl:grid-cols-5 gap-4">
+            <div className="space-y-1">
+              <label className="text-xs font-medium">مستوى التسليح</label>
+              <select aria-label="فلتر مستوى التسليح" className="border rounded-md h-9 px-2 text-sm bg-background" value={armamentFilter} onChange={(e)=>setArmamentFilter(e.target.value)}>
+                <option value="all">الكل</option>
+                <option value="STANDARD">قياسي</option>
+                <option value="ARMED">مسلح</option>
+                <option value="SUPERVISOR">مشرف</option>
+                <option value="MIXED">مزيج</option>
+              </select>
+            </div>
+            <div className="space-y-1">
+              <label className="text-xs font-medium">الحالة (مسودة/مرسل)</label>
+              <select aria-label="فلتر المسودة" className="border rounded-md h-9 px-2 text-sm bg-background" value={draftFilter} onChange={(e)=>setDraftFilter(e.target.value)}>
+                <option value="all">الكل</option>
+                <option value="draft">مسودة</option>
+                <option value="submitted">مرسل</option>
+              </select>
+            </div>
+            <div className="space-y-1">
+              <label className="text-xs font-medium">اسم الخدمة</label>
+              <Input placeholder="فلترة بالاسم" value={serviceNameFilter} onChange={(e)=>setServiceNameFilter(e.target.value)} />
+            </div>
+            <div className="space-y-1">
+              <label className="text-xs font-medium">من تاريخ (بداية)</label>
+              <Input type="date" value={fromDate} onChange={(e)=>setFromDate(e.target.value)} />
+            </div>
+            <div className="space-y-1">
+              <label className="text-xs font-medium">إلى تاريخ (نهاية)</label>
+              <Input type="date" value={toDate} onChange={(e)=>setToDate(e.target.value)} />
+            </div>
+          </div>
         </CardContent>
       </Card>
 
@@ -451,7 +512,7 @@ export default function AdminServiceRequestsPage() {
           </CardDescription>
         </CardHeader>
         <CardContent>
-          <div className="w-full overflow-auto border rounded-lg force-scrollbar" style={{maxHeight: '75vh', minHeight: '400px'}}>
+          <div className="w-full overflow-auto border rounded-lg force-scrollbar max-h-[75vh] min-h-[400px]">
             <div className="min-w-[1200px]">
               <Table className="w-full">
             <TableHeader>
@@ -462,9 +523,15 @@ export default function AdminServiceRequestsPage() {
                 <TableHead className="w-[200px]">عنوان الطلب</TableHead>
                 <TableHead className="w-[120px] text-center">الأولوية</TableHead>
                 <TableHead className="w-[120px] text-center">الحالة</TableHead>
+                <TableHead className="w-[90px] text-center">أفراد</TableHead>
+                <TableHead className="w-[160px] text-center">الجدولة</TableHead>
+                <TableHead className="w-[110px] text-center">تسليح</TableHead>
+                <TableHead className="w-[90px] text-center">مسودة؟</TableHead>
                 <TableHead className="w-[130px] text-center">السعر المقدر</TableHead>
-                <TableHead className="w-[220px]">تفاصيل مختصرة</TableHead>
-                <TableHead className="w-[200px] text-center">الإجراءات</TableHead>
+                <TableHead className="w-[160px] text-center">الموقع</TableHead>
+                <TableHead className="w-[160px] text-center">الإجراءات</TableHead>
+                <TableHead className="w-[160px] text-center">الموقع</TableHead>
+                <TableHead className="w-[160px] text-center">الإجراءات</TableHead>
               </TableRow>
             </TableHeader>
             <TableBody>
@@ -503,8 +570,8 @@ export default function AdminServiceRequestsPage() {
                     </TableCell>
                     <TableCell className="w-[180px]">
                       <div>
-                        <div className="font-medium">{request.service.name}</div>
-                        <div className="text-sm text-muted-foreground truncate max-w-[160px]">{request.service.description}</div>
+                        <div className="font-medium">{request.service?.name || request.service_name}</div>
+                        <div className="text-sm text-muted-foreground truncate max-w-[160px]">{request.service?.description || request.service_description}</div>
                       </div>
                     </TableCell>
                     <TableCell className="w-[200px]">
@@ -515,13 +582,32 @@ export default function AdminServiceRequestsPage() {
                     </TableCell>
                     <TableCell className="w-[120px] text-center">{getPriorityBadge(request.priority)}</TableCell>
                     <TableCell className="w-[120px] text-center">{getStatusBadge(request.status)}</TableCell>
+                    <TableCell className="w-[90px] text-center">{request.personnelCount ?? '-'}</TableCell>
+                    <TableCell className="w-[160px] text-center">
+                      {request.startAt ? (
+                        <div className="text-xs leading-tight">
+                          <div>{new Date(request.startAt).toLocaleDateString('ar-EG',{ month:'short', day:'numeric'})}</div>
+                          {request.endAt && <div className="text-muted-foreground">→ {new Date(request.endAt).toLocaleDateString('ar-EG',{ month:'short', day:'numeric'})}</div>}
+                        </div>
+                      ) : <span className="text-muted-foreground">-</span>}
+                    </TableCell>
+                    <TableCell className="w-[110px] text-center text-xs">
+                      {request.armamentLevel ? (
+                        <Badge variant="outline">{request.armamentLevel}</Badge>
+                      ) : '-'}
+                    </TableCell>
+                    <TableCell className="w-[90px] text-center">
+                      {request.isDraft ? <Badge variant="secondary" className="bg-gray-200 text-gray-800">مسودة</Badge> : <Badge className="bg-blue-100 text-blue-800" variant="outline">مرسل</Badge>}
+                    </TableCell>
                     <TableCell className="w-[130px] text-center">
-                      <div className="font-medium">{formatEGPSimple((request.totalCost ?? request.service.price) || 0)}</div>
+                      <div className="font-medium">{formatEGPSimple((request.service?.price ?? request.service_price) || 0)}</div>
                     </TableCell>
-                    <TableCell className="w-[220px]">
-                      {renderBriefDetails(request)}
+                    <TableCell className="w-[160px] text-center">
+                      {typeof request.locationLat === 'number' && typeof request.locationLng === 'number' ? (
+                        <a className="text-blue-600 hover:underline text-xs" target="_blank" rel="noreferrer" href={`https://maps.google.com/?q=${request.locationLat},${request.locationLng}`}>فتح على الخريطة</a>
+                      ) : <span className="text-muted-foreground text-xs">—</span>}
                     </TableCell>
-                    <TableCell className="w-[200px]">
+                    <TableCell className="w-[160px]">
                       <div className="flex items-center justify-center space-x-1 space-x-reverse">
                         <Button 
                           variant="ghost" 
@@ -581,8 +667,8 @@ export default function AdminServiceRequestsPage() {
 
                                 if (response.ok) {
                                   toast({
-                                    title: "تم إنهاء الطلب وإنشاء الفاتورة",
-                                    description: `تم إنهاء طلب ${request.title} بنجاح وتم إنشاء فاتورة تلقائياً`,
+                                    title: "تم إنهاء الطلب",
+                                    description: `تم إنهاء طلب ${request.title} بنجاح`,
                                   });
                                   fetchServiceRequests(true); // Refresh data
                                 } else {

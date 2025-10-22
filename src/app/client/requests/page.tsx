@@ -1,6 +1,7 @@
 "use client";
 
 import { useState, useEffect } from "react";
+import { useRouter } from 'next/navigation';
 import { Card, CardHeader, CardTitle, CardDescription, CardContent } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
@@ -21,6 +22,7 @@ interface Service {
 }
 
 export default function ClientRequestsPage() {
+  const router = useRouter();
   const { user } = useAuth();
   const { toast } = useToast();
   const [services, setServices] = useState<Service[]>([]);
@@ -149,8 +151,13 @@ export default function ClientRequestsPage() {
           </div>
         </CardContent>
       </Card>
-      <div className="flex justify-between items-center">
+      <div className="flex flex-col md:flex-row justify-between items-start md:items-center gap-3">
         <h1 className="text-3xl font-bold">طلب خدمة جديدة</h1>
+        <div className="flex gap-2">
+          <Button onClick={() => router.push('/client/services/personal-guard?from=requests')}>
+            طلب خدمة الحارس الشخصي
+          </Button>
+        </div>
       </div>
 
       <Card>
@@ -267,7 +274,7 @@ export default function ClientRequestsPage() {
               <h3 className="font-semibold text-green-800 mb-2">📞 التواصل المباشر</h3>
               <p className="text-sm text-green-700">
                 للطوارئ: 122<br />
-                خدمة العملاء: +20 2 1234 5678<br />
+                خدمة العملاء: 01119224091<br />
                 البريد الإلكتروني: support@saifmasr.com
               </p>
             </div>

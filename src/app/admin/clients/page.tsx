@@ -282,7 +282,7 @@ export default function AdminClientsPage() {
         </CardHeader>
         <CardContent>
           {/* Enhanced scrollable table container */}
-          <div className="w-full overflow-auto border rounded-lg force-scrollbar" style={{maxHeight: '75vh', minHeight: '400px'}}>
+          <div className="w-full overflow-auto border rounded-lg force-scrollbar max-h-[75vh] min-h-[400px]">
             <div className="min-w-[1200px]">
               <Table className="w-full">
             <TableHeader>

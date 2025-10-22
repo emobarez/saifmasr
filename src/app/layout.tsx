@@ -1,6 +1,7 @@
 
 import type { Metadata } from 'next';
 import './globals.css';
+import 'leaflet/dist/leaflet.css'; // side-effect import for map styles
 import { AppInitializer } from '@/components/layout/AppInitializer';
 
 // Default metadata - can be overridden by DynamicHeadElementsSetter

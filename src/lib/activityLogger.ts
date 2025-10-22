@@ -11,6 +11,7 @@ export type ActivityActionType =
   | "INVOICE_CREATED" | "INVOICE_UPDATED" | "INVOICE_DELETED"
   | "REPORT_CREATED" | "REPORT_UPDATED" | "REPORT_DELETED"
   | "SERVICE_REQUEST_SUBMITTED" | "SERVICE_REQUEST_STATUS_UPDATED"
+  | "SERVICE_REQUEST_DRAFT_CREATED" | "SERVICE_REQUEST_DRAFT_UPDATED" | "SERVICE_REQUEST_DRAFT_SUBMITTED" | "SERVICE_REQUEST_ATTACHMENT_ADDED" | "SERVICE_REQUEST_REMINDER_SENT"
   | "AI_REPORT_SUMMARY_GENERATED" | "AI_REPORT_IMPROVEMENTS_SUGGESTED" | "AI_REPORT_SECTION_GENERATED" | "AI_REPORT_SECTION_APPENDED"
   | "AI_SERVICE_CATEGORY_SUGGESTED" | "AI_SERVICE_FAQS_GENERATED"
   | "AI_TOOL_USAGE" | "AI_TOOL_ERROR"
@@ -176,6 +177,46 @@ export const ActivityLogger = {
       actionType: 'INFO',
       description: `معلومات النظام: ${info}`,
       details: { info, context }
+    }),
+
+  // Service Request detailed events
+  serviceRequestDraftCreated: (userId: string, requestId: string, data: Record<string, any>) =>
+    logActivity({
+      actionType: 'SERVICE_REQUEST_DRAFT_CREATED',
+      description: `إنشاء مسودة طلب خدمة: ${requestId}`,
+      actor: { id: userId },
+      target: { id: requestId, type: 'ServiceRequest' },
+      details: data
+    }),
+  serviceRequestDraftUpdated: (userId: string, requestId: string, changes: Record<string, any>) =>
+    logActivity({
+      actionType: 'SERVICE_REQUEST_DRAFT_UPDATED',
+      description: `تحديث مسودة طلب خدمة: ${requestId}`,
+      actor: { id: userId },
+      target: { id: requestId, type: 'ServiceRequest' },
+      details: { changes }
+    }),
+  serviceRequestDraftSubmitted: (userId: string, requestId: string) =>
+    logActivity({
+      actionType: 'SERVICE_REQUEST_DRAFT_SUBMITTED',
+      description: `إرسال مسودة طلب خدمة: ${requestId}`,
+      actor: { id: userId },
+      target: { id: requestId, type: 'ServiceRequest' }
+    }),
+  serviceRequestAttachmentAdded: (userId: string | null, requestId: string, attachmentCount: number) =>
+    logActivity({
+      actionType: 'SERVICE_REQUEST_ATTACHMENT_ADDED',
+      description: `إضافة مرفقات (${attachmentCount}) لطلب خدمة: ${requestId}`,
+      actor: { id: userId || null },
+      target: { id: requestId, type: 'ServiceRequest' },
+      details: { attachmentCount }
+    }),
+  serviceRequestReminderSent: (requestId: string, details: Record<string, any>) =>
+    logActivity({
+      actionType: 'SERVICE_REQUEST_REMINDER_SENT',
+      description: `إرسال تذكير لطلب خدمة: ${requestId}`,
+      target: { id: requestId, type: 'ServiceRequest' },
+      details
     }),
 
   // Settings
