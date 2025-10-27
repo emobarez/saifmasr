@@ -1,0 +1,359 @@
+generator client {
+  provider = "prisma-client-js"
+}
+
+datasource db {
+  provider = "postgresql"
+  url      = env("DATABASE_URL")
+  directUrl = env("DIRECT_URL")
+}
+
+model Account {
+  id                String  @id @default(cuid())
+  userId            String
+  type              String
+  provider          String
+  providerAccountId String
+  refresh_token     String?
+  access_token      String?
+  expires_at        Int?
+  token_type        String?
+  scope             String?
+  id_token          String?
+  session_state     String?
+  user              User    @relation(fields: [userId], references: [id], onDelete: Cascade)
+
+  @@unique([provider, providerAccountId])
+}
+
+model Session {
+  id           String   @id @default(cuid())
+  sessionToken String   @unique
+  userId       String
+  expires      DateTime
+  user         User     @relation(fields: [userId], references: [id], onDelete: Cascade)
+}
+
+model User {
+  id              String           @id @default(cuid())
+  name            String?
+  email           String           @unique
+  emailVerified   DateTime?
+  image           String?
+  role            Role             @default(CLIENT)
+  status          UserStatus       @default(ACTIVE)
+  createdAt       DateTime         @default(now())
+  updatedAt       DateTime         @updatedAt
+  password        String?
+  // Client profile fields
+  phone           String?
+  address         String?
+  company         String?
+  position        String?
+  // Notification preferences
+  notificationsEmail  Boolean @default(true)
+  notificationsSms    Boolean @default(true)
+  notificationsSystem Boolean @default(true)
+  // Two-factor authentication (TOTP)
+  twoFactorEnabled    Boolean @default(false)
+  twoFactorSecret     String?
+  accounts        Account[]
+  activityLogs    ActivityLog[]
+  invoices        Invoice[]
+  serviceRequests ServiceRequest[]
+  sessions        Session[]
+}
+
+model VerificationToken {
+  identifier String
+  token      String   @unique
+  expires    DateTime
+
+  @@unique([identifier, token])
+}
+
+model Service {
+  id              String           @id @default(cuid())
+  name            String
+  slug            String           @unique @default(cuid())
+  description     String?
+  shortDescription String?
+  category        String?
+  price           Float?
+  status          ServiceStatus    @default(ACTIVE)
+  createdAt       DateTime         @default(now())
+  updatedAt       DateTime         @updatedAt
+  icon            String?
+  displayOrder    Int              @default(0)
+  isFeatured      Boolean          @default(false)
+  features        Json?
+  ctaLabel        String?
+  ctaUrl          String?
+  faqs            ServiceFAQ[]
+  serviceRequests ServiceRequest[]
+}
+
+model ServiceFAQ {
+  id        String   @id @default(cuid())
+  serviceId String
+  question  String
+  answer    String
+  order     Int      @default(0)
+  createdAt DateTime @default(now())
+  updatedAt DateTime @updatedAt
+  service   Service  @relation(fields: [serviceId], references: [id], onDelete: Cascade)
+}
+
+model ServiceRequest {
+  id            String               @id @default(cuid())
+  userId        String
+  serviceId     String
+  title         String
+  description   String
+  status        ServiceRequestStatus @default(PENDING)
+  priority      Priority             @default(MEDIUM)
+  attachmentUrl String?
+  // Structured fields for rich, per-service customization
+  details           Json?
+  // Scheduling and location (consolidated)
+  startAt           DateTime?
+  endAt             DateTime?
+  locationText      String?
+  locationLat       Float?
+  locationLng       Float?
+  // Options and pricing (consolidated)
+  armamentLevel     ArmamentLevel?
+  personnelCount    Int?
+  durationUnit      DurationUnit?
+  notes             String?
+  notifyBeforeHours Int?             @default(24)
+  isDraft           Boolean?         @default(false)
+  lastReminderAt    DateTime?
+  // Attachments relation
+  attachments       RequestAttachment[]
+  // Relations
+  createdAt         DateTime         @default(now())
+  updatedAt         DateTime         @updatedAt
+  invoices          Invoice[]
+  reminders         Reminder[]
+  service           Service          @relation(fields: [serviceId], references: [id], onDelete: Cascade)
+  user              User             @relation(fields: [userId], references: [id], onDelete: Cascade)
+
+  @@index([startAt])
+  @@index([status, startAt])
+  @@index([isDraft, startAt])
+}
+
+model RequestAttachment {
+  id        String   @id @default(cuid())
+  requestId String
+  url       String
+  name      String?
+  mimeType  String?
+  createdAt DateTime @default(now())
+  request   ServiceRequest @relation(fields: [requestId], references: [id], onDelete: Cascade)
+}
+
+model Employee {
+  id          String         @id @default(cuid())
+  name        String
+  email       String         @unique
+  phone       String?
+  position    String
+  department  String?
+  salary      Float?
+  status      EmployeeStatus @default(ACTIVE)
+  hireDate    DateTime
+  createdAt   DateTime       @default(now())
+  updatedAt   DateTime       @updatedAt
+  assignments Assignment[]
+}
+
+model Assignment {
+  id          String           @id @default(cuid())
+  employeeId  String
+  title       String
+  description String?
+  status      AssignmentStatus @default(PENDING)
+  priority    Priority         @default(MEDIUM)
+  startDate   DateTime?
+  endDate     DateTime?
+  createdAt   DateTime         @default(now())
+  updatedAt   DateTime         @updatedAt
+  employee    Employee         @relation(fields: [employeeId], references: [id], onDelete: Cascade)
+}
+
+model Invoice {
+  id               String          @id @default(cuid())
+  userId           String
+  clientId         String
+  amount           Float
+  status           InvoiceStatus   @default(PENDING)
+  dueDate          DateTime?
+  description      String?
+  createdAt        DateTime        @default(now())
+  updatedAt        DateTime        @updatedAt
+  currency         String          @default("EGP")
+  invoiceNumber    String          @unique
+  paidAt           DateTime?
+  paymentMethod    String?
+  taxAmount        Float?          @default(0)
+  totalAmount      Float
+  serviceRequestId String?
+  serviceRequest   ServiceRequest? @relation(fields: [serviceRequestId], references: [id])
+  user             User            @relation(fields: [userId], references: [id], onDelete: Cascade)
+  items            InvoiceItem[]
+}
+
+model InvoiceItem {
+  id          String   @id @default(cuid())
+  invoiceId   String
+  description String
+  quantity    Int      @default(1)
+  unitPrice   Float
+  totalPrice  Float
+  createdAt   DateTime @default(now())
+  invoice     Invoice  @relation(fields: [invoiceId], references: [id], onDelete: Cascade)
+}
+
+model Report {
+  id         String       @id @default(cuid())
+  title      String
+  content    String
+  status     ReportStatus @default(DRAFT)
+  type       String?
+  createdAt  DateTime     @default(now())
+  updatedAt  DateTime     @updatedAt
+  clientId   String?
+  employeeId String?
+  endDate    DateTime?
+  serviceId  String?
+  startDate  DateTime?
+  summary    String?
+}
+
+model ActivityLog {
+  id          String   @id @default(cuid())
+  userId      String?
+  actionType  String
+  description String
+  metadata    Json?
+  createdAt   DateTime @default(now())
+  user        User?    @relation(fields: [userId], references: [id])
+}
+
+model Reminder {
+  id                String         @id @default(cuid())
+  serviceRequestId  String
+  type              String         @default("FOLLOW_UP_24H")
+  dueAt             DateTime
+  sentAt            DateTime?
+  channel           String?        // e.g., EMAIL, SMS, PUSH
+  createdAt         DateTime       @default(now())
+  updatedAt         DateTime       @updatedAt
+  serviceRequest    ServiceRequest @relation(fields: [serviceRequestId], references: [id], onDelete: Cascade)
+}
+
+model SystemSettings {
+  id                          String   @id @default("general")
+  portalName                  String   @default("سيف مصر الوطنية للأمن")
+  maintenanceMode             Boolean  @default(false)
+  adminEmail                  String   @default("admin@saifmasr.com")
+  companyPhone                String?
+  companyAddress              String?
+  publicEmail                 String?
+  themeBackgroundLight        String?
+  themeForegroundLight        String?
+  themePrimaryLight           String?
+  themePrimaryForegroundLight String?
+  themeAccentLight            String?
+  themeAccentForegroundLight  String?
+  themeBackgroundDark         String?
+  themeForegroundDark         String?
+  themePrimaryDark            String?
+  themePrimaryForegroundDark  String?
+  themeAccentDark             String?
+  themeAccentForegroundDark   String?
+  facebookUrl                 String?
+  twitterUrl                  String?
+  linkedinUrl                 String?
+  instagramUrl                String?
+  createdAt                   DateTime @default(now())
+  updatedAt                   DateTime @updatedAt
+  currency                    String   @default("EGP")
+  locale                      String   @default("ar-EG")
+  taxRate                     Float    @default(14.0)
+  timezone                    String   @default("Africa/Cairo")
+}
+
+enum EmployeeStatus {
+  ACTIVE
+  INACTIVE
+  ON_LEAVE
+  TERMINATED
+}
+
+enum AssignmentStatus {
+  PENDING
+  IN_PROGRESS
+  COMPLETED
+  CANCELLED
+}
+
+enum Role {
+  ADMIN
+  CLIENT
+}
+
+enum UserStatus {
+  ACTIVE
+  INACTIVE
+  BANNED
+}
+
+enum ServiceStatus {
+  ACTIVE
+  INACTIVE
+}
+
+enum ServiceRequestStatus {
+  PENDING
+  IN_PROGRESS
+  COMPLETED
+  CANCELLED
+}
+
+// Level of armament for guards/security
+
+enum Priority {
+  LOW
+  MEDIUM
+  HIGH
+  URGENT
+}
+
+enum InvoiceStatus {
+  PENDING
+  PAID
+  OVERDUE
+  CANCELLED
+}
+
+enum ReportStatus {
+  DRAFT
+  UNDER_REVIEW
+  PUBLISHED
+  ARCHIVED
+}
+
+enum DurationUnit {
+  HOURS
+  DAYS
+}
+
+enum ArmamentLevel {
+  STANDARD
+  ARMED
+  SUPERVISOR
+  MIXED
+}

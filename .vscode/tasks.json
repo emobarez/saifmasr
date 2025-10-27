@@ -1,0 +1,13 @@
+{
+	"version": "2.0.0",
+	"tasks": [
+		{
+			"label": "check-pending-diff",
+			"type": "shell",
+			"command": "git --no-pager diff --name-only | cat",
+			"args": [],
+			"isBackground": false,
+			"group": "build"
+		}
+	]
+}

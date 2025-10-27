@@ -1,0 +1,311 @@
+
+@tailwind base;
+@tailwind components;
+@tailwind utilities;
+
+/* Leaflet map styles imported once in root layout (removed @import to avoid module resolution issues) */
+
+body {
+  font-family: 'Inter', sans-serif;
+}
+
+@layer base {
+  :root {
+    /* Main Light Theme HSL values - Modern Reference Style */
+    --default-background-light: 0 0% 100%;
+    --default-foreground-light: 220 15% 15%;
+    --default-card-light: 0 0% 100%;
+    --default-card-foreground-light: 220 15% 15%;
+    --default-popover-light: 0 0% 100%;
+    --default-popover-foreground-light: 220 15% 15%;
+    --default-primary-light: 214 100% 59%;
+    --default-primary-foreground-light: 0 0% 100%;
+    --default-secondary-light: 220 25% 96%;
+    --default-secondary-foreground-light: 220 15% 20%;
+    --default-muted-light: 220 25% 96%;
+    --default-muted-foreground-light: 220 15% 50%;
+    --default-accent-light: 214 100% 59%;
+    --default-accent-foreground-light: 0 0% 100%;
+    --default-destructive-light: 0 84% 60%;
+    --default-destructive-foreground-light: 0 0% 100%;
+    --default-border-light: 220 25% 90%;
+    --default-input-light: 220 25% 94%;
+    --default-ring-light: 214 100% 59%;    /* Sidebar Light Theme HSL values - Modern Reference Style */
+    --default-sidebar-background-light: 35 45% 94%; /* warm cream like reference */
+    --default-sidebar-foreground-light: 220 20% 20%; /* dark text */
+    --default-sidebar-primary-light: 214 100% 59%;
+    --default-sidebar-primary-foreground-light: 0 0% 100%;
+    --default-sidebar-accent-light: 214 100% 59%;  /* blue accent */
+    --default-sidebar-accent-foreground-light: 0 0% 100%;
+    --default-sidebar-border-light: 35 30% 88%;   /* subtle cream border */
+    --default-sidebar-ring-light: 214 100% 59%;    /* Main CSS variables using custom properties from ThemeApplicator, with fallbacks */
+    --background: var(--custom-background-light, var(--default-background-light));
+    --foreground: var(--custom-foreground-light, var(--default-foreground-light));
+    --card: var(--custom-card-light, var(--default-card-light));
+    --card-foreground: var(--custom-card-foreground-light, var(--default-card-foreground-light));
+    --popover: var(--custom-popover-light, var(--default-popover-light));
+    --popover-foreground: var(--custom-popover-foreground-light, var(--default-popover-foreground-light));
+    --primary: var(--custom-primary-light, var(--default-primary-light));
+    --primary-foreground: var(--custom-primary-foreground-light, var(--default-primary-foreground-light));
+    --secondary: var(--custom-secondary-light, var(--default-secondary-light));
+    --secondary-foreground: var(--custom-secondary-foreground-light, var(--default-secondary-foreground-light));
+    --muted: var(--custom-muted-light, var(--default-muted-light));
+    --muted-foreground: var(--custom-muted-foreground-light, var(--default-muted-foreground-light));
+    --accent: var(--custom-accent-light, var(--default-accent-light));
+    --accent-foreground: var(--custom-accent-foreground-light, var(--default-accent-foreground-light));
+    --destructive: var(--custom-destructive-light, var(--default-destructive-light));
+    --destructive-foreground: var(--custom-destructive-foreground-light, var(--default-destructive-foreground-light));
+    --border: var(--custom-border-light, var(--default-border-light));
+    --input: var(--custom-input-light, var(--default-input-light));
+    --ring: var(--custom-ring-light, var(--default-ring-light));
+
+    /* Sidebar CSS variables using custom properties from ThemeApplicator, with fallbacks */
+    --sidebar-background: var(--custom-sidebar-background-light, var(--default-sidebar-background-light));
+    --sidebar-foreground: var(--custom-sidebar-foreground-light, var(--default-sidebar-foreground-light));
+    --sidebar-primary: var(--custom-sidebar-primary-light, var(--default-sidebar-primary-light));
+    --sidebar-primary-foreground: var(--custom-sidebar-primary-foreground-light, var(--default-sidebar-primary-foreground-light));
+    --sidebar-accent: var(--custom-sidebar-accent-light, var(--default-sidebar-accent-light));
+    --sidebar-accent-foreground: var(--custom-sidebar-accent-foreground-light, var(--default-sidebar-accent-foreground-light));
+    --sidebar-border: var(--custom-sidebar-border-light, var(--default-sidebar-border-light));
+    --sidebar-ring: var(--custom-sidebar-ring-light, var(--default-sidebar-ring-light));
+
+    --chart-1: 195 100% 50%;  /* Primary teal */
+    --chart-2: 195 85% 40%;   /* Darker teal */
+    --chart-3: 210 50% 45%;   /* Navy blue */
+    --chart-4: 195 70% 60%;   /* Light teal */
+    --chart-5: 210 40% 35%;   /* Dark navy */
+    --radius: 1rem; /* rounded, premium look */
+  }
+
+  .dark {
+    /* Main Dark Theme HSL values - Modern Dark Style */
+    --default-background-dark: 220 35% 1%;
+    --default-foreground-dark: 220 15% 96%;
+    --default-card-dark: 220 30% 3%;
+    --default-card-foreground-dark: 220 15% 96%;
+    --default-popover-dark: 220 30% 4%;
+    --default-popover-foreground-dark: 220 15% 96%;
+    --default-primary-dark: 214 100% 65%;
+    --default-primary-foreground-dark: 220 25% 6%;
+    --default-secondary-dark: 220 25% 5%;
+    --default-secondary-foreground-dark: 220 15% 92%;
+    --default-muted-dark: 220 25% 5%;
+    --default-muted-foreground-dark: 220 15% 72%;
+    --default-accent-dark: 214 100% 65%;
+    --default-accent-foreground-dark: 220 25% 6%;
+    --default-destructive-dark: 0 75% 58%;
+    --default-destructive-foreground-dark: 220 15% 95%;
+    --default-border-dark: 220 25% 8%;
+    --default-input-dark: 220 25% 6%;
+    --default-ring-dark: 214 100% 65%;
+
+    /* Sidebar Dark Theme HSL values - Modern Dark Style */
+    --default-sidebar-background-dark: 220 35% 2%;
+    --default-sidebar-foreground-dark: 220 15% 92%;
+    --default-sidebar-primary-dark: 214 100% 65%;
+    --default-sidebar-primary-foreground-dark: 220 35% 2%;
+    --default-sidebar-accent-dark: 214 100% 65%;
+    --default-sidebar-accent-foreground-dark: 220 35% 2%;
+    --default-sidebar-border-dark: 220 25% 6%;
+    --default-sidebar-ring-dark: 214 100% 65%;
+
+    /* Main CSS variables using custom properties from ThemeApplicator, with fallbacks for dark mode */
+    --background: var(--custom-background-dark, var(--default-background-dark));
+    --foreground: var(--custom-foreground-dark, var(--default-foreground-dark));
+    --card: var(--custom-card-dark, var(--default-card-dark));
+    --card-foreground: var(--custom-card-foreground-dark, var(--default-card-foreground-dark));
+    --popover: var(--custom-popover-dark, var(--default-popover-dark));
+    --popover-foreground: var(--custom-popover-foreground-dark, var(--default-popover-foreground-dark));
+    --primary: var(--custom-primary-dark, var(--default-primary-dark));
+    --primary-foreground: var(--custom-primary-foreground-dark, var(--default-primary-foreground-dark));
+    --secondary: var(--custom-secondary-dark, var(--default-secondary-dark));
+    --secondary-foreground: var(--custom-secondary-foreground-dark, var(--default-secondary-foreground-dark));
+    --muted: var(--custom-muted-dark, var(--default-muted-dark));
+    --muted-foreground: var(--custom-muted-foreground-dark, var(--default-muted-foreground-dark));
+    --accent: var(--custom-accent-dark, var(--default-accent-dark));
+    --accent-foreground: var(--custom-accent-foreground-dark, var(--default-accent-foreground-dark));
+    --destructive: var(--custom-destructive-dark, var(--default-destructive-dark));
+    --destructive-foreground: var(--custom-destructive-foreground-dark, var(--default-destructive-foreground-dark));
+    --border: var(--custom-border-dark, var(--default-border-dark));
+    --input: var(--custom-input-dark, var(--default-input-dark));
+    --ring: var(--custom-ring-dark, var(--default-ring-dark));
+
+    /* Sidebar CSS variables using custom properties from ThemeApplicator, with fallbacks for dark mode */
+    --sidebar-background: var(--custom-sidebar-background-dark, var(--default-sidebar-background-dark));
+    --sidebar-foreground: var(--custom-sidebar-foreground-dark, var(--default-sidebar-foreground-dark));
+    --sidebar-primary: var(--custom-sidebar-primary-dark, var(--default-sidebar-primary-dark));
+    --sidebar-primary-foreground: var(--custom-sidebar-primary-foreground-dark, var(--default-sidebar-primary-foreground-dark));
+    --sidebar-accent: var(--custom-sidebar-accent-dark, var(--default-sidebar-accent-dark));
+    --sidebar-accent-foreground: var(--custom-sidebar-accent-foreground-dark, var(--default-sidebar-accent-foreground-dark));
+    --sidebar-border: var(--custom-sidebar-border-dark, var(--default-sidebar-border-dark));
+    --sidebar-ring: var(--custom-sidebar-ring-dark, var(--default-sidebar-ring-dark));
+
+    --chart-1: 195 100% 65%;  /* Bright teal for dark mode */
+    --chart-2: 195 85% 55%;   /* Medium teal */
+    --chart-3: 210 60% 70%;   /* Light navy */
+    --chart-4: 195 70% 75%;   /* Very light teal */
+    --chart-5: 210 50% 60%;   /* Medium navy */
+  }
+}
+
+@layer base {
+  * {
+    @apply border-border;
+  }
+  body {
+    @apply bg-background text-foreground font-body antialiased;
+  }
+  h1, h2, h3, h4, h5, h6 {
+    font-family: theme('fontFamily.headline');
+  }
+  
+  /* Mobile optimizations */
+  @media (max-width: 768px) {
+    .container {
+      @apply px-3;
+    }
+    
+    /* Improve touch targets on mobile (opt-in instead of forcing all controls) */
+    .touch-target {
+      min-height: 44px;
+    }
+    
+    /* Better spacing for mobile */
+    .mobile-padding {
+      @apply p-3;
+    }
+    
+    /* Responsive text scaling */
+    .responsive-text {
+      @apply text-sm sm:text-base;
+    }
+    
+    /* Mobile-friendly cards */
+    .mobile-card {
+      @apply rounded-lg shadow-sm border;
+    }
+  }
+  
+  /* Allow horizontal scroll on mobile/tablet so wide content can be accessed */
+  @media (max-width: 1024px) {
+    html, body {
+      overflow-x: auto;
+      -webkit-overflow-scrolling: touch;
+      scrollbar-gutter: stable both-edges;
+    }
+  }
+  
+  /* Smooth scrolling */
+  html {
+    scroll-behavior: smooth;
+  }
+  
+  /* Always show scrollbars for better UX */
+  * {
+    scrollbar-width: auto; /* Firefox */
+  }
+  
+  /* Force scrollbar visibility on webkit browsers */
+  ::-webkit-scrollbar {
+    width: 8px;
+    height: 8px;
+    background: transparent;
+  }
+  
+  ::-webkit-scrollbar-track {
+    background: hsl(var(--muted));
+    border-radius: 4px;
+  }
+  
+  ::-webkit-scrollbar-thumb {
+    background: hsl(var(--muted-foreground) / 0.3);
+    border-radius: 4px;
+    border: 1px solid hsl(var(--border));
+  }
+  
+  ::-webkit-scrollbar-thumb:hover {
+    background: hsl(var(--muted-foreground) / 0.5);
+  }
+  
+  /* Specific styling for horizontal scrollable containers */
+  .horizontal-scroll {
+    scrollbar-width: thin;
+    -webkit-overflow-scrolling: touch;
+  }
+  
+  /* Focus styles for accessibility */
+  *:focus-visible {
+    @apply outline-none ring-2 ring-primary ring-offset-2;
+  }
+  /* On pure touch devices, avoid heavy focus rings which look like blue ovals */
+  @media (hover: none) and (pointer: coarse) {
+    *:focus-visible {
+      outline: none !important;
+      box-shadow: none !important;
+    }
+  }
+  
+  /* Utility: remove mobile tap highlight */
+  .no-tap-highlight {
+    -webkit-tap-highlight-color: transparent;
+  }
+  
+  /* Force scrollbars to be visible on mobile and desktop */
+  .force-scrollbar {
+    overflow: auto !important;
+    scrollbar-width: auto;
+    -webkit-overflow-scrolling: touch;
+  }
+
+  /* On small screens, always show both horizontal and vertical scrollbars inside scroll containers */
+  @media (max-width: 640px) {
+    .force-scrollbar {
+      overflow-x: scroll !important;
+      overflow-y: scroll !important;
+      /* Reserve space for scrollbars where supported to avoid layout shift */
+      scrollbar-gutter: stable both-edges;
+    }
+  }
+  
+  .force-scrollbar::-webkit-scrollbar {
+    width: 12px;
+    height: 12px;
+  }
+  
+  .force-scrollbar::-webkit-scrollbar-track {
+    background: #f1f1f1;
+    border-radius: 6px;
+  }
+  
+  .force-scrollbar::-webkit-scrollbar-thumb {
+    background: #888;
+    border-radius: 6px;
+  }
+  
+  .force-scrollbar::-webkit-scrollbar-thumb:hover {
+    background: #555;
+  }
+
+  
+  /* Line clamp utilities */
+  .line-clamp-1 {
+    overflow: hidden;
+    display: -webkit-box;
+    -webkit-box-orient: vertical;
+    -webkit-line-clamp: 1;
+  }
+  
+  .line-clamp-2 {
+    overflow: hidden;
+    display: -webkit-box;
+    -webkit-box-orient: vertical;
+    -webkit-line-clamp: 2;
+  }
+  
+  .line-clamp-3 {
+    overflow: hidden;
+    display: -webkit-box;
+    -webkit-box-orient: vertical;
+    -webkit-line-clamp: 3;
+  }
+}

@@ -1,0 +1,16 @@
+{
+    "IDX.aI.enableInlineCompletion": true,
+    "IDX.aI.enableCodebaseIndexing": true,
+    "css.validate": false,
+    "scss.validate": false,
+    "less.validate": false,
+    "tailwindCSS.experimental.classRegex": [
+        "class: [\"'`]([^\"'`]*).*?[\"'`]",
+        "className: [\"'`]([^\"'`]*).*?[\"'`]",
+        ["cva\\(([^)]*)\\)", "[\"'`]([^\"'`]*)[\"'`]"],
+        ["cx\\(([^)]*)\\)", "(?:'|\"|`)([^']*)(?:'|\"|`)"]
+    ],
+    "files.associations": {
+        "*.css": "tailwindcss"
+    }
+}

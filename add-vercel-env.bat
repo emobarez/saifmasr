@@ -1,0 +1,26 @@
+@echo off
+echo Adding environment variables to Vercel...
+
+echo Adding NEXTAUTH_URL...
+echo https://saifmasr.vercel.app | npx vercel env add NEXTAUTH_URL
+
+echo Adding NEXTAUTH_SECRET...
+echo mcnEaCyhXf4Hz38IHYx7IDq8hyUvSB6HBIPNYjctVRI= | npx vercel env add NEXTAUTH_SECRET
+
+echo Adding DATABASE_URL...
+echo postgresql://neondb_owner:npg_vV6f4JpiOTld@ep-dry-base-ae31im2a-pooler.c-2.us-east-2.aws.neon.tech/neondb?sslmode=require | npx vercel env add DATABASE_URL
+
+echo Adding NEXT_PUBLIC_STACK_PROJECT_ID...
+echo d39a106a-b975-4b01-9a47-f731c01cc8aa | npx vercel env add NEXT_PUBLIC_STACK_PROJECT_ID
+
+echo Adding NEXT_PUBLIC_STACK_PUBLISHABLE_CLIENT_KEY...
+echo pck_k7j0pj65mjds4ffwdjr06ng8wc441375z3bn0h6za3rq0 | npx vercel env add NEXT_PUBLIC_STACK_PUBLISHABLE_CLIENT_KEY
+
+echo Adding STACK_SECRET_SERVER_KEY...
+echo ssk_rs193frvrj7dv91d25shpexxm7h7drmyq7yws9cn3s9h0 | npx vercel env add STACK_SECRET_SERVER_KEY
+
+echo Environment variables added successfully!
+echo Now deploying to apply changes...
+npx vercel --prod
+
+echo Deployment complete!
