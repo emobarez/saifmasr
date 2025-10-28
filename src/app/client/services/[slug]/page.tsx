@@ -237,6 +237,49 @@ export default function GenericServiceRequestPage() {
         <span className="text-sm text-muted-foreground">/{service.slug}</span>
       </div>
 
+      {/* Service Details Card */}
+      {(service.description || service.shortDescription || (service.features && service.features.length > 0)) && (
+        <Card className="bg-gradient-to-r from-primary/5 to-primary/10 border-primary/20">
+          <CardHeader>
+            <CardTitle>عن الخدمة</CardTitle>
+            {service.shortDescription && (
+              <CardDescription className="text-base">{service.shortDescription}</CardDescription>
+            )}
+          </CardHeader>
+          <CardContent className="space-y-4">
+            {service.description && (
+              <p className="text-muted-foreground">{service.description}</p>
+            )}
+            {service.features && service.features.length > 0 && (
+              <div>
+                <h3 className="font-semibold mb-3">مزايا الخدمة:</h3>
+                <ul className="grid grid-cols-1 md:grid-cols-2 gap-3">
+                  {service.features.map((feature: string, index: number) => (
+                    <li key={index} className="flex items-start gap-2">
+                      <div className="w-1.5 h-1.5 bg-primary rounded-full flex-shrink-0 mt-2"></div>
+                      <span className="text-sm">{feature}</span>
+                    </li>
+                  ))}
+                </ul>
+              </div>
+            )}
+            {service.price && (
+              <div className="flex items-center gap-2 text-sm">
+                <span className="text-muted-foreground">السعر المبدئي:</span>
+                <span className="font-bold text-primary text-lg">{Number(service.price).toLocaleString('ar-EG')} ج.م</span>
+                <span className="text-muted-foreground">/ للوحدة</span>
+              </div>
+            )}
+            {service.duration && (
+              <div className="flex items-center gap-2 text-sm">
+                <span className="text-muted-foreground">المدة:</span>
+                <span className="font-medium">{service.duration}</span>
+              </div>
+            )}
+          </CardContent>
+        </Card>
+      )}
+
       <Card>
         <CardHeader>
           <CardTitle>طلب الخدمة</CardTitle>

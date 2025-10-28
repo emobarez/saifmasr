@@ -137,6 +137,50 @@ export default function CCTVInstallationRequestPage() {
   return (
     <div className="space-y-6">
       <h1 className="text-3xl font-bold">تركيب كاميرات المراقبة</h1>
+
+      {/* Service Details Card */}
+      {serviceMeta && (serviceMeta.description || serviceMeta.shortDescription || (serviceMeta.features && serviceMeta.features.length > 0)) && (
+        <Card className="bg-gradient-to-r from-primary/5 to-primary/10 border-primary/20">
+          <CardHeader>
+            <CardTitle>عن الخدمة</CardTitle>
+            {serviceMeta.shortDescription && (
+              <CardDescription className="text-base">{serviceMeta.shortDescription}</CardDescription>
+            )}
+          </CardHeader>
+          <CardContent className="space-y-4">
+            {serviceMeta.description && (
+              <p className="text-muted-foreground">{serviceMeta.description}</p>
+            )}
+            {serviceMeta.features && serviceMeta.features.length > 0 && (
+              <div>
+                <h3 className="font-semibold mb-3">مزايا الخدمة:</h3>
+                <ul className="grid grid-cols-1 md:grid-cols-2 gap-3">
+                  {serviceMeta.features.map((feature: string, index: number) => (
+                    <li key={index} className="flex items-start gap-2">
+                      <div className="w-1.5 h-1.5 bg-primary rounded-full flex-shrink-0 mt-2"></div>
+                      <span className="text-sm">{feature}</span>
+                    </li>
+                  ))}
+                </ul>
+              </div>
+            )}
+            {serviceMeta.price && (
+              <div className="flex items-center gap-2 text-sm">
+                <span className="text-muted-foreground">السعر المبدئي:</span>
+                <span className="font-bold text-primary text-lg">{Number(serviceMeta.price).toLocaleString('ar-EG')} ج.م</span>
+                <span className="text-muted-foreground">/ للوحدة</span>
+              </div>
+            )}
+            {serviceMeta.duration && (
+              <div className="flex items-center gap-2 text-sm">
+                <span className="text-muted-foreground">المدة:</span>
+                <span className="font-medium">{serviceMeta.duration}</span>
+              </div>
+            )}
+          </CardContent>
+        </Card>
+      )}
+
       <Card>
         <CardHeader>
           <CardTitle>بيانات الطلب</CardTitle>
