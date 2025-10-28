@@ -6,6 +6,7 @@ import { Badge } from "@/components/ui/badge";
 import { Header } from "@/components/layout/Header";
 import { Footer } from "@/components/layout/Footer";
 import { Shield, Camera, Users, Building, Car, HeadphonesIcon, Sparkles } from "lucide-react";
+import { useAuth } from "@/context/AuthContext";
 
 const ICON_COMPONENTS = {
   Shield,
@@ -32,6 +33,7 @@ interface ServiceCard {
 }
 
 export default function ServicesPage() {
+  const { user } = useAuth();
   const [services, setServices] = useState<ServiceCard[]>([]);
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState<string | null>(null);
@@ -84,7 +86,10 @@ export default function ServicesPage() {
         ? service.features
         : [service.description || "تواصل معنا لمعرفة تفاصيل أكثر"];
       const ctaLabel = service.ctaLabel || "اطلب الآن";
-      const ctaHref = service.ctaUrl || `/client/services/${service.slug}`;
+      // إذا كان المستخدم مسجل دخول، يذهب مباشرة إلى فورمة الخدمة
+      const ctaHref = user 
+        ? `/client/services/${service.slug}` 
+        : (service.ctaUrl || `/auth/login`);
 
       return (
         <>
