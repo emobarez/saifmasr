@@ -106,9 +106,10 @@ export default function LandingPage() {
                         </h3>
                       </div>
                     </div>
-                  </Button>
-                </Link>
-              ))}
+                    </Button>
+                  </Link>
+                );
+              })}
             </div>
             
             {/* Mobile Action Buttons */}
@@ -215,8 +216,8 @@ export default function LandingPage() {
                         </p>
                       </div>
                     </div>
-                      </Button>
-                    </Link>
+                    </Button>
+                  </Link>
                 );
               })}
             </div>
