@@ -68,11 +68,11 @@ export default function LandingPage() {
                 const serviceHref = user ? `/client/services/${service.slug}` : "/auth/login";
                 return (
                   <Link
-                  key={index}
-                  href={serviceHref}
-                  aria-label={`الانتقال إلى صفحة الخدمات: ${service.title}`}
-                  className="group block"
-                >
+                    key={index}
+                    href={serviceHref}
+                    aria-label={`الانتقال إلى صفحة الخدمات: ${service.title}`}
+                    className="group block"
+                  >
                   <Button
                     variant="outline"
                     className="h-auto w-full p-0 overflow-hidden border-2 hover:border-primary transition-all duration-300 group-hover:shadow-2xl group-hover:scale-[1.02] rounded-xl"
@@ -174,11 +174,11 @@ export default function LandingPage() {
                 const serviceHref = user ? `/client/services/${service.slug}` : "/auth/login";
                 return (
                   <Link
-                  key={index}
-                  href={serviceHref}
-                  aria-label={`الانتقال إلى صفحة الخدمات: ${service.title}`}
-                  className="group block"
-                >
+                    key={index}
+                    href={serviceHref}
+                    aria-label={`الانتقال إلى صفحة الخدمات: ${service.title}`}
+                    className="group block"
+                  >
                   <Button
                     variant="outline"
                     className="h-auto w-full p-0 overflow-hidden border-2 hover:border-primary transition-all duration-300 group-hover:shadow-2xl group-hover:scale-[1.02] rounded-xl"
@@ -218,7 +218,7 @@ export default function LandingPage() {
                     </div>
                   </Button>
                 </Link>
-                  );
+                );
               })}
             </div>
             
