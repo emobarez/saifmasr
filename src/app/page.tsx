@@ -213,7 +213,7 @@ export default function LandingPage() {
                         </h3>
                         <p className="text-xs md:text-sm lg:text-base xl:text-lg 2xl:text-xl text-center text-white/90 line-clamp-2 leading-tight">
                           {service.description}
-                        </h3>
+                        </p>
                       </div>
                     </div>
                       </Button>
