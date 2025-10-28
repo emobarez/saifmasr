@@ -131,6 +131,7 @@ export default function PersonalGuardRequestPage() {
         locationLng: form.locationLng ? Number(form.locationLng) : undefined,
         armamentLevel: form.armamentLevel,
         notifyBeforeHours: form.remindBefore24h ? 24 : 0,
+        totalCost: totalPrice > 0 ? totalPrice : undefined,
         isDraft: asDraft || form.isDraft,
         // details JSON keeps shift and notes
         details: {

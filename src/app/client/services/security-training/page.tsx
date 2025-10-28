@@ -86,6 +86,7 @@ export default function SecurityTrainingRequestPage() {
         title: form.title,
         description: form.description || "طلب تدريب",
         headcount: Number(form.traineesCount),
+        totalCost: totalPrice > 0 ? totalPrice : undefined,
         details: {
           trainingType: form.trainingType,
           duration: form.duration,

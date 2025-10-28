@@ -88,6 +88,7 @@ export default function SecurityConsultingRequestPage() {
         description: form.description || "طلب استشارات أمنية",
         startAt: form.scheduleAt ? new Date(form.scheduleAt).toISOString() : undefined,
         unitPrice: form.price ? Number(form.price) : undefined,
+        totalCost: serviceMeta?.price ? Number(serviceMeta.price) : (form.price ? Number(form.price) : undefined),
         isDraft: asDraft || form.isDraft,
         details: {
           consultType: form.consultType,

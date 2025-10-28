@@ -93,6 +93,7 @@ export default function CleaningRequestPage() {
         description: form.description || "طلب خدمة نظافة",
         personnelCount: Number(form.cleaners),
         locationText: form.address || undefined,
+        totalCost: totalPrice > 0 ? totalPrice : undefined,
         isDraft: asDraft || form.isDraft,
         details: {
           cleanType: form.cleanType,

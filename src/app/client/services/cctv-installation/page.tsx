@@ -108,6 +108,7 @@ export default function CCTVInstallationRequestPage() {
         title: form.title,
         description: form.description || "طلب تركيب كاميرات",
         startAt: form.scheduleAt ? new Date(form.scheduleAt).toISOString() : undefined,
+        totalCost: totalPrice > 0 ? totalPrice : undefined,
         isDraft: asDraft || form.isDraft,
         details: {
           cameraTypes: form.cameraTypes,

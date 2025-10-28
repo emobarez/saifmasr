@@ -120,6 +120,7 @@ export default function RegularSecurityRequestPage() {
         locationText: form.address || undefined,
         armamentLevel: form.armamentLevel,
         notifyBeforeHours: form.remindBefore24h ? 24 : 0,
+        totalCost: totalPrice > 0 ? totalPrice : undefined,
         isDraft: asDraft || form.isDraft,
         details: {
           shiftSystem: form.shiftSystem,

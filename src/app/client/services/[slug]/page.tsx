@@ -167,6 +167,7 @@ export default function GenericServiceRequestPage() {
         armamentLevel: form.armamentLevel || undefined,
         notes: form.notes || undefined,
         notifyBeforeHours: Number(form.notifyBeforeHours) || 24,
+        totalCost: totalPrice > 0 ? totalPrice : undefined,
         isDraft: asDraft || form.isDraft,
         attachments: form.attachments,
       };

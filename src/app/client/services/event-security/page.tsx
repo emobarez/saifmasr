@@ -104,6 +104,7 @@ export default function EventSecurityRequestPage() {
         endAt: form.endAt ? new Date(form.endAt).toISOString() : undefined,
         locationAddress: form.location || undefined,
         headcount: form.guardsCount ? Number(form.guardsCount) : undefined,
+        totalCost: totalPrice > 0 ? totalPrice : undefined,
         details: {
           eventType: form.eventType,
           attendees: form.attendees ? Number(form.attendees) : undefined,
