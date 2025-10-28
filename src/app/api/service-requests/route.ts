@@ -29,6 +29,7 @@ export async function POST(request: NextRequest) {
       armamentLevel,
       notes,
       notifyBeforeHours,
+      totalCost,
       isDraft,
       attachments,
     } = payload as Record<string, any>;
@@ -49,6 +50,7 @@ export async function POST(request: NextRequest) {
     // Parse and coerce types
     const parsedPersonnel = personnelCount === undefined || personnelCount === null || personnelCount === "" ? null : Number(personnelCount);
     const parsedNotify = typeof notifyBeforeHours === "number" ? notifyBeforeHours : Number(notifyBeforeHours) || 24;
+    const parsedTotalCost = totalCost === undefined || totalCost === null || totalCost === "" ? null : Number(totalCost);
     const parsedLocationLat = locationLat === undefined || locationLat === null || locationLat === "" ? null : Number(locationLat);
     const parsedLocationLng = locationLng === undefined || locationLng === null || locationLng === "" ? null : Number(locationLng);
     const startDateObj = startAt ? new Date(startAt) : null;
@@ -82,6 +84,7 @@ export async function POST(request: NextRequest) {
         armamentLevel: armamentLevel || null,
         notes: notes ? String(notes) : null,
         notifyBeforeHours: parsedNotify,
+        totalCost: typeof parsedTotalCost === "number" && !isNaN(parsedTotalCost) ? parsedTotalCost : null,
         isDraft: !!isDraft,
         attachments: attachmentCreates.length ? { create: attachmentCreates } : undefined,
       },
