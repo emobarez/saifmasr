@@ -53,6 +53,13 @@ export default function GenericServiceRequestPage() {
     attachments: [] as UploadedFile[],
   });
 
+  // Calculate total price based on service price and personnel count
+  const totalPrice = useMemo(() => {
+    const basePrice = service?.price || 0;
+    const count = Number(form.personnelCount) || 1;
+    return basePrice * count;
+  }, [service?.price, form.personnelCount]);
+
   // Normalization similar to server's normalizeSlug
   const normalizeSlug = (input?: string | string[] | null) => {
     const s = Array.isArray(input) ? input[0] : input || "";
@@ -250,6 +257,29 @@ export default function GenericServiceRequestPage() {
               <Input type="number" min={1} value={form.personnelCount}
                      onChange={(e) => handleChange("personnelCount", Number(e.target.value))} />
             </div>
+            {service?.price && (
+              <div className="space-y-2">
+                <Label>السعر</Label>
+                <div className="space-y-2">
+                  <div className="p-3 bg-muted rounded-md">
+                    <div className="flex justify-between items-center text-sm mb-1">
+                      <span className="text-muted-foreground">سعر الوحدة:</span>
+                      <span className="font-medium">{service.price.toLocaleString('ar-EG')} ج.م</span>
+                    </div>
+                    <div className="flex justify-between items-center text-sm mb-1">
+                      <span className="text-muted-foreground">عدد الأفراد:</span>
+                      <span className="font-medium">×{form.personnelCount}</span>
+                    </div>
+                    <div className="border-t pt-2 mt-2">
+                      <div className="flex justify-between items-center">
+                        <span className="font-semibold">السعر الإجمالي:</span>
+                        <span className="text-lg font-bold text-primary">{totalPrice.toLocaleString('ar-EG')} ج.م</span>
+                      </div>
+                    </div>
+                  </div>
+                </div>
+              </div>
+            )}
             <div className="space-y-2">
               <Label>تاريخ ووقت البداية</Label>
               <Input type="datetime-local" value={form.startAt}
