@@ -258,15 +258,6 @@ export default function RegularSecurityRequestPage() {
             </div>
           </div>
 
-          <div className="flex items-center gap-3">
-            <Button type="button" variant="secondary" onClick={calcTotal}>
-              <Calculator className="h-4 w-4 mr-2" /> احسب التكلفة
-            </Button>
-            {totalCost !== null && (
-              <span className="text-lg font-semibold">الإجمالي: {new Intl.NumberFormat('ar-EG', { style: 'currency', currency: 'EGP' }).format(totalCost)}</span>
-            )}
-          </div>
-
           <div className="flex justify-end gap-2">
             <Button type="button" variant="outline" onClick={() => submit(true)} disabled={isSubmitting}>
               <Save className="h-4 w-4 mr-2" /> حفظ كمسودة
