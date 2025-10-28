@@ -152,7 +152,6 @@ export default function PersonalGuardRequestPage() {
       }
 
       const created = await res.json();
-      setTotalCost(created.totalCost ?? totalCost);
 
       toast({
         title: asDraft ? "تم حفظ المسودة" : "تم إرسال الطلب",
@@ -174,8 +173,7 @@ export default function PersonalGuardRequestPage() {
           locationLng: "",
           specialNotes: "",
           attachments: [],
-        }));
-        setTotalCost(null);
+        });
       }
     } catch (e: any) {
       toast({ title: "حدث خطأ", description: e.message, variant: "destructive" });
