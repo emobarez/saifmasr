@@ -73,10 +73,10 @@ export default function LandingPage() {
                     aria-label={`الانتقال إلى صفحة الخدمات: ${service.title}`}
                     className="group block"
                   >
-                  <Button
-                    variant="outline"
-                    className="h-auto w-full p-0 overflow-hidden border-2 hover:border-primary transition-all duration-300 group-hover:shadow-2xl group-hover:scale-[1.02] rounded-xl"
-                  >
+                    <Button
+                      variant="outline"
+                      className="h-auto w-full p-0 overflow-hidden border-2 hover:border-primary transition-all duration-300 group-hover:shadow-2xl group-hover:scale-[1.02] rounded-xl"
+                    >
                     <div className="relative w-full">
                       {/* Background Image */}
                       <div className="relative h-36 w-full overflow-hidden">
@@ -179,10 +179,10 @@ export default function LandingPage() {
                     aria-label={`الانتقال إلى صفحة الخدمات: ${service.title}`}
                     className="group block"
                   >
-                  <Button
-                    variant="outline"
-                    className="h-auto w-full p-0 overflow-hidden border-2 hover:border-primary transition-all duration-300 group-hover:shadow-2xl group-hover:scale-[1.02] rounded-xl"
-                  >
+                    <Button
+                      variant="outline"
+                      className="h-auto w-full p-0 overflow-hidden border-2 hover:border-primary transition-all duration-300 group-hover:shadow-2xl group-hover:scale-[1.02] rounded-xl"
+                    >
                     <div className="relative w-full">
                       {/* Background Image */}
                       <div className="relative h-48 md:h-56 lg:h-64 xl:h-80 2xl:h-96 w-full overflow-hidden">
@@ -213,11 +213,11 @@ export default function LandingPage() {
                         </h3>
                         <p className="text-xs md:text-sm lg:text-base xl:text-lg 2xl:text-xl text-center text-white/90 line-clamp-2 leading-tight">
                           {service.description}
-                        </p>
+                        </h3>
                       </div>
                     </div>
-                  </Button>
-                </Link>
+                      </Button>
+                    </Link>
                 );
               })}
             </div>
