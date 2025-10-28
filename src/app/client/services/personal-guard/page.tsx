@@ -173,7 +173,7 @@ export default function PersonalGuardRequestPage() {
           locationLng: "",
           specialNotes: "",
           attachments: [],
-        });
+        }));
       }
     } catch (e: any) {
       toast({ title: "حدث خطأ", description: e.message, variant: "destructive" });
