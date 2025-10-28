@@ -80,6 +80,7 @@ model Service {
   shortDescription String?
   category        String?
   price           Float?
+  duration        String?
   status          ServiceStatus    @default(ACTIVE)
   createdAt       DateTime         @default(now())
   updatedAt       DateTime         @updatedAt
@@ -125,6 +126,9 @@ model ServiceRequest {
   armamentLevel     ArmamentLevel?
   personnelCount    Int?
   durationUnit      DurationUnit?
+  totalCost         Float?
+  extraCost         Float?
+  remindBefore24h   Boolean?
   notes             String?
   notifyBeforeHours Int?             @default(24)
   isDraft           Boolean?         @default(false)
