@@ -67,7 +67,7 @@ export default function LandingPage() {
               {services.map((service, index) => {
                 const serviceHref = user ? `/client/services/${service.slug}` : "/auth/login";
                 return (
-                <Link
+                  <Link
                   key={index}
                   href={serviceHref}
                   aria-label={`الانتقال إلى صفحة الخدمات: ${service.title}`}
@@ -173,7 +173,7 @@ export default function LandingPage() {
               {services.map((service, index) => {
                 const serviceHref = user ? `/client/services/${service.slug}` : "/auth/login";
                 return (
-                <Link
+                  <Link
                   key={index}
                   href={serviceHref}
                   aria-label={`الانتقال إلى صفحة الخدمات: ${service.title}`}
@@ -218,7 +218,7 @@ export default function LandingPage() {
                     </div>
                   </Button>
                 </Link>
-              );
+                  );
               })}
             </div>
             
