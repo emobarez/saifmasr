@@ -1,4 +1,6 @@
 
+"use client";
+
 import { Button } from "@/components/ui/button";
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card";
 import { Briefcase, ShieldCheck, Camera, ArrowLeftCircle, Users, SearchCheck, Search, LogIn } from "lucide-react";
@@ -6,12 +8,14 @@ import Image from "next/image";
 import Link from "next/link";
 import { Header } from "@/components/layout/Header";
 import { Footer } from "@/components/layout/Footer";
+import { useAuth } from "@/context/AuthContext";
 
 const services = [
   {
     icon: <ShieldCheck className="h-10 w-10 text-primary" />,
     title: "خدمه الحارس الشخصي",
     description: "نوفر حماية شخصية متخصصة لضمان سلامتك وأمنك في جميع الظروف.",
+    slug: "personal-guard",
     dataAiHint: "bodyguard protection",
     imageUrl: "https://images.unsplash.com/photo-1618371690240-e0d46eead4b8?crop=entropy&cs=tinysrgb&fit=max&fm=jpg&ixid=M3w3NDE5ODJ8MHwxfHNlYXJjaHwxfHxib2R5JTIwZ3VhcmR8ZW58MHx8fHwxNzUwNTAzNjgwfDA&ixlib=rb-4.1.0&q=80&w=1080"
   },
@@ -19,6 +23,7 @@ const services = [
     icon: <ShieldCheck className="h-10 w-10 text-primary" />,
     title: "خدمه تأمين المصانع",
     description: "نوفر حلولاً أمنية متكاملة لحماية المنشآت الصناعية والمصانع.",
+    slug: "regular-security",
     dataAiHint: "factory security",
     imageUrl: "https://images.unsplash.com/photo-1582190506824-ef3bd95a956e?crop=entropy&cs=tinysrgb&fit=max&fm=jpg&ixid=M3w3NDE5ODJ8MHwxfHNlYXJjaHwxMHx8bWFudWZhY3R1cmV8ZW58MHx8fHwxNzUwNTI2MTMxfDA&ixlib=rb-4.1.0&q=80&w=1080"
   },
@@ -26,6 +31,7 @@ const services = [
     icon: <Camera className="h-10 w-10 text-primary" />,
     title: "خدمه كاميرات المراقبه",
     description: "تركيب وتشغيل أنظمة المراقبة بالكاميرات لتأمين ممتلكاتك على مدار الساعة.",
+    slug: "cctv-installation",
     dataAiHint: "cctv camera",
     imageUrl: "https://images.unsplash.com/photo-1675213958054-46062269e343?crop=entropy&cs=tinysrgb&fit=max&fm=jpg&ixid=M3w3NDE5ODJ8MHwxfHNlYXJjaHw2fHxTZWN1cml0aWVzJTIwY2FtZXJhfGVufDB8fHx8MTc1MDUyNzA4M3ww&ixlib=rb-4.1.0&q=80&w=1080"
   },
@@ -33,6 +39,7 @@ const services = [
     icon: <Users className="h-10 w-10 text-primary" />,
     title: "الأمن الإنتظامى",
     description: "توفير أفراد أمن مدربين ومؤهلين لضمان أمن وحماية منشأتك على مدار الساعة.",
+    slug: "regular-security",
     dataAiHint: "security guard",
     imageUrl: "https://images.unsplash.com/flagged/photo-1570343271132-8949dd284a04?crop=entropy&cs=tinysrgb&fit=max&fm=jpg&ixid=M3w3NDE5ODJ8MHwxfHNlYXJjaHwxM3x8U2VjdXJpdHklMjBtYW58ZW58MHx8fHwxNzUwNTI4MDg4fDA&ixlib=rb-4.1.0&q=80&w=1080"
   },
@@ -40,12 +47,15 @@ const services = [
     icon: <SearchCheck className="h-10 w-10 text-primary" />,
     title: "حراسة مناطق المؤتمرات",
     description: "توفير حراس أمن مدربين لتأمين كافة مناطق المؤتمرات والفعاليات، وضمان سلامة الحضور.",
+    slug: "event-security",
     dataAiHint: "conference guard",
     imageUrl: "https://images.unsplash.com/photo-1472691681358-fdf00a4bfcfe?crop=entropy&cs=tinysrgb&fit=max&fm=jpg&ixid=M3w3NDE5ODJ8MHwxfHNlYXJjaHwxN3x8Q29uZmVyZW5jZXMlMjB8ZW58MHx8fHwxNzUwNTA0MzQ5fDA&ixlib=rb-4.1.0&q=80&w=1080"
   },
 ];
 
 export default function LandingPage() {
+  const { user } = useAuth();
+  
   return (
     <div className="flex flex-col min-h-screen">
       <Header />
@@ -54,10 +64,12 @@ export default function LandingPage() {
         <section id="services" className="py-8 md:py-16 lg:py-24 bg-background block md:hidden">
           <div className="w-full px-3">
             <div className="grid grid-cols-2 gap-2">
-              {services.map((service, index) => (
+              {services.map((service, index) => {
+                const serviceHref = user ? `/client/services/${service.slug}` : "/auth/login";
+                return (
                 <Link
                   key={index}
-                  href="/services"
+                  href={serviceHref}
                   aria-label={`الانتقال إلى صفحة الخدمات: ${service.title}`}
                   className="group block"
                 >
@@ -158,10 +170,12 @@ export default function LandingPage() {
               </p>
             </div>
             <div className="grid grid-cols-2 md:grid-cols-3 lg:grid-cols-4 xl:grid-cols-5 2xl:grid-cols-6 gap-6 lg:gap-8 xl:gap-10 2xl:gap-12">
-              {services.map((service, index) => (
+              {services.map((service, index) => {
+                const serviceHref = user ? `/client/services/${service.slug}` : "/auth/login";
+                return (
                 <Link
                   key={index}
-                  href="/services"
+                  href={serviceHref}
                   aria-label={`الانتقال إلى صفحة الخدمات: ${service.title}`}
                   className="group block"
                 >
@@ -204,7 +218,8 @@ export default function LandingPage() {
                     </div>
                   </Button>
                 </Link>
-              ))}
+              );
+              })}
             </div>
             
             {/* View All Services Button */}
