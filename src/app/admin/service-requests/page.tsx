@@ -587,7 +587,11 @@ export default function AdminServiceRequestsPage() {
                       {request.isDraft ? <Badge variant="secondary" className="bg-gray-200 text-gray-800">مسودة</Badge> : <Badge className="bg-blue-100 text-blue-800" variant="outline">مرسل</Badge>}
                     </TableCell>
                     <TableCell className="w-[130px] text-center">
-                      <div className="font-medium">{formatEGPSimple((request.service?.price ?? request.service_price) || 0)}</div>
+                      {request.totalCost ? (
+                        <div className="font-medium text-primary">{formatEGPSimple(request.totalCost)}</div>
+                      ) : (
+                        <div className="text-sm text-muted-foreground">{formatEGPSimple((request.service?.price ?? request.service_price) || 0)}</div>
+                      )}
                     </TableCell>
                     <TableCell className="w-[160px] text-center">
                       {typeof request.locationLat === 'number' && typeof request.locationLng === 'number' ? (
