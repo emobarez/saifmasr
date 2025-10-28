@@ -1,6 +1,6 @@
 "use client";
 
-import { useEffect, useState } from "react";
+import { useEffect, useState, useMemo } from "react";
 import { Card, CardHeader, CardTitle, CardDescription, CardContent } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
@@ -9,7 +9,7 @@ import { Label } from "@/components/ui/label";
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
 import { useToast } from "@/hooks/use-toast";
 import { useAuth } from "@/context/AuthContext";
-import { Loader2, Calculator, Save, Send } from "lucide-react";
+import { Loader2, Save, Send } from "lucide-react";
 
 const SERVICE_SLUG = "cleaning";
 const CLEAN_TYPES = ["يومية", "أسبوعية", "عميقة", "بعد الفعاليات"];
@@ -22,7 +22,6 @@ export default function CleaningRequestPage() {
   const { user } = useAuth();
 
   const [isSubmitting, setIsSubmitting] = useState(false);
-  const [totalCost, setTotalCost] = useState<number | null>(null);
   const [serviceMeta, setServiceMeta] = useState<any | null>(null);
 
   const [form, setForm] = useState({
@@ -42,7 +41,12 @@ export default function CleaningRequestPage() {
 
   const handle = (k: string, v: any) => setForm((p) => ({ ...p, [k]: v }));
 
-  useEffect(() => {
+  // Calculate total price automatically
+  const totalPrice = useMemo(() => {
+    const basePrice = serviceMeta?.price || 0;
+    const count = Number(form.cleaners) || 1;
+    return basePrice * count;
+  }, [serviceMeta?.price, form.cleaners]);(() => {
     let mounted = true;
     const load = async () => {
       try {
@@ -59,14 +63,9 @@ export default function CleaningRequestPage() {
     };
     load();
     return () => { mounted = false; };
-  }, []);
+  }, [serviceMeta?.price, form.cleaners]);
 
-  const calc = () => {
-    const n = Number(form.cleaners || 0), u = Number(serviceMeta?.price || 0);
-    const t = n * u; setTotalCost(Number.isFinite(t) ? t : 0);
-  };
-
-  const submit = async (asDraft = false) => {
+  useEffect = async (asDraft = false) => {
     if (!user) { toast({ title: "يجب تسجيل الدخول", variant: "destructive" }); return; }
     let serviceId = form.serviceId;
     if (!serviceId) {
@@ -128,6 +127,27 @@ export default function CleaningRequestPage() {
               <Label>عدد الأفراد</Label>
               <Input type="number" min={1} value={form.cleaners} onChange={(e) => handle("cleaners", Number(e.target.value))} />
             </div>
+            {serviceMeta?.price && (
+              <div className="space-y-2">
+                <Label>السعر</Label>
+                <div className="p-3 bg-muted rounded-md space-y-2">
+                  <div className="flex justify-between items-center text-sm">
+                    <span className="text-muted-foreground">سعر الفرد:</span>
+                    <span className="font-medium">{serviceMeta.price.toLocaleString('ar-EG')} ج.م</span>
+                  </div>
+                  <div className="flex justify-between items-center text-sm">
+                    <span className="text-muted-foreground">عدد الأفراد:</span>
+                    <span className="font-medium">×{form.cleaners}</span>
+                  </div>
+                  <div className="border-t pt-2">
+                    <div className="flex justify-between items-center">
+                      <span className="font-semibold">السعر الإجمالي:</span>
+                      <span className="text-lg font-bold text-primary">{totalPrice.toLocaleString('ar-EG')} ج.م</span>
+                    </div>
+                  </div>
+                </div>
+              </div>
+            )}
             <div className="space-y-2">
               <Label>نوع الخدمة</Label>
               <Select value={form.cleanType} onValueChange={(v) => handle("cleanType", v)}>

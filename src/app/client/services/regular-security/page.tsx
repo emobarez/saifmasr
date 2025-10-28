@@ -1,6 +1,6 @@
 "use client";
 
-import { useEffect, useState } from "react";
+import { useEffect, useState, useMemo } from "react";
 import { Card, CardHeader, CardTitle, CardDescription, CardContent } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
@@ -10,7 +10,7 @@ import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@
 import { Checkbox } from "@/components/ui/checkbox";
 import { useToast } from "@/hooks/use-toast";
 import { useAuth } from "@/context/AuthContext";
-import { Loader2, Calculator, Save, Send } from "lucide-react";
+import { Loader2, Save, Send } from "lucide-react";
 
 const SERVICE_SLUG = "regular-security";
 
@@ -36,7 +36,6 @@ export default function RegularSecurityRequestPage() {
   const { user } = useAuth();
 
   const [isSubmitting, setIsSubmitting] = useState(false);
-  const [totalCost, setTotalCost] = useState<number | null>(null);
   const [serviceMeta, setServiceMeta] = useState<any | null>(null);
 
   const [form, setForm] = useState({
@@ -79,12 +78,12 @@ export default function RegularSecurityRequestPage() {
 
   const handleChange = (k: string, v: any) => setForm((p) => ({ ...p, [k]: v }));
 
-  const calcTotal = () => {
-    const guards = Number(form.guards || 0);
-    const unit = Number(serviceMeta?.price || 0);
-    const total = guards * unit;
-    setTotalCost(Number.isFinite(total) ? total : 0);
-  };
+  // Calculate total price automatically
+  const totalPrice = useMemo(() => {
+    const basePrice = serviceMeta?.price || 0;
+    const count = Number(form.guards) || 1;
+    return basePrice * count;
+  }, [serviceMeta?.price, form.guards]);
 
   const submit = async (asDraft = false) => {
     if (!user) {
@@ -137,9 +136,6 @@ export default function RegularSecurityRequestPage() {
       });
       if (!res.ok) throw new Error((await res.json()).error || "فشل إنشاء الطلب");
 
-      const created = await res.json();
-      setTotalCost(created.totalCost ?? totalCost);
-
       toast({ title: asDraft ? "تم حفظ المسودة" : "تم إرسال الطلب" });
     } catch (e: any) {
       toast({ title: "حدث خطأ", description: e.message, variant: "destructive" });
@@ -172,6 +168,27 @@ export default function RegularSecurityRequestPage() {
               <Input type="number" min={1} value={form.guards}
                      onChange={(e) => handleChange("guards", Number(e.target.value))} />
             </div>
+            {serviceMeta?.price && (
+              <div className="space-y-2">
+                <Label>السعر</Label>
+                <div className="p-3 bg-muted rounded-md space-y-2">
+                  <div className="flex justify-between items-center text-sm">
+                    <span className="text-muted-foreground">سعر الحارس الواحد:</span>
+                    <span className="font-medium">{serviceMeta.price.toLocaleString('ar-EG')} ج.م</span>
+                  </div>
+                  <div className="flex justify-between items-center text-sm">
+                    <span className="text-muted-foreground">عدد الحراس:</span>
+                    <span className="font-medium">×{form.guards}</span>
+                  </div>
+                  <div className="border-t pt-2">
+                    <div className="flex justify-between items-center">
+                      <span className="font-semibold">السعر الإجمالي:</span>
+                      <span className="text-lg font-bold text-primary">{totalPrice.toLocaleString('ar-EG')} ج.م</span>
+                    </div>
+                  </div>
+                </div>
+              </div>
+            )}
             <div className="space-y-2">
               <Label>مدة العقد</Label>
               <Select value={form.contractDuration} onValueChange={(v) => handleChange("contractDuration", v)}>

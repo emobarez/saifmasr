@@ -1,6 +1,6 @@
 "use client";
 
-import { useEffect, useState } from "react";
+import { useEffect, useState, useMemo } from "react";
 import { Card, CardHeader, CardTitle, CardDescription, CardContent } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
@@ -10,7 +10,7 @@ import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@
 import { Checkbox } from "@/components/ui/checkbox";
 import { useToast } from "@/hooks/use-toast";
 import { useAuth } from "@/context/AuthContext";
-import { Loader2, Calculator, Save, Send } from "lucide-react";
+import { Loader2, Save, Send } from "lucide-react";
 import { UploadField, type UploadedFile } from "@/components/ui/upload-field";
 
 const SERVICE_SLUG = "personal-guard";
@@ -39,8 +39,6 @@ export default function PersonalGuardRequestPage() {
   const { user } = useAuth();
 
   const [isSubmitting, setIsSubmitting] = useState(false);
-  const [isCalculating, setIsCalculating] = useState(false);
-  const [totalCost, setTotalCost] = useState<number | null>(null);
   const [serviceMeta, setServiceMeta] = useState<any | null>(null);
 
   const [form, setForm] = useState({
@@ -85,14 +83,12 @@ export default function PersonalGuardRequestPage() {
     setForm((prev) => ({ ...prev, [key]: value }));
   };
 
-  const calcTotal = () => {
-    setIsCalculating(true);
-    const headcount = Number(form.headcount || 0);
-    const unit = Number(serviceMeta?.price || 0);
-    const total = headcount * unit;
-    setTotalCost(Number.isFinite(total) ? total : 0);
-    setIsCalculating(false);
-  };
+  // Calculate total price automatically based on service price and headcount
+  const totalPrice = useMemo(() => {
+    const basePrice = serviceMeta?.price || 0;
+    const count = Number(form.headcount) || 1;
+    return basePrice * count;
+  }, [serviceMeta?.price, form.headcount]);
 
   const submit = async (asDraft = false) => {
     if (!user) {
@@ -250,11 +246,27 @@ export default function PersonalGuardRequestPage() {
                 </SelectContent>
               </Select>
             </div>
-            {/* السعر يُحدد من الإدارة ويظهر للعميل للعلم فقط */}
-            <div className="space-y-2">
-              <Label>سعر الفرد (من الإدارة)</Label>
-              <Input readOnly value={serviceMeta?.price ?? "—"} />
-            </div>
+            {serviceMeta?.price && (
+              <div className="space-y-2 md:col-span-2">
+                <Label>السعر</Label>
+                <div className="p-3 bg-muted rounded-md space-y-2">
+                  <div className="flex justify-between items-center text-sm">
+                    <span className="text-muted-foreground">سعر الفرد الواحد:</span>
+                    <span className="font-medium">{serviceMeta.price.toLocaleString('ar-EG')} ج.م</span>
+                  </div>
+                  <div className="flex justify-between items-center text-sm">
+                    <span className="text-muted-foreground">عدد الأفراد:</span>
+                    <span className="font-medium">×{form.headcount}</span>
+                  </div>
+                  <div className="border-t pt-2">
+                    <div className="flex justify-between items-center">
+                      <span className="font-semibold">السعر الإجمالي:</span>
+                      <span className="text-lg font-bold text-primary">{totalPrice.toLocaleString('ar-EG')} ج.م</span>
+                    </div>
+                  </div>
+                </div>
+              </div>
+            )}
             <div className="space-y-2 md:col-span-2">
               <Label>متطلبات خاصة وملاحظات</Label>
               <Textarea placeholder="مثال: حارس يتحدث الإنجليزية، لديه رخصة قيادة..."
@@ -266,15 +278,6 @@ export default function PersonalGuardRequestPage() {
                         onCheckedChange={(v) => handleChange("remindBefore24h", !!v)} />
               <Label htmlFor="remind24">إشعار بالمتابعة قبل 24 ساعة</Label>
             </div>
-          </div>
-
-          <div className="flex items-center gap-3">
-            <Button type="button" variant="secondary" onClick={calcTotal}>
-              {isCalculating ? <Loader2 className="h-4 w-4 animate-spin" /> : <Calculator className="h-4 w-4" />} احسب التكلفة
-            </Button>
-            {totalCost !== null && (
-              <span className="text-lg font-semibold">الإجمالي: {new Intl.NumberFormat('ar-EG', { style: 'currency', currency: 'EGP' }).format(totalCost)}</span>
-            )}
           </div>
 
           <div className="flex justify-end gap-2">
