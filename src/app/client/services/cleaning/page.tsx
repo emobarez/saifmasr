@@ -46,7 +46,9 @@ export default function CleaningRequestPage() {
     const basePrice = serviceMeta?.price || 0;
     const count = Number(form.cleaners) || 1;
     return basePrice * count;
-  }, [serviceMeta?.price, form.cleaners]);(() => {
+  }, [serviceMeta?.price, form.cleaners]);
+
+  useEffect(() => {
     let mounted = true;
     const load = async () => {
       try {
@@ -63,9 +65,9 @@ export default function CleaningRequestPage() {
     };
     load();
     return () => { mounted = false; };
-  }, [serviceMeta?.price, form.cleaners]);
+  }, []);
 
-  useEffect = async (asDraft = false) => {
+  const submit = async (asDraft = false) => {
     if (!user) { toast({ title: "يجب تسجيل الدخول", variant: "destructive" }); return; }
     let serviceId = form.serviceId;
     if (!serviceId) {

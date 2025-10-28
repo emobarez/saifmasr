@@ -1,6 +1,6 @@
 "use client";
 
-import { useState } from "react";
+import { useState, useEffect, useMemo } from "react";
 import { Card, CardHeader, CardTitle, CardDescription, CardContent } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
@@ -26,7 +26,25 @@ export default function SecurityConsultingRequestPage() {
   const { toast } = useToast();
   const { user } = useAuth();
 
+  const [serviceMeta, setServiceMeta] = useState<any | null>(null);
   const [isSubmitting, setIsSubmitting] = useState(false);
+
+  useEffect(() => {
+    const loadService = async () => {
+      try {
+        const res = await fetch("/api/services");
+        const services = await res.json();
+        const match = services.find((s: any) => (s.slug || "") === SERVICE_SLUG);
+        if (match) {
+          setServiceMeta(match);
+          setForm((p) => ({ ...p, serviceId: match.id }));
+        }
+      } catch (error) {
+        console.error("Failed to load service", error);
+      }
+    };
+    loadService();
+  }, []);
 
   const [form, setForm] = useState({
     serviceId: "",
@@ -110,6 +128,14 @@ export default function SecurityConsultingRequestPage() {
                 </SelectContent>
               </Select>
             </div>
+            {serviceMeta?.price && (
+              <div className="p-3 bg-muted rounded-md space-y-2">
+                <div className="flex justify-between items-center">
+                  <span className="text-sm text-muted-foreground">سعر الاستشارة الموصى به:</span>
+                  <span className="text-lg font-bold text-primary">{Number(serviceMeta.price).toLocaleString('ar-EG')} ج.م</span>
+                </div>
+              </div>
+            )}
             <div className="space-y-2">
               <Label>طبيعة العميل</Label>
               <Select value={form.clientNature} onValueChange={(v) => setForm((p) => ({ ...p, clientNature: v }))}>

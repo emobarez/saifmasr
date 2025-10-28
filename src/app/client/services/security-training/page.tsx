@@ -1,6 +1,6 @@
 "use client";
 
-import { useState } from "react";
+import { useState, useEffect, useMemo } from "react";
 import { Card, CardHeader, CardTitle, CardDescription, CardContent } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
@@ -21,7 +21,31 @@ export default function SecurityTrainingRequestPage() {
   const { toast } = useToast();
   const { user } = useAuth();
 
+  const [serviceMeta, setServiceMeta] = useState<any | null>(null);
   const [isSubmitting, setIsSubmitting] = useState(false);
+
+  useEffect(() => {
+    const loadService = async () => {
+      try {
+        const res = await fetch("/api/services");
+        const services = await res.json();
+        const match = services.find((s: any) => (s.slug || "") === SERVICE_SLUG);
+        if (match) {
+          setServiceMeta(match);
+          setForm((p) => ({ ...p, serviceId: match.id }));
+        }
+      } catch (error) {
+        console.error("Failed to load service", error);
+      }
+    };
+    loadService();
+  }, []);
+
+  const totalPrice = useMemo(() => {
+    const basePrice = serviceMeta?.price || 0;
+    const count = Number(form.traineesCount) || 1;
+    return basePrice * count;
+  }, [serviceMeta?.price, form.traineesCount]);
 
   const [form, setForm] = useState({
     serviceId: "",
@@ -106,6 +130,23 @@ export default function SecurityTrainingRequestPage() {
               <Input type="number" min={1} value={form.traineesCount}
                      onChange={(e) => setForm((p) => ({ ...p, traineesCount: Number(e.target.value) }))} />
             </div>
+            {serviceMeta?.price && form.traineesCount > 0 && (
+              <div className="p-3 bg-muted rounded-md space-y-2">
+                <div className="flex justify-between items-center">
+                  <span className="text-sm text-muted-foreground">سعر المتدرب الواحد:</span>
+                  <span className="text-sm font-medium">{Number(serviceMeta.price).toLocaleString('ar-EG')} ج.م</span>
+                </div>
+                <div className="flex justify-between items-center">
+                  <span className="text-sm text-muted-foreground">عدد المتدربين:</span>
+                  <span className="text-sm font-medium">{form.traineesCount}</span>
+                </div>
+                <div className="h-px bg-border my-2" />
+                <div className="flex justify-between items-center">
+                  <span className="font-medium">السعر الإجمالي:</span>
+                  <span className="text-lg font-bold text-primary">{totalPrice.toLocaleString('ar-EG')} ج.م</span>
+                </div>
+              </div>
+            )}
             <div className="space-y-2">
               <Label>مدة التدريب</Label>
               <Select value={form.duration} onValueChange={(v) => setForm((p) => ({ ...p, duration: v }))}>

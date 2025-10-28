@@ -1,6 +1,6 @@
 "use client";
 
-import { useState } from "react";
+import { useEffect, useState, useMemo } from "react";
 import { Card, CardHeader, CardTitle, CardDescription, CardContent } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
@@ -22,6 +22,7 @@ export default function EventSecurityRequestPage() {
   const { user } = useAuth();
 
   const [isSubmitting, setIsSubmitting] = useState(false);
+  const [serviceMeta, setServiceMeta] = useState<any | null>(null);
 
   const [form, setForm] = useState({
     serviceId: "",
@@ -39,6 +40,31 @@ export default function EventSecurityRequestPage() {
     requestCall: true,
     isDraft: false,
   });
+
+  useEffect(() => {
+    let mounted = true;
+    const load = async () => {
+      try {
+        const res = await fetch("/api/services");
+        const services = await res.json();
+        const match = services.find((s: any) => (s.slug || "") === SERVICE_SLUG);
+        if (mounted) {
+          setServiceMeta(match || null);
+          if (match?.id) setForm((p) => ({ ...p, serviceId: match.id }));
+        }
+      } catch (e) {
+        console.error("Failed to load service", e);
+      }
+    };
+    load();
+    return () => { mounted = false; };
+  }, []);
+
+  const totalPrice = useMemo(() => {
+    const basePrice = serviceMeta?.price || 0;
+    const count = Number(form.guardsCount) || 0;
+    return basePrice * count;
+  }, [serviceMeta?.price, form.guardsCount]);
 
   const toggleArray = (key: keyof typeof form, value: string) => {
     setForm((prev) => {
@@ -129,6 +155,27 @@ export default function EventSecurityRequestPage() {
               <Input type="number" min={0} value={form.guardsCount}
                      onChange={(e) => setForm((p) => ({ ...p, guardsCount: e.target.value }))} />
             </div>
+            {serviceMeta?.price && form.guardsCount && Number(form.guardsCount) > 0 && (
+              <div className="space-y-2">
+                <Label>السعر</Label>
+                <div className="p-3 bg-muted rounded-md space-y-2">
+                  <div className="flex justify-between items-center text-sm">
+                    <span className="text-muted-foreground">سعر الفرد:</span>
+                    <span className="font-medium">{serviceMeta.price.toLocaleString('ar-EG')} ج.م</span>
+                  </div>
+                  <div className="flex justify-between items-center text-sm">
+                    <span className="text-muted-foreground">عدد الأفراد:</span>
+                    <span className="font-medium">×{form.guardsCount}</span>
+                  </div>
+                  <div className="border-t pt-2">
+                    <div className="flex justify-between items-center">
+                      <span className="font-semibold">السعر الإجمالي:</span>
+                      <span className="text-lg font-bold text-primary">{totalPrice.toLocaleString('ar-EG')} ج.م</span>
+                    </div>
+                  </div>
+                </div>
+              </div>
+            )}
             <div className="space-y-2">
               <Label>عدد الطاقم الإداري/الدعم</Label>
               <Input type="number" min={0} value={form.staffCount}

@@ -1,6 +1,6 @@
 "use client";
 
-import { useState } from "react";
+import { useEffect, useState, useMemo } from "react";
 import { Card, CardHeader, CardTitle, CardDescription, CardContent } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
@@ -26,6 +26,7 @@ export default function CCTVInstallationRequestPage() {
   const { user } = useAuth();
 
   const [isSubmitting, setIsSubmitting] = useState(false);
+  const [serviceMeta, setServiceMeta] = useState<any | null>(null);
 
   const [form, setForm] = useState({
     serviceId: "",
@@ -40,6 +41,31 @@ export default function CCTVInstallationRequestPage() {
     requestInspectionCall: true,
     isDraft: false,
   });
+
+  useEffect(() => {
+    let mounted = true;
+    const load = async () => {
+      try {
+        const res = await fetch("/api/services");
+        const services = await res.json();
+        const match = services.find((s: any) => (s.slug || "") === SERVICE_SLUG);
+        if (mounted) {
+          setServiceMeta(match || null);
+          if (match?.id) setForm((p) => ({ ...p, serviceId: match.id }));
+        }
+      } catch (e) {
+        console.error("Failed to load service", e);
+      }
+    };
+    load();
+    return () => { mounted = false; };
+  }, []);
+
+  const totalPrice = useMemo(() => {
+    const basePrice = serviceMeta?.price || 0;
+    const count = Number(form.cameraCount) || 1;
+    return basePrice * count;
+  }, [serviceMeta?.price, form.cameraCount]);
 
   const toggleArray = (key: keyof typeof form, value: string) => {
     setForm((prev) => {
@@ -134,6 +160,27 @@ export default function CCTVInstallationRequestPage() {
               <Input type="number" min={1} value={form.cameraCount}
                      onChange={(e) => setForm((p) => ({ ...p, cameraCount: Number(e.target.value) }))} />
             </div>
+            {serviceMeta?.price && (
+              <div className="space-y-2">
+                <Label>السعر</Label>
+                <div className="p-3 bg-muted rounded-md space-y-2">
+                  <div className="flex justify-between items-center text-sm">
+                    <span className="text-muted-foreground">سعر الكاميرا:</span>
+                    <span className="font-medium">{serviceMeta.price.toLocaleString('ar-EG')} ج.م</span>
+                  </div>
+                  <div className="flex justify-between items-center text-sm">
+                    <span className="text-muted-foreground">عدد الكاميرات:</span>
+                    <span className="font-medium">×{form.cameraCount}</span>
+                  </div>
+                  <div className="border-t pt-2">
+                    <div className="flex justify-between items-center">
+                      <span className="font-semibold">السعر الإجمالي:</span>
+                      <span className="text-lg font-bold text-primary">{totalPrice.toLocaleString('ar-EG')} ج.م</span>
+                    </div>
+                  </div>
+                </div>
+              </div>
+            )}
             <div className="space-y-2 md:col-span-2">
               <Label>مواقع التركيب</Label>
               <Textarea placeholder="حدد الأماكن المراد تركيب الكاميرات فيها" value={form.locations}
